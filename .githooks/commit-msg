@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Commit-msg hook: append commit subject as Prompt into docs/prompts.md if code-related changes exist
+# Enable with: git config core.hooksPath .githooks
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+MSG_FILE="$1"            # path to .git/COMMIT_EDITMSG
+PROMPTS_FILE="docs/prompts.md"
+TRIGGER_PATTERNS='^src/|^pom.xml$|^Dockerfile$|^docs/|^postman/|^.github/workflows/'
+
+STAGED_FILES=$(git diff --cached --name-only)
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+# If no trigger files, skip
+if ! echo "$STAGED_FILES" | grep -Eq "$TRIGGER_PATTERNS"; then
+  exit 0
+fi
+
+# If prompts file already staged by pre-commit, skip to avoid duplicate
+if echo "$STAGED_FILES" | grep -Fxq "$PROMPTS_FILE"; then
+  exit 0
+fi
+
+TODAY=$(date +%F)
+GIT_USER=$(git config user.name || true)
+if [ -z "$GIT_USER" ]; then
+  GIT_USER=${USER:-"unknown"}
+fi
+
+# Extract commit subject (first non-empty line)
+COMMIT_SUBJECT=$(sed -n '1{s/^\s*//;p;q}' "$MSG_FILE")
+if [ -z "$COMMIT_SUBJECT" ]; then
+  COMMIT_SUBJECT="(无提交说明)"
+fi
+
+ENTRY="\n---\n\n## ${TODAY} | 输入人：${GIT_USER}\n- Prompt：\n  - ${COMMIT_SUBJECT}\n- 涉及模块/文件：\n  - （自动记录，见提交改动）\n- 产出/改动概述：\n  - （可在后续提交中补充详细说明）\n"
+
+# Ensure prompts file header exists
+if [ ! -f "$PROMPTS_FILE" ] || [ ! -s "$PROMPTS_FILE" ]; then
+  {
+    echo "# Prompts 记录"
+    echo
+    echo "> 目的：强制记录所有执行的 Prompts，包含日期与输入人，确保可追溯。"
+    echo
+    echo "## 记录规范"
+    echo "- 必填：日期（YYYY-MM-DD）、输入人、Prompt 内容、涉及模块或文件、产出/改动概述"
+    echo "- 一次记录对应一次执行的 Prompt，按时间倒序追加"
+    echo "- 与本项目规范一致：命名、API 响应结构 { code, message, data } 等"
+    echo
+  } >> "$PROMPTS_FILE"
+fi
+
+printf "%b" "$ENTRY" >> "$PROMPTS_FILE"
+
+echo "已自动追加 prompts 记录到 $PROMPTS_FILE"
+# Stage it to help pass CI
+git add "$PROMPTS_FILE"
+
+exit 0

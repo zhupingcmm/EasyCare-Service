@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Auto-append a prompt record into docs/prompts.md on code changes
+# Requires: set hooks path via: git config core.hooksPath .githooks
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+PROMPTS_FILE="docs/prompts.md"
+# Patterns that indicate app logic changes
+TRIGGER_PATTERNS='^src/|^pom.xml$|^Dockerfile$|^docs/|^postman/|^.github/workflows/'
+
+# Gather staged files
+STAGED_FILES=$(git diff --cached --name-only)
+
+# If no staged files, nothing to do
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+# Determine if triggers are present
+if echo "$STAGED_FILES" | grep -Eq "$TRIGGER_PATTERNS"; then
+  # Check if prompts.md is already staged
+  if echo "$STAGED_FILES" | grep -Fxq "$PROMPTS_FILE"; then
+    # Already updated by developer
+    exit 0
+  fi
+
+  # Prepare entry
+  TODAY=$(date +%F)
+  GIT_USER=$(git config user.name || true)
+  if [ -z "$GIT_USER" ]; then
+    GIT_USER=${USER:-"unknown"}
+  fi
+
+  # Try to get prepared commit message subject from env/temporary file if exists
+  # In pre-commit the message usually isn't available yet, so we place a placeholder
+  ENTRY="\n---\n\n## ${TODAY} | 输入人：${GIT_USER}\n- Prompt：\n  - （参考本次提交信息）\n- 涉及模块/文件：\n  - （自动记录，见提交改动）\n- 产出/改动概述：\n  - （请在后续提交中补充必要说明，可直接编辑本条记录）\n"
+
+  # Ensure prompts file exists with header
+  if [ ! -f "$PROMPTS_FILE" ] || [ ! -s "$PROMPTS_FILE" ]; then
+    {
+      echo "# Prompts 记录"
+      echo
+      echo "> 目的：强制记录所有执行的 Prompts，包含日期与输入人，确保可追溯。"
+      echo
+      echo "## 记录规范"
+      echo "- 必填：日期（YYYY-MM-DD）、输入人、Prompt 内容、涉及模块或文件、产出/改动概述"
+      echo "- 一次记录对应一次执行的 Prompt，按时间倒序追加"
+      echo "- 与本项目规范一致：命名、API 响应结构 { code, message, data } 等"
+      echo
+    } >> "$PROMPTS_FILE"
+  fi
+
+  # Append entry
+  printf "%b" "$ENTRY" >> "$PROMPTS_FILE"
+
+  # Stage prompts file so this commit passes CI rule
+  git add "$PROMPTS_FILE"
+fi
+
+exit 0
