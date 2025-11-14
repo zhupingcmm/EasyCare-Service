@@ -1,0 +1,794 @@
+{
+	"info": {
+		"_postman_id": "45a4a418-d727-4755-a040-18c7785185bd",
+		"name": "HR Maternity",
+		"description": "Postman collection for Maternity Allowance APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14202635"
+	},
+	"item": [
+		{
+			"name": "local",
+			"item": [
+				{
+					"name": "产假津贴 (Maternity Allowance)",
+					"item": [
+						{
+							"name": "Calculate Maternity Allowance - SH Case1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lanId\": \"A2345678\",\n    \"employeeName\": \"1212\",\n    \"cityCode\": \"SH\",\n    \"maternityLeaveDays\": 173,\n    \"maternityLeaveStartDate\": \"2024-11-01\",\n    \"maternityLeaveEndDate\": \"2025-04-26\",\n    \"averageSalaryPast12Months\": 21821.79,\n    \"governmentAllowance\": 212911.1,\n    \"paidMaternityWage\": 23240.8,\n    \"unitMonthlyAverageSalary\": 49753.8,\n    \"monthlyBaseSalary\": 20000,\n    \"adjustedMonthlyBaseSalary\": 20000,\n    \"companyAdvance\": {\n        \"addItem\": {\n            \"socialInsuranceBase\": 4648.16,\n            \"flexibleBenefit\": 305,\n            \"unionFee\": 50\n        },\n        \"deleteItem\": {\n            \"spotOn\": 100\n        }\n    }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-allowance/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SH Case2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lanId\": \"a2131231\",\n    \"employeeName\": \"1231\",\n    \"cityCode\": \"SH\",\n    \"maternityLeaveDays\": 158,\n    \"maternityLeaveStartDate\": \"2025-09-01\",\n    \"maternityLeaveEndDate\": \"2026-02-05\",\n    \"averageSalaryPast12Months\": 21821.79,\n    \"governmentAllowance\": 2000001,\n    \"companyAdvance\": {\n        \"addItem\": {\n            \"socialInsuranceBase\": 1000,\n            \"ESPP\": 1000\n        },\n        \"deleteItem\": {}\n    },\n    \"monthlyBaseSalary\": 20000,\n    \"adjustedMonthlyBaseSalary\": 30000,\n    \"unitMonthlyAverageSalary\": 12000,\n    \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-allowance/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SH Case3",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lanId\": \"A2345678\",\n    \"employeeName\": \"1212\",\n    \"cityCode\": \"SH\",\n    \"maternityLeaveDays\": 173,\n    \"maternityLeaveStartDate\": \"2025-03-10\",\n    \"maternityLeaveEndDate\": \"2025-08-20\",\n    \"averageSalaryPast12Months\": 21821.79,\n    \"governmentAllowance\": 212911.1,\n    \"paidMaternityWage\": 23240.8,\n    \"unitMonthlyAverageSalary\": 49753.8,\n    \"monthlyBaseSalary\": 20000,\n    \"adjustedMonthlyBaseSalary\": 30000,\n    \"companyAdvance\": {\n        \"addItem\": {\n            \"socialInsuranceBase\": 4648.16,\n            \"adjustedSocialInsuranceBase\": 5648.16,\n            \"flexibleBenefit\": 305,\n            \"unionFee\": 50\n        },\n        \"deleteItem\": {\n            \"spotOn\": 100\n        }\n    }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-allowance/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SZ",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan67890\",\n  \"employeeName\": \"李四\",\n  \"cityCode\": \"SZ\",\n  \"maternityLeaveDays\": 178,\n  \"maternityLeaveStartDate\": \"2024-11-01\",\n  \"maternityLeaveEndDate\": \"2025-03-11\",\n  \"averageSalaryPast12Months\": 18000,\n  \"governmentAllowance\": 28000,\n  \"paidMaternityWage\": 15000,\n  \"socialInsuranceBase\": 18000,\n  \"monthlyBaseSalary\": 18000,\n  \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-allowance/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - GZ",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan34567\",\n  \"employeeName\": \"王五\",\n  \"cityCode\": \"GZ\",\n  \"maternityLeaveDays\": 178,\n  \"maternityLeaveStartDate\": \"2025-08-20\",\n  \"maternityLeaveEndDate\": \"2026-02-13\",\n  \"averageSalaryPast12Months\": 20000,\n  \"governmentAllowance\": 132000,\n  \"paidMaternityWage\": 18000,\n  \"socialInsuranceBase\": 20000,\n  \"monthlyBaseSalary\": 20000,\n  \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-allowance/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SU",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan34567\",\n  \"employeeName\": \"王五\",\n  \"cityCode\": \"SU\",\n  \"maternityLeaveDays\": 178,\n  \"maternityLeaveStartDate\": \"2025-08-20\",\n  \"maternityLeaveEndDate\": \"2026-02-13\",\n  \"averageSalaryPast12Months\": 20000,\n  \"governmentAllowance\": 132000,\n  \"paidMaternityWage\": 18000,\n  \"socialInsuranceBase\": 20000,\n  \"monthlyBaseSalary\": 20000,\n  \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-allowance/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "产假天数 (Maternity Leave)",
+					"item": [
+						{
+							"name": "Calculate Maternity Leave",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan12345\",\n  \"employeeName\": \"张三\",\n  \"cityCode\": \"SH\",\n  \"expectedDeliveryDate\": \"2025-10-01\",\n  \"isDifficultBirth\": false,\n  \"numberOfBabies\": 1\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-leave/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-leave",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Leave - Difficult Birth (SH)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan22334\",\n  \"employeeName\": \"王敏\",\n  \"cityCode\": \"SH\",\n  \"expectedDeliveryDate\": \"2025-10-15\",\n  \"isDifficultBirth\": true,\n  \"numberOfBabies\": 1\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-leave/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-leave",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Leave - Multiple Babies (SZ)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan55667\",\n  \"employeeName\": \"李娜\",\n  \"cityCode\": \"SZ\",\n  \"expectedDeliveryDate\": \"2025-11-01\",\n  \"isDifficultBirth\": false,\n  \"numberOfBabies\": 2\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-leave/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-leave",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Leave - Difficult + Multiple (GZ)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan88990\",\n  \"employeeName\": \"赵六\",\n  \"cityCode\": \"GZ\",\n  \"expectedDeliveryDate\": \"2025-12-01\",\n  \"isDifficultBirth\": true,\n  \"numberOfBabies\": 2\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/maternity-leave/calculate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"maternity-leave",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "/holidays",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+									"const json = pm.response.json();",
+									"pm.test('Has unified wrapper', function () { pm.expect(json).to.have.keys(['code','message','data']); });",
+									"pm.test('code is 0', function () { pm.expect(json.code).to.eql(0); });",
+									"pm.test('data is array', function () { pm.expect(Array.isArray(json.data)).to.be.true; });"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/support/holidays/2023",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"support",
+								"holidays",
+								"2023"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/cities",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+									"const json = pm.response.json();",
+									"pm.test('Has unified wrapper', function () { pm.expect(json).to.have.keys(['code','message','data']); });",
+									"pm.test('code is 0', function () { pm.expect(json.code).to.eql(0); });",
+									"pm.test('data is array', function () { pm.expect(Array.isArray(json.data)).to.be.true; });"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/support/cities",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"support",
+								"cities"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/workdays",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/support/workdays?start=2024-11-01&end=2025-04-25",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"support",
+								"workdays"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "2024-11-01"
+								},
+								{
+									"key": "end",
+									"value": "2025-04-25"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DEV",
+			"item": [
+				{
+					"name": "产假津贴 (Maternity Allowance)",
+					"item": [
+						{
+							"name": "Calculate Maternity Allowance - SH Case1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lanId\": \"A2345678\",\n    \"employeeName\": \"1212\",\n    \"cityCode\": \"SH\",\n    \"maternityLeaveDays\": 173,\n    \"maternityLeaveStartDate\": \"2024-11-01\",\n    \"maternityLeaveEndDate\": \"2025-04-26\",\n    \"averageSalaryPast12Months\": 21821.79,\n    \"governmentAllowance\": 212911.1,\n    \"paidMaternityWage\": 23240.8,\n    \"unitMonthlyAverageSalary\": 49753.8,\n    \"monthlyBaseSalary\": 20000,\n    \"adjustedMonthlyBaseSalary\": 20000,\n    \"companyAdvance\": {\n        \"addItem\": {\n            \"socialInsuranceBase\": 4648.16,\n            \"flexibleBenefit\": 305,\n            \"unionFee\": 50\n        },\n        \"deleteItem\": {\n            \"spotOn\": 100\n        }\n    }\n}"
+								},
+								"url": {
+									"raw": "http://122.152.220.47:9016/api/maternity-allowance/calculate",
+									"protocol": "http",
+									"host": [
+										"122",
+										"152",
+										"220",
+										"47"
+									],
+									"port": "9016",
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SH Case2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lanId\": \"a2131231\",\n    \"employeeName\": \"1231\",\n    \"cityCode\": \"SH\",\n    \"maternityLeaveDays\": 158,\n    \"maternityLeaveStartDate\": \"2025-09-01\",\n    \"maternityLeaveEndDate\": \"2026-02-05\",\n    \"averageSalaryPast12Months\": 21821.79,\n    \"governmentAllowance\": 2000001,\n    \"companyAdvance\": {\n        \"addItem\": {\n            \"socialInsuranceBase\": 1000,\n            \"ESPP\": 1000\n        },\n        \"deleteItem\": {}\n    },\n    \"monthlyBaseSalary\": 20000,\n    \"adjustedMonthlyBaseSalary\": 30000,\n    \"unitMonthlyAverageSalary\": 12000,\n    \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "http://122.152.220.47:9016/api/maternity-allowance/calculate",
+									"protocol": "http",
+									"host": [
+										"122",
+										"152",
+										"220",
+										"47"
+									],
+									"port": "9016",
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SH Case3",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lanId\": \"A2345678\",\n    \"employeeName\": \"1212\",\n    \"cityCode\": \"SH\",\n    \"maternityLeaveDays\": 173,\n    \"maternityLeaveStartDate\": \"2025-03-10\",\n    \"maternityLeaveEndDate\": \"2025-08-20\",\n    \"averageSalaryPast12Months\": 21821.79,\n    \"governmentAllowance\": 212911.1,\n    \"paidMaternityWage\": 23240.8,\n    \"unitMonthlyAverageSalary\": 49753.8,\n    \"monthlyBaseSalary\": 20000,\n    \"adjustedMonthlyBaseSalary\": 30000,\n    \"companyAdvance\": {\n        \"addItem\": {\n            \"socialInsuranceBase\": 4648.16,\n            \"adjustedSocialInsuranceBase\": 5648.16,\n            \"flexibleBenefit\": 305,\n            \"unionFee\": 50\n        },\n        \"deleteItem\": {\n            \"spotOn\": 100\n        }\n    }\n}"
+								},
+								"url": {
+									"raw": "http://122.152.220.47:9016/api/maternity-allowance/calculate",
+									"protocol": "http",
+									"host": [
+										"122",
+										"152",
+										"220",
+										"47"
+									],
+									"port": "9016",
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SZ",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan67890\",\n  \"employeeName\": \"李四\",\n  \"cityCode\": \"SZ\",\n  \"maternityLeaveDays\": 178,\n  \"maternityLeaveStartDate\": \"2025-09-15\",\n  \"maternityLeaveEndDate\": \"2026-03-11\",\n  \"averageSalaryPast12Months\": 18000,\n  \"governmentAllowance\": 28000,\n  \"paidMaternityWage\": 15000,\n  \"socialInsuranceBase\": 18000,\n  \"monthlyBaseSalary\": 18000,\n  \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "http://122.152.220.47:9016/api/maternity-allowance/calculate",
+									"protocol": "http",
+									"host": [
+										"122",
+										"152",
+										"220",
+										"47"
+									],
+									"port": "9016",
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - GZ",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan34567\",\n  \"employeeName\": \"王五\",\n  \"cityCode\": \"GZ\",\n  \"maternityLeaveDays\": 178,\n  \"maternityLeaveStartDate\": \"2025-08-20\",\n  \"maternityLeaveEndDate\": \"2026-02-13\",\n  \"averageSalaryPast12Months\": 20000,\n  \"governmentAllowance\": 132000,\n  \"paidMaternityWage\": 18000,\n  \"socialInsuranceBase\": 20000,\n  \"monthlyBaseSalary\": 20000,\n  \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "http://122.152.220.47:9016/api/maternity-allowance/calculate",
+									"protocol": "http",
+									"host": [
+										"122",
+										"152",
+										"220",
+										"47"
+									],
+									"port": "9016",
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Calculate Maternity Allowance - SU",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"lanId\": \"lan34567\",\n  \"employeeName\": \"王五\",\n  \"cityCode\": \"SU\",\n  \"maternityLeaveDays\": 178,\n  \"maternityLeaveStartDate\": \"2025-08-20\",\n  \"maternityLeaveEndDate\": \"2026-02-13\",\n  \"averageSalaryPast12Months\": 20000,\n  \"governmentAllowance\": 132000,\n  \"paidMaternityWage\": 18000,\n  \"socialInsuranceBase\": 20000,\n  \"monthlyBaseSalary\": 20000,\n  \"isMultipleBirth\": false\n}"
+								},
+								"url": {
+									"raw": "http://122.152.220.47:9016/api/maternity-allowance/calculate",
+									"protocol": "http",
+									"host": [
+										"122",
+										"152",
+										"220",
+										"47"
+									],
+									"port": "9016",
+									"path": [
+										"api",
+										"maternity-allowance",
+										"calculate"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "/workdays",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://122.152.220.47:9016/api/support/workdays?start=2025-01-15&end=2025-03-10",
+							"protocol": "http",
+							"host": [
+								"122",
+								"152",
+								"220",
+								"47"
+							],
+							"port": "9016",
+							"path": [
+								"api",
+								"support",
+								"workdays"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "2025-01-15"
+								},
+								{
+									"key": "end",
+									"value": "2025-03-10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "年度节假日List",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://unpkg.com/holiday-calendar/data/CN/2025.json",
+					"protocol": "https",
+					"host": [
+						"unpkg",
+						"com"
+					],
+					"path": [
+						"holiday-calendar",
+						"data",
+						"CN",
+						"2025.json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "判断节假日",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://oneapi.coderbox.cn/openapi/public/holiday?date=2025-05-02",
+					"protocol": "https",
+					"host": [
+						"oneapi",
+						"coderbox",
+						"cn"
+					],
+					"path": [
+						"openapi",
+						"public",
+						"holiday"
+					],
+					"query": [
+						{
+							"key": "date",
+							"value": "2025-05-02"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "判断节假日 - 0 工作日 / 1 法定节假日 / 2 调休补班",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://api.goseek.cn/Tools/holiday?date=20251001",
+					"protocol": "http",
+					"host": [
+						"api",
+						"goseek",
+						"cn"
+					],
+					"path": [
+						"Tools",
+						"holiday"
+					],
+					"query": [
+						{
+							"key": "date",
+							"value": "20251001"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
