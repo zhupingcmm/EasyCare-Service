@@ -16,6 +16,11 @@ import java.time.LocalDate;
 @Data
 public class MaternityAllowanceRequest {
     
+    /**
+     * 产假申请记录ID（可选，用于关联产假申请）
+     */
+    private Long requestId;
+    
     @NotBlank(message = "工号不能为空")
     private String lanId;
     

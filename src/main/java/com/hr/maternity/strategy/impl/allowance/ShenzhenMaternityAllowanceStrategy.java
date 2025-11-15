@@ -84,6 +84,8 @@ public class ShenzhenMaternityAllowanceStrategy implements MaternityAllowanceStr
             BigDecimal.ZERO : compensationAmount;
 
         return new MaternityAllowanceResponse(
+                null, // requestId - 由Service层设置
+                null, // resultId - 由Service层设置
                 request.getLanId(),
                 request.getEmployeeName(),
                 request.getCityCode(),
