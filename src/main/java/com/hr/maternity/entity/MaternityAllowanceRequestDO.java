@@ -49,6 +49,8 @@ public class MaternityAllowanceRequestDO {
     @Column(name = "city_code", nullable = false, length = 50)
     private String cityCode;
 
+    @EncryptedField
+    @Convert(converter = Base64AttributeConverter.class)
     @Column(name = "unit_monthly_average_salary", precision = 15, scale = 2)
     private BigDecimal unitMonthlyAverageSalary;
 
@@ -57,11 +59,13 @@ public class MaternityAllowanceRequestDO {
     @Column(name = "monthly_base_salary", precision = 15, scale = 2)
     private BigDecimal monthlyBaseSalary;
 
-//    @EncryptedField
-//    @Convert(converter = Base64AttributeConverter.class)
+    @EncryptedField
+    @Convert(converter = Base64AttributeConverter.class)
     @Column(name = "adjusted_monthly_base_salary", precision = 15, scale = 2)
     private BigDecimal adjustedMonthlyBaseSalary;
 
+    @EncryptedField
+    @Convert(converter = Base64AttributeConverter.class)
     @Column(name = "average_salary_past_12_months", nullable = false, precision = 15, scale = 2)
     private BigDecimal averageSalaryPast12Months;
 

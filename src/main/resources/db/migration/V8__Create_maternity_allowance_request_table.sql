@@ -13,10 +13,10 @@ CREATE TABLE maternity_allowance_request (
     city_code VARCHAR(50) NOT NULL,
     
     -- 工资信息
-    unit_monthly_average_salary DECIMAL(15, 2),
-    monthly_base_salary DECIMAL(15, 2),
-    adjusted_monthly_base_salary DECIMAL(15, 2),
-    average_salary_past_12_months DECIMAL(15, 2) NOT NULL,
+    unit_monthly_average_salary TEXT,
+    monthly_base_salary TEXT,
+    adjusted_monthly_base_salary TEXT,
+    average_salary_past_12_months TEXT NOT NULL,
     
     -- 产假信息
     maternity_leave_days INTEGER NOT NULL,
