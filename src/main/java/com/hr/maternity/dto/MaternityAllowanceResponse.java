@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 生育津贴计算响应DTO
@@ -13,6 +14,16 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MaternityAllowanceResponse {
+    
+    /**
+     * 申请记录ID
+     */
+    private Long requestId;
+    
+    /**
+     * 计算结果ID
+     */
+    private Long resultId;
     
     /**
      * 工号
@@ -66,14 +77,12 @@ public class MaternityAllowanceResponse {
 
     /**
      * 津贴补差计算详情
-     * 支持String类型（单个详情描述）或List<String>类型（多个详情项）
      */
-    private Object allowanceCompensationDetails;
+    private List<String> allowanceCompensationDetails;
 
     /**
      * 返还计算详情
-     * 支持String类型（单个详情描述）或List<String>类型（多个详情项）
      */
-    private Object refundDetails;
+    private List<String> refundDetails;
 }
 

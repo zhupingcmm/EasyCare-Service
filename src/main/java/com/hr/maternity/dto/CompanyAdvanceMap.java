@@ -1,9 +1,11 @@
 package com.hr.maternity.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hr.maternity.domain.MonthlyWorkdayInfoDO;
 import com.hr.maternity.enums.AddDeleteItemEnum;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,10 @@ import java.util.Map;
  * 支持增加和删除操作
  */
 @Data
-public class CompanyAdvanceMap {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class CompanyAdvanceMap implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     /**
      * 增加项目的Map

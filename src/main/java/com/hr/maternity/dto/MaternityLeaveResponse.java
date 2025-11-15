@@ -17,6 +17,16 @@ import java.util.Map;
 public class MaternityLeaveResponse {
     
     /**
+     * 申请记录ID
+     */
+    private Long requestId;
+    
+    /**
+     * 计算结果ID
+     */
+    private Long resultId;
+    
+    /**
      * 工号
      */
     private String lanId;
