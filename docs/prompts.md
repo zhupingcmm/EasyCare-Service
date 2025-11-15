@@ -266,6 +266,22 @@ compensate的value为现在的返回BigDecimal, refundDetail的value为String格
 
 ---
 
+## 2025-11-15
+
+### 输入人：用户
+
+**提示词：**
+```
+springboot+hibernet +JPA实现数据库字段级别的加密，我要实现一个注解， 在entity 需要加密的的字段加上此注解，则入库时时能加密，读取时能解密。新加一个package在里面生成一个demo，不要动现有java项目结构，可以在pom中加入此功能需要的库。加密算法使用base64，要支持加密解密。为我生成demo 和demo sql建表语句， 加密字段类型 支持各种类型，包括日期 ，字符和 数字，sql建表要满足存储要求。 demo要包括 入库和出库，要有demo controller， 可以直接在postman测试。使用最新的主流方案，不要使用deprecated的方案和接口。
+```
+
+**执行内容：**
+- 新增 `com.hr.maternity.demo.encryption` 包，包含 `@EncryptedField` 注解、Base64 属性转换器、异常与负载模型。
+- 创建 Demo 实体、Repository、DTO、Service/Impl 以及 Controller，演示字段级加密的创建、查询全部、按 ID 查询。
+- 提供建表示例 SQL 以及 Postman 可直接调用的接口说明。
+
+---
+
 ## 2025-01-17 - 将 spotOn 字段从 MaternityCalcInfo 移至 AllowanceCalcInfo
 
 **需求**：将 `MaternityTestCaseRowDTO` 中的 `spotOn` 字段从 `MaternityCalcInfo` 类移动到 `AllowanceCalcInfo` 类

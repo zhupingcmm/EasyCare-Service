@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "45a4a418-d727-4755-a040-18c7785185bd",
+		"_postman_id": "eec6ee1f-0b42-405a-b8ec-9a9918feb504",
 		"name": "HR Maternity",
 		"description": "Postman collection for Maternity Allowance APIs",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "14202635"
+		"_exporter_id": "19497889"
 	},
 	"item": [
 		{
@@ -339,6 +339,10 @@
 							"response": []
 						}
 					]
+				},
+				{
+					"name": "加密",
+					"item": []
 				},
 				{
 					"name": "/holidays",
