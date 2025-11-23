@@ -14,9 +14,7 @@ import java.util.Optional;
 @Repository
 public interface MaternityLeaveResultRepository extends JpaRepository<MaternityLeaveResultDO, Long> {
 
-    List<MaternityLeaveResultDO> findByRequestId(Long requestId);
 
-    Optional<MaternityLeaveResultDO> findFirstByRequestIdOrderByCreateDateDesc(Long requestId);
 
     List<MaternityLeaveResultDO> findByLanId(String lanId);
 

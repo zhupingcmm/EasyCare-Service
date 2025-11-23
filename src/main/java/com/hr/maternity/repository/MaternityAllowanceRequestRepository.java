@@ -18,9 +18,6 @@ public interface MaternityAllowanceRequestRepository extends JpaRepository<Mater
 
     List<MaternityAllowanceRequestDO> findByCityCode(String cityCode);
 
-    List<MaternityAllowanceRequestDO> findByMaternityLeaveRequestId(Long maternityLeaveRequestId);
-
-    Optional<MaternityAllowanceRequestDO> findFirstByMaternityLeaveRequestIdOrderByCreateDateDesc(Long maternityLeaveRequestId);
 
     List<MaternityAllowanceRequestDO> findByMaternityLeaveStartDateBetween(LocalDate startDate, LocalDate endDate);
 }

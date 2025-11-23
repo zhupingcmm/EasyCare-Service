@@ -1,9 +1,7 @@
 -- 创建津贴申请表
 CREATE TABLE maternity_allowance_request (
     id BIGSERIAL PRIMARY KEY,
-    
-    -- 关联产假申请记录ID (外键)
-    maternity_leave_request_id BIGINT,
+
     
     -- 员工信息
     lan_id VARCHAR(50) NOT NULL,
@@ -34,17 +32,10 @@ CREATE TABLE maternity_allowance_request (
     create_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     create_by VARCHAR(100) DEFAULT 'system',
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_by VARCHAR(100) DEFAULT 'system',
-    
-    -- 外键约束
-    CONSTRAINT fk_maternity_allowance_request_leave 
-        FOREIGN KEY (maternity_leave_request_id) 
-        REFERENCES maternity_leave_request(id) 
-        ON DELETE SET NULL
+    update_by VARCHAR(100) DEFAULT 'system'
 );
 
 -- 创建索引
-CREATE INDEX idx_maternity_allowance_request_leave_id ON maternity_allowance_request(maternity_leave_request_id);
 CREATE INDEX idx_maternity_allowance_request_lan_id ON maternity_allowance_request(lan_id);
 CREATE INDEX idx_maternity_allowance_request_city_code ON maternity_allowance_request(city_code);
 CREATE INDEX idx_maternity_allowance_request_start_date ON maternity_allowance_request(maternity_leave_start_date);
@@ -53,7 +44,6 @@ CREATE INDEX idx_maternity_allowance_request_create_date ON maternity_allowance_
 -- 添加表注释
 COMMENT ON TABLE maternity_allowance_request IS '津贴申请记录表';
 COMMENT ON COLUMN maternity_allowance_request.id IS '主键ID';
-COMMENT ON COLUMN maternity_allowance_request.maternity_leave_request_id IS '关联的产假申请记录ID';
 COMMENT ON COLUMN maternity_allowance_request.lan_id IS '员工工号';
 COMMENT ON COLUMN maternity_allowance_request.employee_name IS '员工姓名';
 COMMENT ON COLUMN maternity_allowance_request.city_code IS '城市代码';

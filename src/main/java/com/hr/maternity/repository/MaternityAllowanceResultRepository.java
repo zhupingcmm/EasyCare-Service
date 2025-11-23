@@ -13,9 +13,7 @@ import java.util.Optional;
 @Repository
 public interface MaternityAllowanceResultRepository extends JpaRepository<MaternityAllowanceResultDO, Long> {
 
-    List<MaternityAllowanceResultDO> findByAllowanceRequestId(Long allowanceRequestId);
 
-    Optional<MaternityAllowanceResultDO> findFirstByAllowanceRequestIdOrderByCreateDateDesc(Long allowanceRequestId);
 
     List<MaternityAllowanceResultDO> findByLanId(String lanId);
 

@@ -1,13 +1,7 @@
 package com.hr.maternity.entity;
 
 import com.hr.maternity.dto.MiscarriageLeaveDetail;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -20,6 +14,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 产假申请记录实体类
@@ -75,6 +70,7 @@ public class MaternityLeaveRequestDO {
     @Column(name = "miscarriage_leave_detail", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private MiscarriageLeaveDetail miscarriageLeaveDetail;
+
 
     @CreatedDate
     @Column(name = "create_date", nullable = false, updatable = false)

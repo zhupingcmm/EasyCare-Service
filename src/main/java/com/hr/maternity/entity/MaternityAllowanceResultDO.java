@@ -1,15 +1,6 @@
 package com.hr.maternity.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -39,12 +30,6 @@ public class MaternityAllowanceResultDO {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "allowance_request_id", nullable = false)
-    private Long allowanceRequestId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "allowance_request_id", insertable = false, updatable = false)
-    private MaternityAllowanceRequestDO allowanceRequest;
 
     @Column(name = "lan_id", nullable = false, length = 50)
     private String lanId;
