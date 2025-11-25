@@ -2,6 +2,8 @@ package com.hr.maternity.repository;
 
 import com.hr.maternity.entity.HistoryDO;
 import com.hr.maternity.enums.RecordTypeEnum;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +16,15 @@ import java.util.List;
 public interface HistoryRepository extends JpaRepository<HistoryDO, Long> {
 
     /**
-     * 根据员工工号查询历史记录
+     * 根据员工工号查询历史记录（分页）
+     * @param lanId 员工工号
+     * @param pageable 分页参数
+     * @return 分页历史记录
+     */
+    Page<HistoryDO> findByLanId(String lanId, Pageable pageable);
+    
+    /**
+     * 根据员工工号查询历史记录（不分页）
      * @param lanId 员工工号
      * @return 历史记录列表
      */

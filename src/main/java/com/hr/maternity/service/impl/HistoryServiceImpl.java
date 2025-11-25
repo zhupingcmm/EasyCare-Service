@@ -17,6 +17,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 /**
  * 历史记录服务实现
@@ -29,6 +32,29 @@ public class HistoryServiceImpl implements HistoryService {
     private final HistoryRepository historyRepository;
 
     @Override
+    public Page<HistoryDTO> findByLanId(String lanId, Pageable pageable) {
+        log.info("分页查询员工历史记录，lanId: {}, page: {}, size: {}", 
+                lanId, pageable.getPageNumber(), pageable.getPageSize());
+        
+        // 1. 分页查询历史记录
+        Page<HistoryDO> historyPage = historyRepository.findByLanId(lanId, pageable);
+        log.info("从 history 表查询到 {} 条记录，共 {} 页", 
+                historyPage.getTotalElements(), historyPage.getTotalPages());
+        
+        // 2. 转换为DTO列表
+        List<HistoryDTO> dtos = new ArrayList<>();
+        for (HistoryDO history : historyPage.getContent()) {
+            HistoryDTO dto = convertToDto(history);
+            if (dto != null) {
+                dtos.add(dto);
+            }
+        }
+        
+        // 3. 返回分页结果
+        return new PageImpl<>(dtos, pageable, historyPage.getTotalElements());
+    }
+    
+    @Override
     public List<HistoryDTO> findByLanId(String lanId) {
         log.info("查询员工历史记录，lanId: {}", lanId);
         
@@ -39,17 +65,7 @@ public class HistoryServiceImpl implements HistoryService {
         log.info("从 history 表查询到 {} 条记录", histories.size());
         
         for (HistoryDO history : histories) {
-            HistoryDTO dto = null;
-            
-            // 2. 根据 RecordType 进行不同的映射
-            if (RecordTypeEnum.MATERNITY.equals(history.getRecordType())) {
-                // 3. MATERNITY 类型的映射
-                dto = convertMaternityHistory(history);
-            } else if (RecordTypeEnum.ALLOWANCE.equals(history.getRecordType())) {
-                // 4. ALLOWANCE 类型的映射
-                dto = convertAllowanceHistory(history);
-            }
-            
+            HistoryDTO dto = convertToDto(history);
             if (dto != null) {
                 historyList.add(dto);
             }
@@ -61,6 +77,26 @@ public class HistoryServiceImpl implements HistoryService {
         
         log.info("转换后得到 {} 条历史记录", historyList.size());
         return historyList;
+    }
+    
+    /**
+     * 将 HistoryDO 转换为 HistoryDTO
+     * @param history 历史记录实体
+     * @return 历史记录DTO
+     */
+    private HistoryDTO convertToDto(HistoryDO history) {
+        if (history == null) {
+            return null;
+        }
+        
+        // 根据 RecordType 进行不同的映射
+        if (RecordTypeEnum.MATERNITY.equals(history.getRecordType())) {
+            return convertMaternityHistory(history);
+        } else if (RecordTypeEnum.ALLOWANCE.equals(history.getRecordType())) {
+            return convertAllowanceHistory(history);
+        }
+        
+        return null;
     }
 
     /**
