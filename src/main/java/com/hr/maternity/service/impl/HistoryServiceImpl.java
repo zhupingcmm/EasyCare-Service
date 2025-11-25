@@ -87,7 +87,7 @@ public class HistoryServiceImpl implements HistoryService {
                 .companyCompensation(BigDecimal.ZERO)  // -> 0
                 .employeeCompensation(BigDecimal.ZERO)  // -> 0
                 .calculatedAt(ZonedDateTime.now())  // -> 当前时间
-                .recordType("产假")
+                .recordType(RecordTypeEnum.MATERNITY.getCode())
                 .build();
     }
 
@@ -126,7 +126,7 @@ public class HistoryServiceImpl implements HistoryService {
                 .employeeCompensation(allowanceResult.getEmployeeRefundAmount())  // -> MaternityAllowanceResultDO.employeeRefundAmount
                 .calculatedAt(ZonedDateTime.now())  // -> 当前时间
                 .submissionTime(updateDate != null ? updateDate.toLocalDate() : null)  // -> MaternityAllowanceResultDO.updateDate
-                .recordType("津贴")
+                .recordType(RecordTypeEnum.ALLOWANCE.getCode())
                 .build();
     }
 }
