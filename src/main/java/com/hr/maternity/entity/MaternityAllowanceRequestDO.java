@@ -17,6 +17,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 津贴申请记录实体类
@@ -33,12 +34,6 @@ public class MaternityAllowanceRequestDO {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "maternity_leave_request_id")
-    private Long maternityLeaveRequestId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maternity_leave_request_id", insertable = false, updatable = false)
-    private MaternityLeaveRequestDO maternityLeaveRequest;
 
     @Column(name = "lan_id", nullable = false, length = 50)
     private String lanId;

@@ -1,10 +1,7 @@
 -- 创建产假计算结果表
 CREATE TABLE maternity_leave_result (
     id BIGSERIAL PRIMARY KEY,
-    
-    -- 关联的申请记录ID (外键)
-    request_id BIGINT NOT NULL,
-    
+
     -- 员工信息 (冗余字段，便于查询)
     lan_id VARCHAR(50) NOT NULL,
     employee_name VARCHAR(100) NOT NULL,
@@ -37,17 +34,12 @@ CREATE TABLE maternity_leave_result (
     create_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     create_by VARCHAR(100) DEFAULT 'system',
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_by VARCHAR(100) DEFAULT 'system',
+    update_by VARCHAR(100) DEFAULT 'system'
     
-    -- 外键约束
-    CONSTRAINT fk_maternity_leave_result_request 
-        FOREIGN KEY (request_id) 
-        REFERENCES maternity_leave_request(id) 
-        ON DELETE CASCADE
+
 );
 
 -- 创建索引
-CREATE INDEX idx_maternity_leave_result_request_id ON maternity_leave_result(request_id);
 CREATE INDEX idx_maternity_leave_result_lan_id ON maternity_leave_result(lan_id);
 CREATE INDEX idx_maternity_leave_result_city_code ON maternity_leave_result(city_code);
 CREATE INDEX idx_maternity_leave_result_start_date ON maternity_leave_result(start_date);
@@ -57,7 +49,6 @@ CREATE INDEX idx_maternity_leave_result_create_date ON maternity_leave_result(cr
 -- 添加表注释
 COMMENT ON TABLE maternity_leave_result IS '产假计算结果表';
 COMMENT ON COLUMN maternity_leave_result.id IS '主键ID';
-COMMENT ON COLUMN maternity_leave_result.request_id IS '关联的申请记录ID';
 COMMENT ON COLUMN maternity_leave_result.lan_id IS '员工工号';
 COMMENT ON COLUMN maternity_leave_result.employee_name IS '员工姓名';
 COMMENT ON COLUMN maternity_leave_result.city_code IS '城市代码';

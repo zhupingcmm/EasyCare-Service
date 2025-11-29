@@ -1,16 +1,7 @@
 package com.hr.maternity.entity;
 
 import com.hr.maternity.dto.TimeScope;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -40,12 +31,6 @@ public class MaternityLeaveResultDO {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "request_id", nullable = false)
-    private Long requestId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id", insertable = false, updatable = false)
-    private MaternityLeaveRequestDO request;
 
     @Column(name = "lan_id", nullable = false, length = 50)
     private String lanId;

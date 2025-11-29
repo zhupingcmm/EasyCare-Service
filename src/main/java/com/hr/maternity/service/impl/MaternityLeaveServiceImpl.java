@@ -3,9 +3,12 @@ package com.hr.maternity.service.impl;
 import com.hr.maternity.dto.MaternityLeaveRequest;
 import com.hr.maternity.dto.MaternityLeaveResponse;
 import com.hr.maternity.entity.City;
+import com.hr.maternity.entity.HistoryDO;
 import com.hr.maternity.entity.MaternityLeaveRequestDO;
 import com.hr.maternity.entity.MaternityLeaveResultDO;
+import com.hr.maternity.enums.RecordTypeEnum;
 import com.hr.maternity.repository.CityRepository;
+import com.hr.maternity.repository.HistoryRepository;
 import com.hr.maternity.repository.MaternityLeaveRequestRepository;
 import com.hr.maternity.repository.MaternityLeaveResultRepository;
 import com.hr.maternity.service.MaternityLeaveService;
@@ -13,6 +16,7 @@ import com.hr.maternity.strategy.MaternityLeaveStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +33,22 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
     private final CityRepository cityRepository;
     private final MaternityLeaveRequestRepository requestRepository;
     private final MaternityLeaveResultRepository resultRepository;
+    private final HistoryRepository historyRepository;
+
+    @Value("${maternity.default.lan-id}")
+    private String defaultLanId;
 
     public MaternityLeaveServiceImpl(
             @Qualifier("maternityLeaveStrategyMap") Map<String, MaternityLeaveStrategy> strategyMap,
             CityRepository cityRepository,
             MaternityLeaveRequestRepository requestRepository,
-            MaternityLeaveResultRepository resultRepository) {
+            MaternityLeaveResultRepository resultRepository,
+            HistoryRepository historyRepository) {
         this.strategyMap = strategyMap;
         this.cityRepository = cityRepository;
         this.requestRepository = requestRepository;
         this.resultRepository = resultRepository;
+        this.historyRepository = historyRepository;
     }
 
     @Override
@@ -51,7 +61,15 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
         requestEntity = requestRepository.save(requestEntity);
         log.info("保存申请记录成功，ID: {}", requestEntity.getId());
         
-        // 2. 计算产假
+        // 2. 创建历史记录并保存申请记录ID
+        HistoryDO history = new HistoryDO();
+        history.setLanId(defaultLanId);
+        history.setRecordType(RecordTypeEnum.MATERNITY);
+        history.setMaternityLeaveRequestId(requestEntity.getId());
+        history = historyRepository.save(history);
+        log.info("保存历史记录(申请)成功，ID: {}", history.getId());
+        
+        // 3. 计算产假
         MaternityLeaveStrategy strategy = strategyMap.get(request.getCityCode());
         if (strategy == null) {
             throw new IllegalArgumentException("不支持的城市代码: " + request.getCityCode());
@@ -59,12 +77,17 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
         MaternityLeaveResponse resp = strategy.calculateMaternityLeave(request);
         cityRepository.findByCode(request.getCityCode()).ifPresent(city -> fillCity(resp, city));
         
-        // 3. 保存计算结果
+        // 4. 保存计算结果
         MaternityLeaveResultDO resultEntity = convertToResultEntity(resp, requestEntity.getId());
         resultEntity = resultRepository.save(resultEntity);
         log.info("保存计算结果成功，ID: {}", resultEntity.getId());
         
-        // 4. 设置ID到响应中
+        // 5. 更新历史记录，保存计算结果ID
+        history.setMaternityLeaveResultId(resultEntity.getId());
+        historyRepository.save(history);
+        log.info("更新历史记录(结果)成功，ID: {}", history.getId());
+        
+        // 6. 设置ID到响应中
         resp.setRequestId(requestEntity.getId());
         resp.setResultId(resultEntity.getId());
         
@@ -90,7 +113,7 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
      */
     private MaternityLeaveResultDO convertToResultEntity(MaternityLeaveResponse response, Long requestId) {
         MaternityLeaveResultDO entity = new MaternityLeaveResultDO();
-        entity.setRequestId(requestId);
+//        entity.setRequestId(requestId);
         entity.setLanId(response.getLanId());
         entity.setEmployeeName(response.getEmployeeName());
         entity.setCityCode(response.getCityCode());
