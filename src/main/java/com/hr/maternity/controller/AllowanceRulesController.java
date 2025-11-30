@@ -63,11 +63,12 @@ public class AllowanceRulesController {
      * 查询所有津贴规则（分页）
      */
     @GetMapping
-    @Operation(summary = "查询所有津贴规则", description = "分页查询所有津贴规则列表")
+    @Operation(summary = "查询所有津贴规则", description = "分页查询所有津贴规则列表，支持按城市过滤")
     public ApiResponse<Page<AllowanceRulesResponse>> listAllAllowanceRules(
+            @RequestParam(required = false) String city,
             @PageableDefault(page = 0, size = 10, sort = "updateDate", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("分页查询所有津贴规则，page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
-        return ApiResponse.success(allowanceRulesService.listAllAllowanceRules(pageable));
+        log.info("分页查询津贴规则，城市: {}, page: {}, size: {}", city, pageable.getPageNumber(), pageable.getPageSize());
+        return ApiResponse.success(allowanceRulesService.listAllAllowanceRules(city, pageable));
     }
 
     /**

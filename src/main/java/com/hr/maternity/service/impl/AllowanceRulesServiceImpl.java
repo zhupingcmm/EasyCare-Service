@@ -52,10 +52,17 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
     }
 
     @Override
-    public Page<AllowanceRulesResponse> listAllAllowanceRules(Pageable pageable) {
-        log.info("分页查询所有津贴规则，page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+    public Page<AllowanceRulesResponse> listAllAllowanceRules(String city, Pageable pageable) {
+        log.info("分页查询津贴规则，城市: {}, page: {}, size: {}", city, pageable.getPageNumber(), pageable.getPageSize());
 
-        Page<AllowanceRules> allowanceRulesPage = allowanceRulesRepository.findByIsActiveTrue(pageable);
+        Page<AllowanceRules> allowanceRulesPage;
+        if (city != null && !city.trim().isEmpty()) {
+            // 按城市过滤
+            allowanceRulesPage = allowanceRulesRepository.findByCityAndIsActiveTrue(city, pageable);
+        } else {
+            // 查询所有
+            allowanceRulesPage = allowanceRulesRepository.findByIsActiveTrue(pageable);
+        }
         return allowanceRulesPage.map(this::convertToResponse);
     }
 

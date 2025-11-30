@@ -54,24 +54,15 @@ public class MaternityRulesController {
      * 分页查询所有产假规则
      */
     @GetMapping
-    @Operation(summary = "分页查询产假规则", description = "分页查询所有产假规则")
+    @Operation(summary = "分页查询产假规则", description = "分页查询所有产假规则，支持按城市过滤")
     public ApiResponse<Page<MaternityRulesResponse>> listAllMaternityRules(
+            @RequestParam(required = false) String city,
             @PageableDefault(page = 0, size = 10, sort = "updateDate", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("收到分页查询产假规则请求，分页参数: {}", pageable);
-        Page<MaternityRulesResponse> page = maternityRulesService.listAllMaternityRules(pageable);
+        log.info("收到分页查询产假规则请求，城市: {}, 分页参数: {}", city, pageable);
+        Page<MaternityRulesResponse> page = maternityRulesService.listAllMaternityRules(city, pageable);
         return ApiResponse.success(page);
     }
 
-    /**
-     * 根据城市查询产假规则
-     */
-    @GetMapping("/city/{city}")
-    @Operation(summary = "根据城市查询产假规则", description = "根据城市查询该城市的所有产假规则")
-    public ApiResponse<List<MaternityRulesResponse>> listMaternityRulesByCity(@PathVariable String city) {
-        log.info("收到根据城市查询产假规则请求，城市: {}", city);
-        List<MaternityRulesResponse> rules = maternityRulesService.listMaternityRulesByCity(city);
-        return ApiResponse.success(rules);
-    }
 
     /**
      * 下载产假规则导入模板

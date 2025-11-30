@@ -23,4 +23,9 @@ public interface AllowanceRulesRepository extends JpaRepository<AllowanceRules, 
      * 分页查询所有激活的津贴规则
      */
     Page<AllowanceRules> findByIsActiveTrue(Pageable pageable);
+
+    /**
+     * 根据城市分页查询激活的津贴规则
+     */
+    Page<AllowanceRules> findByCityAndIsActiveTrue(String city, Pageable pageable);
 }

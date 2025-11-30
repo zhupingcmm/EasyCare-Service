@@ -51,21 +51,18 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
 
 
     @Override
-    public Page<MaternityRulesResponse> listAllMaternityRules(Pageable pageable) {
-        log.info("分页查询所有产假规则，page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+    public Page<MaternityRulesResponse> listAllMaternityRules(String city, Pageable pageable) {
+        log.info("分页查询产假规则，城市: {}, page: {}, size: {}", city, pageable.getPageNumber(), pageable.getPageSize());
 
-        Page<MaternityRules> maternityRulesPage = maternityRulesRepository.findAll(pageable);
+        Page<MaternityRules> maternityRulesPage;
+        if (city != null && !city.trim().isEmpty()) {
+            // 按城市过滤
+            maternityRulesPage = maternityRulesRepository.findByCityAndIsActive(city, true, pageable);
+        } else {
+            // 查询所有
+            maternityRulesPage = maternityRulesRepository.findByIsActive(true, pageable);
+        }
         return maternityRulesPage.map(this::convertToResponse);
-    }
-
-    @Override
-    public List<MaternityRulesResponse> listMaternityRulesByCity(String city) {
-        log.info("根据城市查询产假规则，城市: {}", city);
-
-        List<MaternityRules> maternityRules = maternityRulesRepository.findByCity(city);
-        return maternityRules.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
     }
 
 

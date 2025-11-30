@@ -21,13 +21,12 @@ public interface MaternityRulesService {
 
     /**
      * 查询所有产假规则（分页）
+     * @param city 城市名称（可选，为null则查询所有）
+     * @param pageable 分页参数
      */
-    Page<MaternityRulesResponse> listAllMaternityRules(Pageable pageable);
+    Page<MaternityRulesResponse> listAllMaternityRules(String city, Pageable pageable);
 
-    /**
-     * 根据城市查询产假规则
-     */
-    List<MaternityRulesResponse> listMaternityRulesByCity(String city);
+
 
 
     /**

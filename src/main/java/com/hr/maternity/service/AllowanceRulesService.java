@@ -25,8 +25,10 @@ public interface AllowanceRulesService {
 
     /**
      * 分页查询所有津贴规则
+     * @param city 城市名称（可选，为null则查询所有）
+     * @param pageable 分页参数
      */
-    Page<AllowanceRulesResponse> listAllAllowanceRules(Pageable pageable);
+    Page<AllowanceRulesResponse> listAllAllowanceRules(String city, Pageable pageable);
 
     /**
      * 更新津贴规则

@@ -68,6 +68,5 @@ public class MaternityRulesRequest {
     /**
      * 是否启用
      */
-    @NotNull(message = "是否启用不能为空")
     private Boolean isActive;
 }
