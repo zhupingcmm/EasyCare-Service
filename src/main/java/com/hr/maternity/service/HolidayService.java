@@ -1,5 +1,10 @@
 package com.hr.maternity.service;
 
+import com.hr.maternity.dto.HolidayRequest;
+import com.hr.maternity.dto.HolidayResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -23,4 +28,41 @@ public interface HolidayService {
     Set<LocalDate> getHoliday();
     Map<LocalDate, Map<String, Object>> getDayInfoMap();
 
+    /**
+     * 创建节假日
+     */
+    HolidayResponse createHoliday(HolidayRequest request);
+
+    /**
+     * 查询所有节假日（分页）
+     */
+    Page<HolidayResponse> listAllHolidays(Pageable pageable);
+
+
+
+    /**
+     * 更新节假日
+     */
+    HolidayResponse updateHoliday(Integer id, HolidayRequest request);
+
+    /**
+     * 删除节假日（逻辑删除）
+     */
+    void deleteHoliday(Integer id);
+
+    /**
+     * 批量导入节假日
+     * 
+     * @param dataList CSV数据列表
+     * @return 成功导入的数量
+     */
+    int batchImportHolidays(List<Map<String, Object>> dataList);
+
+    /**
+     * 从公网API获取节假日数据并生成CSV文件
+     * 
+     * @param year 年份
+     * @return CSV文件字节数组
+     */
+    byte[] generateCsvFromPublicApi(String year) throws Exception;
 }

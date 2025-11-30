@@ -1,70 +1,66 @@
 package com.hr.maternity.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * 节假日实体类
  */
 @Entity
-@Table(name = "holiday", schema = "hr-maternity-cn-dev",
-       uniqueConstraints = @UniqueConstraint(name = "uk_holiday_year_region_date", 
-                                           columnNames = {"year", "region", "date"}))
+@Table(name = "holiday")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Holiday {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer id;
 
-    @Column(name = "year", nullable = false)
-    private Integer year;
-
-    @Column(name = "region", nullable = false, length = 10)
-    private String region = "CN";
-
-    @Column(name = "date", nullable = false)
+    @Column(name = "date", nullable = false, unique = true)
     private LocalDate date;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "name_cn", nullable = false, length = 100)
-    private String nameCn;
-
-    @Column(name = "name_en", nullable = false, length = 100)
-    private String nameEn;
-
-    @Column(name = "type", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 20)
     private HolidayType type;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "is_statutory", nullable = false)
+    private Boolean isStatutory = true;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdDate;
+
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateDate;
+
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        if (isStatutory == null) {
+            isStatutory = true;
+        }
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 
     /**

@@ -391,3 +391,280 @@ private Boolean isSuccess;        // 是否成功
 - 测试结果现在包含城市代码信息，便于按城市筛选和分析测试结果
 
 **输入人**：用户
+
+---
+
+## 2025-11-30 - 创建 t_allowance_rules 表的增删改查 API
+
+**需求**：根据 `t_allowance_rules` 表增加增删改查API，删除是逻辑删除，查询支持分页
+
+**实现内容**：
+
+1. **创建数据库表**：
+   - 创建 `V13__Create_t_allowance_rules.sql` 迁移文件
+   - 表结构：id, city, payout_method, is_active, create_date, create_by, update_date, update_by
+   - 添加唯一索引：`idx_t_allowance_rules_city`（仅对激活状态的记录）
+   - 创建 `V14__Add_is_active_to_holiday.sql`（原V12内容移至V14）
+
+2. **创建实体类**：
+   - `AllowanceRules.java` - 津贴规则实体
+   - 包含审计字段（创建人、创建时间、更新人、更新时间）
+   - 支持逻辑删除（is_active字段）
+
+3. **创建 DTO**：
+   - `AllowanceRulesRequest.java` - 请求DTO，包含参数校验
+   - `AllowanceRulesResponse.java` - 响应DTO
+
+4. **创建 Repository**：
+   - `AllowanceRulesRepository.java` - 数据访问层
+   - 方法：`findByCityAndIsActiveTrue()`, `findByIsActiveTrue(Pageable)`
+
+5. **创建 Service**：
+   - `AllowanceRulesService.java` - 服务接口
+   - `AllowanceRulesServiceImpl.java` - 服务实现
+   - 实现增删改查和批量导入功能
+
+6. **创建 Controller**：
+   - `AllowanceRulesController.java` - REST API控制器
+   - API端点：
+     - `POST /api/allowance-rules` - 创建
+     - `GET /api/allowance-rules/{id}` - 查询单个
+     - `GET /api/allowance-rules` - 分页查询（支持分页）
+     - `PUT /api/allowance-rules/{id}` - 更新
+     - `DELETE /api/allowance-rules/{id}` - 逻辑删除
+     - `GET /api/allowance-rules/template/download` - 下载CSV模板
+     - `POST /api/allowance-rules/import` - 批量导入
+
+7. **CSV模板导出功能**：
+   - 在 `ExcelExporter.java` 中添加 `createAllowanceRulesTemplate()` 方法
+   - 模板字段：城市、津贴发放方式
+   - 示例数据：上海、社保局
+   - 包含说明文档
+
+8. **批量导入功能**：
+   - 在 `AllowanceRulesServiceImpl` 中实现 `batchImportAllowanceRules()` 方法
+   - 支持CSV文件导入
+   - 自动处理重复城市（逻辑删除旧规则，创建新规则）
+   - 数据验证和错误处理
+
+**技术特性**：
+- ✅ 逻辑删除（通过 `is_active` 字段）
+- ✅ 分页查询支持
+- ✅ 参数校验（使用 `@Valid`）
+- ✅ 统一API响应结构（`ApiResponse`）
+- ✅ 完整的日志记录
+- ✅ Swagger文档注解
+- ✅ 审计字段支持
+- ✅ CSV模板导出
+- ✅ 批量导入功能
+
+**输入人**：用户
+
+---
+
+## 2025-11-30 - 修复文件下载接口类型转换错误
+
+**问题**：`AllowanceRulesController.downloadTemplate()` 执行时报错：
+```
+class com.hr.maternity.common.ApiResponse cannot be cast to class [B
+```
+
+**原因分析**：
+- 全局响应处理器 `GlobalResponseAdvice` 会拦截所有返回值
+- 它尝试将 `ResponseEntity<byte[]>` 中的 `byte[]` 包装成 `ApiResponse`
+- 导致文件下载时出现类型转换错误
+
+**解决方案**：
+在 `GlobalResponseAdvice.beforeBodyWrite()` 中添加对 `byte[]` 类型的判断：
+1. 直接返回 `byte[]` 类型的body，不做包装
+2. 对于 `ResponseEntity<byte[]>`，检查内部body是否为 `byte[]`，如果是则直接返回原 `ResponseEntity`
+
+**修改文件**：
+- `GlobalResponseAdvice.java` - 添加 `byte[]` 类型判断，排除文件下载响应
+
+**影响范围**：
+- 所有返回 `byte[]` 的接口（如CSV/Excel模板下载）不再被全局响应处理器包装
+- 保持文件下载功能正常工作
+
+**输入人**：用户
+
+---
+
+## 2025-11-30 - 修复CSV文件解析中文乱码问题
+
+**问题**：`ExcelParser.parseCsvToMapList()` 解析CSV文件时出现中文乱码
+
+**原因分析**：
+- Windows Excel 默认保存CSV文件为 GBK 编码
+- 原代码固定使用 UTF-8 编码解析，导致 GBK 编码的中文显示为乱码
+
+**解决方案**：
+改进 `parseCsvToMapList()` 方法，实现自动编码检测：
+1. 检测 UTF-8 BOM 标记（0xEF 0xBB 0xBF）
+2. 尝试 UTF-8 解析，检查是否有乱码字符（�）
+3. 如果 UTF-8 解析失败，自动切换到 GBK 编码
+4. 添加 `isValidUtf8()` 辅助方法验证 UTF-8 编码有效性
+
+**修改内容**：
+```java
+// 自动检测编码
+byte[] bytes = inputStream.readAllBytes();
+if (bytes.length >= 3 && bytes[0] == (byte)0xEF && bytes[1] == (byte)0xBB && bytes[2] == (byte)0xBF) {
+    content = new String(bytes, 3, bytes.length - 3, StandardCharsets.UTF_8);
+} else {
+    String utf8Content = new String(bytes, StandardCharsets.UTF_8);
+    if (utf8Content.contains("�") || !isValidUtf8(bytes)) {
+        content = new String(bytes, "GBK");
+    } else {
+        content = utf8Content;
+    }
+}
+```
+
+**修改文件**：
+- `ExcelParser.java` - 改进CSV解析方法，支持自动编码检测
+- 移除未使用的 `BufferedReader` 和 `InputStreamReader` 导入
+
+**影响范围**：
+- ✅ 支持 UTF-8（带BOM和不带BOM）编码的CSV文件
+- ✅ 支持 GBK 编码的CSV文件（Windows Excel默认格式）
+- ✅ 自动检测编码，无需手动指定
+- ✅ 解决中文乱码问题
+
+**输入人**：用户
+
+---
+
+## 2025-11-30 - 修复分页排序参数错误
+
+**问题**：`AllowanceRulesController.listAllAllowanceRules()` 报错：
+```
+org.springframework.data.mapping.PropertyReferenceException: No property 'id,desc' found for type 'AllowanceRules'
+```
+
+**原因分析**：
+- `@PageableDefault` 注解中使用了错误的排序语法：`sort = "id,desc"`
+- Spring Data 将 `"id,desc"` 作为单个属性名查找，导致找不到该属性
+- 正确的语法应该分别指定排序字段和方向
+
+**解决方案**：
+修改 `@PageableDefault` 注解的参数：
+```java
+// 错误写法
+@PageableDefault(page = 0, size = 10, sort = "id,desc")
+
+// 正确写法
+@PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC)
+```
+
+**修改文件**：
+- `AllowanceRulesController.java` - 修复分页排序参数
+- 添加 `Sort` 类的导入
+
+**影响范围**：
+- ✅ 分页查询接口可以正常按ID降序排序
+- ✅ 避免属性引用异常
+
+**输入人**：用户
+
+---
+
+## 2025-11-30 - 为节假日添加CSV模板导出功能
+
+**需求**：为 `HolidayController` 创建导出CSV模板功能，header包含：年份、地区、日期、节日名称、中文名称、英文名称、类型、是否为法定假日
+
+**实现内容**：
+
+1. **在 ExcelExporter 中添加方法**：
+   - `createHolidayTemplate()` - 创建节假日导入模板
+   - 包含8个字段的表头
+   - 提供3条示例数据（元旦、春节、春节调休）
+   - 包含详细的填写说明
+
+2. **在 HolidayController 中添加接口**：
+   - `GET /api/holidays/template/download` - 下载CSV模板
+   - 返回 `ResponseEntity<byte[]>`
+   - 文件名：`节假日导入模板.csv`
+
+**CSV模板字段**：
+- 年份：4位数字年份，如：2025
+- 地区：地区代码，如：CN（中国）
+- 日期：格式 YYYY-MM-DD，如：2025-01-01
+- 节日名称：节日名称
+- 中文名称：中文节日名称
+- 英文名称：英文节日名称
+- 类型：public_holiday（公共假日）、transfer_workday（调休工作日）
+- 是否为法定假日：是 或 否
+
+**示例数据**：
+```csv
+年份,地区,日期,节日名称,中文名称,英文名称,类型,是否为法定假日
+2025,CN,2025-01-01,元旦,元旦,New Year's Day,public_holiday,是
+2025,CN,2025-01-28,春节,春节,Spring Festival,public_holiday,是
+2025,CN,2025-01-26,春节调休,春节调休,Spring Festival Workday,transfer_workday,否
+```
+
+**修改文件**：
+- `ExcelExporter.java` - 添加 `createHolidayTemplate()` 方法
+- `HolidayController.java` - 添加模板下载接口和必要的导入
+
+**影响范围**：
+- ✅ 支持节假日批量导入的CSV模板下载
+- ✅ 提供详细的字段说明和示例数据
+- ✅ 与现有的津贴规则、产假规则模板保持一致的风格
+
+**输入人**：用户
+
+---
+
+## 2025-11-30 - 实现节假日批量导入功能
+
+**需求**：实现按照CSV模板导入节假日的API功能
+
+**实现内容**：
+
+1. **在 HolidayService 接口中添加方法**：
+   - `batchImportHolidays(List<Map<String, Object>> dataList)` - 批量导入节假日
+
+2. **在 HolidayServiceImpl 中实现批量导入逻辑**：
+   - 解析CSV数据（年份、地区、日期、节日名称、中文名称、英文名称、类型、是否为法定假日）
+   - 验证必填字段
+   - 检查是否存在相同记录（年份+地区+日期）
+   - 支持新增和更新
+   - 统计新增、更新、跳过的数量
+
+3. **在 HolidayController 中添加导入接口**：
+   - `POST /api/holidays/import` - 批量导入节假日
+   - 接收CSV文件
+   - 返回处理结果统计
+
+4. **添加 `is_statutory` 字段支持**：
+   - 在 `Holiday` 实体中添加 `isStatutory` 字段
+   - 在 `HolidayRequest` 和 `HolidayResponse` DTO中添加字段
+   - 在 `HolidayRepository` 中添加查询方法
+   - 更新所有相关的CRUD方法
+
+**导入逻辑**：
+- 根据年份+地区+日期判断记录是否存在
+- 存在则更新，不存在则新增
+- 自动处理类型枚举转换
+- "是"转换为true，其他转换为false
+- 中文名称和英文名称可选，默认使用节日名称
+
+**修改文件**：
+- `HolidayService.java` - 添加批量导入接口方法
+- `HolidayServiceImpl.java` - 实现批量导入逻辑
+- `HolidayController.java` - 添加导入API接口
+- `Holiday.java` - 添加 `isStatutory` 字段
+- `HolidayRequest.java` - 添加 `isStatutory` 字段
+- `HolidayResponse.java` - 添加 `isStatutory` 字段
+- `HolidayRepository.java` - 添加 `findByYearAndRegionAndDate` 方法
+
+**影响范围**：
+- ✅ 支持CSV文件批量导入节假日
+- ✅ 自动处理新增和更新
+- ✅ 完整的数据验证和错误处理
+- ✅ 详细的导入统计信息
+- ✅ 支持"是否为法定假日"字段
+
+**输入人**：用户

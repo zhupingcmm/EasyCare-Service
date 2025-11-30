@@ -32,11 +32,20 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
             return body;
         }
 
+        // 文件下载（byte[]）不做包装，直接返回
+        if (body instanceof byte[]) {
+            return body;
+        }
+
         // 处理 ResponseEntity 包装
         if (body instanceof ResponseEntity<?> re) {
             Object inner = re.getBody();
             if (inner instanceof ApiResponse) {
                 return re; // 已包装
+            }
+            // 文件下载（byte[]）不做包装
+            if (inner instanceof byte[]) {
+                return re;
             }
             ApiResponse<?> wrapped = ApiResponse.success(inner);
             return new ResponseEntity<>(wrapped, re.getHeaders(), re.getStatusCode());

@@ -7,6 +7,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -18,6 +19,100 @@ import java.util.function.Function;
  */
 @Slf4j
 public class ExcelParser {
+
+    /**
+     * 解析 CSV 文件为 Map 列表
+     * 
+     * @param inputStream CSV 文件输入流
+     * @return 每行数据的 Map 列表，key 为列名，value 为单元格值
+     * @throws IOException 文件读取异常
+     */
+    public static List<Map<String, Object>> parseCsvToMapList(InputStream inputStream) throws IOException {
+        log.info("开始解析 CSV 文件");
+        
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        // 先读取文件内容到字节数组，以便尝试不同编码
+        byte[] bytes = inputStream.readAllBytes();
+        
+        // 尝试检测编码：UTF-8 with BOM, UTF-8, GBK
+        String content = null;
+        if (bytes.length >= 3 && bytes[0] == (byte)0xEF && bytes[1] == (byte)0xBB && bytes[2] == (byte)0xBF) {
+            // UTF-8 with BOM
+            content = new String(bytes, 3, bytes.length - 3, StandardCharsets.UTF_8);
+            log.debug("检测到 UTF-8 BOM 编码");
+        } else {
+            // 尝试 UTF-8
+            String utf8Content = new String(bytes, StandardCharsets.UTF_8);
+            // 检查是否包含中文乱码特征
+            if (utf8Content.contains("�") || !isValidUtf8(bytes)) {
+                // 尝试 GBK
+                try {
+                    content = new String(bytes, "GBK");
+                    log.debug("使用 GBK 编码解析");
+                } catch (Exception e) {
+                    content = utf8Content;
+                    log.debug("使用 UTF-8 编码解析");
+                }
+            } else {
+                content = utf8Content;
+                log.debug("使用 UTF-8 编码解析");
+            }
+        }
+        
+        // 按行分割
+        String[] lines = content.split("\\r?\\n");
+        if (lines.length == 0) {
+            log.warn("CSV 文件为空");
+            return result;
+        }
+        
+        // 读取表头
+        String headerLine = lines[0];
+        if (headerLine.trim().isEmpty()) {
+            log.warn("CSV 文件表头为空");
+            return result;
+        }
+        
+        String[] headers = headerLine.split(",");
+        log.debug("解析到表头: {}", Arrays.toString(headers));
+        
+        // 读取数据行
+        for (int i = 1; i < lines.length; i++) {
+            String line = lines[i];
+            // 跳过空行和说明行
+            if (line.trim().isEmpty() || line.startsWith("说明") || line.matches("^\\d+\\..*")) {
+                continue;
+            }
+            
+            String[] values = line.split(",", -1); // -1 保留空字段
+            if (values.length > 0) {
+                Map<String, Object> rowData = new LinkedHashMap<>();
+                for (int j = 0; j < headers.length; j++) {
+                    String header = headers[j].trim();
+                    String value = j < values.length ? values[j].trim() : "";
+                    rowData.put(header, value.isEmpty() ? null : value);
+                }
+                result.add(rowData);
+            }
+        }
+        
+        log.info("CSV 解析完成，共解析 {} 行数据", result.size());
+        return result;
+    }
+    
+    /**
+     * 检查字节数组是否是有效的 UTF-8 编码
+     */
+    private static boolean isValidUtf8(byte[] bytes) {
+        try {
+            String str = new String(bytes, StandardCharsets.UTF_8);
+            byte[] reEncoded = str.getBytes(StandardCharsets.UTF_8);
+            return Arrays.equals(bytes, reEncoded);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     /**
      * 解析 Excel 文件为 Map 列表
