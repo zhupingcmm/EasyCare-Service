@@ -1,10 +1,14 @@
 package com.hr.maternity.service.impl;
 
+import com.hr.maternity.dto.HolidayRequest;
+import com.hr.maternity.dto.HolidayResponse;
 import com.hr.maternity.entity.Holiday;
 import com.hr.maternity.repository.HolidayRepository;
 import com.hr.maternity.service.HolidayService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -83,22 +87,22 @@ public class HolidayServiceImpl implements HolidayService {
 
         log.info("获取{}年节假日数据", year);
 
-        // 1. 首先从数据库查询
-        List<Holiday> dbHolidays = holidayRepository.findByYearAndRegionOrderByDate(yearInt, region);
-        if (!dbHolidays.isEmpty()) {
-            log.info("从数据库获取到{}年节假日数据，共{}条", year, dbHolidays.size());
-            return convertHolidaysToMap(dbHolidays);
-        }
+//        // 1. 首先从数据库查询
+//        List<Holiday> dbHolidays = holidayRepository.findByYearAndRegionOrderByDate(yearInt, region);
+//        if (!dbHolidays.isEmpty()) {
+//            log.info("从数据库获取到{}年节假日数据，共{}条", year, dbHolidays.size());
+//            return convertHolidaysToMap(dbHolidays);
+//        }
 
         // 2. 数据库没有数据，从第三方API获取
         log.info("数据库中没有{}年节假日数据，从第三方API获取", year);
         List<Map<String, Object>> apiHolidays = fetchHolidaysFromApi(year);
 
         // 3. 将API数据保存到数据库
-        if (!apiHolidays.isEmpty()) {
-            saveHolidaysToDatabase(apiHolidays, yearInt, region);
-            log.info("已将{}年节假日数据保存到数据库，共{}条", year, apiHolidays.size());
-        }
+//        if (!apiHolidays.isEmpty()) {
+//            saveHolidaysToDatabase(apiHolidays, yearInt, region);
+//            log.info("已将{}年节假日数据保存到数据库，共{}条", year, apiHolidays.size());
+//        }
 
         return apiHolidays;
     }
@@ -133,15 +137,12 @@ public class HolidayServiceImpl implements HolidayService {
         for (Map<String, Object> apiHoliday : apiHolidays) {
             try {
                 Holiday holiday = new Holiday();
-                holiday.setYear(year);
-                holiday.setRegion(region);
                 holiday.setDate(LocalDate.parse((String) apiHoliday.get("date")));
                 holiday.setName((String) apiHoliday.get("name"));
-                holiday.setNameCn((String) apiHoliday.get("name_cn"));
-                holiday.setNameEn((String) apiHoliday.get("name_en"));
 
                 String typeStr = (String) apiHoliday.get("type");
                 holiday.setType(Holiday.HolidayType.valueOf(typeStr));
+                holiday.setIsStatutory(true);
 
                 holidays.add(holiday);
             } catch (Exception e) {
@@ -155,22 +156,201 @@ public class HolidayServiceImpl implements HolidayService {
         }
     }
 
-    /**
-     * 将Holiday实体转换为Map格式
-     */
-    private List<Map<String, Object>> convertHolidaysToMap(List<Holiday> holidays) {
-        List<Map<String, Object>> result = new ArrayList<>();
 
-        for (Holiday holiday : holidays) {
-            Map<String, Object> holidayMap = new HashMap<>();
-            holidayMap.put("date", holiday.getDate().toString());
-            holidayMap.put("name", holiday.getName());
-            holidayMap.put("name_cn", holiday.getNameCn());
-            holidayMap.put("name_en", holiday.getNameEn());
-            holidayMap.put("type", holiday.getType().name());
-            result.add(holidayMap);
+    @Override
+    @Transactional
+    public HolidayResponse createHoliday(HolidayRequest request) {
+        log.info("开始创建节假日，请求参数: {}", request);
+
+        Holiday holiday = new Holiday();
+        holiday.setDate(request.getDate());
+        holiday.setName(request.getName());
+        holiday.setType(request.getType());
+        holiday.setIsStatutory(request.getIsStatutory());
+
+        Holiday saved = holidayRepository.save(holiday);
+        log.info("节假日创建成功，ID: {}", saved.getId());
+
+        return convertToResponse(saved);
+    }
+
+    @Override
+    public Page<HolidayResponse> listAllHolidays(Pageable pageable) {
+        log.info("查询所有未删除的节假日，分页参数: {}", pageable);
+
+        // 只查询未被逻辑删除的数据
+        Page<Holiday> holidayPage = holidayRepository.findByIsActive(true, pageable);
+        
+        return holidayPage.map(this::convertToResponse);
+    }
+
+    @Override
+    @Transactional
+    public HolidayResponse updateHoliday(Integer id, HolidayRequest request) {
+        log.info("更新节假日，ID: {}, 请求参数: {}", id, request);
+
+        Holiday holiday = holidayRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("节假日不存在，ID: " + id));
+
+        holiday.setDate(request.getDate());
+        holiday.setName(request.getName());
+        holiday.setType(request.getType());
+        holiday.setIsStatutory(request.getIsStatutory());
+
+        Holiday updated = holidayRepository.save(holiday);
+        log.info("节假日更新成功，ID: {}", updated.getId());
+
+        return convertToResponse(updated);
+    }
+
+
+    @Override
+    @Transactional
+    public void deleteHoliday(Integer id) {
+        log.info("逻辑删除节假日，ID: {}", id);
+
+        Holiday holiday = holidayRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("节假日不存在，ID: " + id));
+
+        holiday.setIsActive(false);
+        holidayRepository.save(holiday);
+        log.info("节假日逻辑删除成功，ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public int batchImportHolidays(List<Map<String, Object>> dataList) {
+        log.info("开始批量导入节假日，共 {} 条数据", dataList.size());
+        
+        int successCount = 0;
+        int updateCount = 0;
+        int skipCount = 0;
+        
+        for (Map<String, Object> data : dataList) {
+            try {
+                String dateStr = (String) data.get("日期");
+                String name = (String) data.get("节假日名称");
+                String typeStr = (String) data.get("类型");
+                String isStatutoryStr = (String) data.get("是否为法定假日");
+                
+                // 验证必填字段
+                if (dateStr == null || dateStr.trim().isEmpty() ||
+                    name == null || name.trim().isEmpty() ||
+                    typeStr == null || typeStr.trim().isEmpty()) {
+                    log.warn("跳过不完整的数据行: {}", data);
+                    skipCount++;
+                    continue;
+                }
+                
+                // 解析数据
+                LocalDate date = LocalDate.parse(dateStr.trim());
+                
+                Holiday.HolidayType type;
+                try {
+                    type = Holiday.HolidayType.valueOf(typeStr.trim());
+                } catch (IllegalArgumentException e) {
+                    log.warn("无效的类型: {}，跳过该数据行", typeStr);
+                    skipCount++;
+                    continue;
+                }
+                
+                Boolean isStatutory = "是".equals(isStatutoryStr);
+                
+                // 检查是否存在相同的记录（根据日期）
+                Optional<Holiday> existingHoliday = holidayRepository.findByDate(date);
+                
+                Holiday holiday;
+                boolean isUpdate = false;
+                
+                if (existingHoliday.isPresent()) {
+                    // 更新现有记录
+                    holiday = existingHoliday.get();
+                    isUpdate = true;
+                } else {
+                    // 创建新记录
+                    holiday = new Holiday();
+                    holiday.setDate(date);
+                }
+                
+                // 设置或更新字段
+                holiday.setName(name.trim());
+                holiday.setType(type);
+                holiday.setIsStatutory(isStatutory);
+                holiday.setIsActive(true);
+                
+                holidayRepository.save(holiday);
+                
+                if (isUpdate) {
+                    updateCount++;
+                    log.debug("更新节假日: 日期={}, 名称={}", date, name);
+                } else {
+                    successCount++;
+                    log.debug("创建节假日: 日期={}, 名称={}", date, name);
+                }
+            } catch (Exception e) {
+                log.error("导入数据失败: {}", data, e);
+                skipCount++;
+            }
         }
+        
+        log.info("批量导入节假日完成，新增 {} 条，更新 {} 条，跳过 {} 条", successCount, updateCount, skipCount);
+        return successCount + updateCount;
+    }
 
-        return result;
+    @Override
+    public byte[] generateCsvFromPublicApi(String year) throws Exception {
+        log.info("从公网API获取{}年节假日数据并生成CSV", year);
+        
+        // 1. 从公网API获取数据
+        List<Map<String, Object>> apiHolidays = fetchHolidaysFromApi(year);
+        
+        if (apiHolidays.isEmpty()) {
+            throw new IllegalArgumentException("未能获取到" + year + "年的节假日数据");
+        }
+        
+        // 2. 构建CSV内容
+        StringBuilder csv = new StringBuilder();
+        
+        // 添加UTF-8 BOM
+        csv.append('\ufeff');
+        
+        // 添加表头
+        csv.append("日期,节假日名称,类型,是否为法定假日\n");
+        
+        // 添加数据行
+        for (Map<String, Object> holiday : apiHolidays) {
+            String date = (String) holiday.get("date");
+            String name = (String) holiday.get("name");
+            String type = (String) holiday.get("type");
+            
+            // 判断是否为法定假日（public_holiday为法定假日）
+            String isStatutory = "public_holiday".equals(type) ? "是" : "否";
+            
+            csv.append(date).append(",")
+               .append(name).append(",")
+               .append(type).append(",")
+               .append(isStatutory).append("\n");
+        }
+        
+        log.info("成功生成CSV文件，共{}条数据", apiHolidays.size());
+        return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 转换为响应DTO
+     */
+    private HolidayResponse convertToResponse(Holiday holiday) {
+        return HolidayResponse.builder()
+                .id(holiday.getId())
+                .date(holiday.getDate())
+                .name(holiday.getName())
+                .type(holiday.getType())
+                .isActive(holiday.getIsActive())
+                .isStatutory(holiday.getIsStatutory())
+                .createdAt(holiday.getCreatedDate())
+                .createdBy(holiday.getCreatedBy())
+                .updatedAt(holiday.getUpdateDate())
+                .updatedBy(holiday.getUpdatedBy())
+                .build();
     }
 }
