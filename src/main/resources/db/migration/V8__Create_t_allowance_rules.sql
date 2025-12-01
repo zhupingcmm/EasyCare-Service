@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS t_allowance_rules;
 CREATE TABLE t_allowance_rules (
     id                      SERIAL PRIMARY KEY,
     city                    VARCHAR(50) NOT NULL,
