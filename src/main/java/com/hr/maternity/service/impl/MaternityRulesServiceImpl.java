@@ -1,8 +1,11 @@
 package com.hr.maternity.service.impl;
 
+import com.hr.maternity.dto.MaternityLeaveTypeResponse;
 import com.hr.maternity.dto.MaternityRulesRequest;
 import com.hr.maternity.dto.MaternityRulesResponse;
+import com.hr.maternity.entity.MaternityLeaveType;
 import com.hr.maternity.entity.MaternityRules;
+import com.hr.maternity.repository.MaternityLeaveTypeRepository;
 import com.hr.maternity.repository.MaternityRulesRepository;
 import com.hr.maternity.service.MaternityRulesService;
 import lombok.RequiredArgsConstructor;
@@ -26,21 +29,26 @@ import java.util.stream.Collectors;
 public class MaternityRulesServiceImpl implements MaternityRulesService {
 
     private final MaternityRulesRepository maternityRulesRepository;
+    private final MaternityLeaveTypeRepository maternityLeaveTypeRepository;
 
     @Override
     @Transactional
     public MaternityRulesResponse createMaternityRules(MaternityRulesRequest request) {
         log.info("开始创建产假规则，请求参数: {}", request);
 
+        // 查找产假类型
+        MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findById(request.getMaternityLeaveTypeId())
+                .orElseThrow(() -> new IllegalArgumentException("产假类型不存在，ID: " + request.getMaternityLeaveTypeId()));
+
         MaternityRules maternityRules = new MaternityRules();
         maternityRules.setCity(request.getCity());
-        maternityRules.setMaternityLeaveType(request.getMaternityLeaveType());
-        maternityRules.setAbortionLeaveType(request.getAbortionLeaveType());
+        maternityRules.setMaternityLeaveType(maternityLeaveType);
         maternityRules.setLeaveDays(request.getLeaveDays());
         maternityRules.setIsExtendable(request.getIsExtendable());
         maternityRules.setHasAllowance(request.getHasAllowance());
         maternityRules.setIsDefault(request.getIsDefault());
         maternityRules.setRadioGroup(request.getRadioGroup());
+        maternityRules.setEnabled(request.getEnabled());
 
         MaternityRules saved = maternityRulesRepository.save(maternityRules);
         log.info("产假规则创建成功，ID: {}", saved.getId());
@@ -57,10 +65,10 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         Page<MaternityRules> maternityRulesPage;
         if (city != null && !city.trim().isEmpty()) {
             // 按城市过滤
-            maternityRulesPage = maternityRulesRepository.findByCityAndIsActive(city, true, pageable);
+            maternityRulesPage = maternityRulesRepository.findByCityAndEnabled(city, true, pageable);
         } else {
             // 查询所有
-            maternityRulesPage = maternityRulesRepository.findByIsActive(true, pageable);
+            maternityRulesPage = maternityRulesRepository.findByEnabled(true, pageable);
         }
         return maternityRulesPage.map(this::convertToResponse);
     }
@@ -74,14 +82,18 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         MaternityRules maternityRules = maternityRulesRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("产假规则不存在，ID: " + id));
 
+        // 查找产假类型
+        MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findById(request.getMaternityLeaveTypeId())
+                .orElseThrow(() -> new IllegalArgumentException("产假类型不存在，ID: " + request.getMaternityLeaveTypeId()));
+
         maternityRules.setCity(request.getCity());
-        maternityRules.setMaternityLeaveType(request.getMaternityLeaveType());
-        maternityRules.setAbortionLeaveType(request.getAbortionLeaveType());
+        maternityRules.setMaternityLeaveType(maternityLeaveType);
         maternityRules.setLeaveDays(request.getLeaveDays());
         maternityRules.setIsExtendable(request.getIsExtendable());
         maternityRules.setHasAllowance(request.getHasAllowance());
         maternityRules.setIsDefault(request.getIsDefault());
         maternityRules.setRadioGroup(request.getRadioGroup());
+        maternityRules.setEnabled(request.getEnabled());
 
         MaternityRules updated = maternityRulesRepository.save(maternityRules);
         log.info("产假规则更新成功，ID: {}", updated.getId());
@@ -97,7 +109,7 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         MaternityRules maternityRules = maternityRulesRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("产假规则不存在，ID: " + id));
 
-        maternityRules.setIsActive(false);
+        maternityRules.setEnabled(false);
         maternityRulesRepository.save(maternityRules);
         log.info("产假规则逻辑删除成功，ID: {}", id);
     }
@@ -193,18 +205,38 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         return MaternityRulesResponse.builder()
                 .id(maternityRules.getId())
                 .city(maternityRules.getCity())
-                .maternityLeaveType(maternityRules.getMaternityLeaveType())
-                .abortionLeaveType(maternityRules.getAbortionLeaveType())
+                .maternityLeaveType(convertLeaveTypeToResponse(maternityRules.getMaternityLeaveType()))
                 .leaveDays(maternityRules.getLeaveDays())
                 .isExtendable(maternityRules.getIsExtendable())
                 .hasAllowance(maternityRules.getHasAllowance())
                 .isDefault(maternityRules.getIsDefault())
                 .radioGroup(maternityRules.getRadioGroup())
-                .isActive(maternityRules.getIsActive())
+                .enabled(maternityRules.getEnabled())
                 .createDate(maternityRules.getCreateDate())
                 .createBy(maternityRules.getCreateBy())
                 .updateDate(maternityRules.getUpdateDate())
                 .updateBy(maternityRules.getUpdateBy())
+                .build();
+    }
+
+    /**
+     * 转换产假类型为响应DTO
+     */
+    private MaternityLeaveTypeResponse convertLeaveTypeToResponse(MaternityLeaveType leaveType) {
+        if (leaveType == null) {
+            return null;
+        }
+        return MaternityLeaveTypeResponse.builder()
+                .id(leaveType.getId())
+                .code(leaveType.getCode())
+                .name(leaveType.getName())
+                .isAbortion(leaveType.getIsAbortion())
+                .remark(leaveType.getRemark())
+                .enabled(leaveType.getEnabled())
+                .createDate(leaveType.getCreateDate())
+                .createBy(leaveType.getCreateBy())
+                .updateDate(leaveType.getUpdateDate())
+                .updateBy(leaveType.getUpdateBy())
                 .build();
     }
 }

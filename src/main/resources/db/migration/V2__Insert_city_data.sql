@@ -1,6 +1,6 @@
 -- 插入城市基础数据
 
-INSERT INTO city (name, code, chinese_name, english_name, province, country_code, enabled, sort_order) VALUES
+INSERT INTO city (name, code, cn_name, en_name, province, country_code, enabled, sort_order) VALUES
 ('Shanghai', 'SH', '上海', 'Shanghai', '上海市', 'CN', true, 1),
 ('Shenzhen', 'SZ', '深圳', 'Shenzhen', '广东省', 'CN', true, 2),
 ('Guangzhou', 'GZ', '广州', 'Guangzhou', '广东省', 'CN', true, 3),

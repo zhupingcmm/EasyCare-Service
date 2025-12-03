@@ -1,6 +1,6 @@
 package com.hr.maternity.controller;
 
-import com.hr.maternity.entity.City;
+import com.hr.maternity.entity.CityDO;
 import com.hr.maternity.repository.CityRepository;
 import com.hr.maternity.service.HolidayService;
 import com.hr.maternity.service.WorkdayCalculatorService;
@@ -37,8 +37,8 @@ public class SupportController {
      */
     @GetMapping("/cities")
     @Operation(summary = "获取支持的城市", description = "获取系统支持的所有城市列表")
-    public ResponseEntity<List<City>> getSupportedCities() {
-        List<City> cities = cityRepository.findByEnabledTrueOrderBySortOrder();
+    public ResponseEntity<List<CityDO>> getSupportedCities() {
+        List<CityDO> cities = cityRepository.findByEnabledTrueOrderBySortOrder();
         return ResponseEntity.ok(cities);
     }
 

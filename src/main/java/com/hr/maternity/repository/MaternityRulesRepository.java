@@ -20,17 +20,12 @@ public interface MaternityRulesRepository extends JpaRepository<MaternityRules, 
     List<MaternityRules> findByCity(String city);
 
     /**
-     * 根据城市和产假类型查询产假规则
-     */
-    List<MaternityRules> findByCityAndMaternityLeaveType(String city, String maternityLeaveType);
-
-    /**
      * 分页查询启用状态的产假规则
      */
-    Page<MaternityRules> findByIsActive(Boolean isActive, Pageable pageable);
+    Page<MaternityRules> findByEnabled(Boolean enabled, Pageable pageable);
 
     /**
-     * 根据城市和激活状态分页查询产假规则
+     * 根据城市和启用状态分页查询产假规则
      */
-    Page<MaternityRules> findByCityAndIsActive(String city, Boolean isActive, Pageable pageable);
+    Page<MaternityRules> findByCityAndEnabled(String city, Boolean enabled, Pageable pageable);
 }

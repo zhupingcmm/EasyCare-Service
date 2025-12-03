@@ -1,6 +1,5 @@
 package com.hr.maternity.dto;
 
-import com.hr.maternity.entity.Holiday;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -11,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 /**
- * 节假日请求DTO
+ * 特殊日期请求DTO（节假日/补班）
  */
 @Data
 @Builder
@@ -19,15 +18,30 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class HolidayRequest {
 
+    @NotNull(message = "年份不能为空")
+    private Integer year;
+
+    @Builder.Default
+    private String region = "CN";
+
     @NotNull(message = "日期不能为空")
     private LocalDate date;
 
-    @NotBlank(message = "节假日名称不能为空")
+    @NotBlank(message = "名称不能为空")
     private String name;
 
-    @NotNull(message = "类型不能为空")
-    private Holiday.HolidayType type;
+    @NotBlank(message = "中文名称不能为空")
+    private String cnName;
 
-    @NotNull(message = "是否为法定假日不能为空")
-    private Boolean isStatutory;
+    @NotBlank(message = "英文名称不能为空")
+    private String enName;
+
+    @NotNull(message = "类型不能为空")
+    private Integer type;
+
+    @NotNull(message = "是否为国定假日不能为空")
+    private Boolean isPublicHoliday;
+
+    @Builder.Default
+    private Boolean enabled = true;
 }

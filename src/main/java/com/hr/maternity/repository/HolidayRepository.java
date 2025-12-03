@@ -8,12 +8,13 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
- * 节假日数据访问接口
+ * 特殊日期数据访问接口（节假日/补班）
  */
 @Repository
-public interface HolidayRepository extends JpaRepository<Holiday, Integer> {
+public interface HolidayRepository extends JpaRepository<Holiday, UUID> {
 
     /**
      * 根据日期查询节假日
@@ -24,11 +25,11 @@ public interface HolidayRepository extends JpaRepository<Holiday, Integer> {
     Optional<Holiday> findByDate(LocalDate date);
 
     /**
-     * 分页查询未被逻辑删除的节假日
+     * 分页查询启用的特殊日期
      * 
-     * @param isActive 是否激活
+     * @param enabled 是否启用
      * @param pageable 分页参数
-     * @return 节假日分页数据
+     * @return 特殊日期分页数据
      */
-    Page<Holiday> findByIsActive(Boolean isActive, Pageable pageable);
+    Page<Holiday> findByEnabled(Boolean enabled, Pageable pageable);
 }

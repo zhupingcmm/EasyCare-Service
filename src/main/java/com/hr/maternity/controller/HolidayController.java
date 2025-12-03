@@ -138,25 +138,25 @@ public class HolidayController {
     }
 
     /**
-     * 更新节假日
+     * 更新特殊日期
      */
     @PutMapping("/{id}")
-    @Operation(summary = "更新节假日", description = "更新指定ID的节假日信息")
+    @Operation(summary = "更新特殊日期", description = "更新指定ID的特殊日期信息")
     public ApiResponse<HolidayResponse> updateHoliday(
-            @PathVariable Integer id,
+            @PathVariable java.util.UUID id,
             @Valid @RequestBody HolidayRequest request) {
-        log.info("收到更新节假日请求，ID: {}, 请求参数: {}", id, request);
+        log.info("收到更新特殊日期请求，ID: {}, 请求参数: {}", id, request);
         HolidayResponse response = holidayService.updateHoliday(id, request);
         return ApiResponse.success(response);
     }
 
     /**
-     * 删除节假日（逻辑删除）
+     * 禁用特殊日期
      */
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除节假日", description = "逻辑删除指定ID的节假日")
-    public ApiResponse<Void> deleteHoliday(@PathVariable Integer id) {
-        log.info("收到删除节假日请求，ID: {}", id);
+    @Operation(summary = "禁用特殊日期", description = "禁用指定ID的特殊日期")
+    public ApiResponse<Void> deleteHoliday(@PathVariable java.util.UUID id) {
+        log.info("收到禁用特殊日期请求，ID: {}", id);
         holidayService.deleteHoliday(id);
         return ApiResponse.success(null);
     }

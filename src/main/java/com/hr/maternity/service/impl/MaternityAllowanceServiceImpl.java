@@ -2,7 +2,7 @@ package com.hr.maternity.service.impl;
 
 import com.hr.maternity.dto.MaternityAllowanceRequest;
 import com.hr.maternity.dto.MaternityAllowanceResponse;
-import com.hr.maternity.entity.City;
+import com.hr.maternity.entity.CityDO;
 import com.hr.maternity.entity.HistoryDO;
 import com.hr.maternity.entity.MaternityAllowanceRequestDO;
 import com.hr.maternity.entity.MaternityAllowanceResultDO;
@@ -120,7 +120,7 @@ public class MaternityAllowanceServiceImpl implements MaternityAllowanceService 
         }
     }
 
-    private void fillCity(MaternityAllowanceResponse resp, City city) {
+    private void fillCity(MaternityAllowanceResponse resp, CityDO city) {
         resp.setCityCode(city.getCode());
         // 优先中文名，其次通用名
         resp.setCityName(city.getChineseName() != null ? city.getChineseName() : city.getName());

@@ -25,11 +25,11 @@ import java.util.UUID;
  * 城市实体类
  */
 @Entity
-@Table(name = "city")
+@Table(name = "t_city")
 @Data
 @EqualsAndHashCode(callSuper = false)
 @EntityListeners(AuditingEntityListener.class)
-public class City {
+public class CityDO {
 
     /**
      * 主键ID - UUID类型
@@ -54,13 +54,13 @@ public class City {
     /**
      * 城市中文名称
      */
-    @Column(name = "chinese_name", length = 100)
+    @Column(name = "cn_name", length = 100)
     private String chineseName;
 
     /**
      * 城市英文名称
      */
-    @Column(name = "english_name", length = 100)
+    @Column(name = "en_name", length = 100)
     private String englishName;
 
     /**

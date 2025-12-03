@@ -12,14 +12,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * 产假规则实体类
+ * 产假类型实体类
  */
 @Entity
-@Table(name = "t_maternity_rules")
+@Table(name = "t_maternity_leave_type")
 @Data
 @EqualsAndHashCode(callSuper = false)
 @EntityListeners(AuditingEntityListener.class)
-public class MaternityRules {
+public class MaternityLeaveType {
 
     /**
      * 主键ID
@@ -30,47 +30,28 @@ public class MaternityRules {
     private Integer id;
 
     /**
-     * 城市
+     * 类型代码
      */
-    @Column(name = "city", nullable = false, length = 50)
-    private String city;
+    @Column(name = "code", nullable = false, unique = true, length = 50)
+    private String code;
 
     /**
-     * 产假类型（外键关联）
+     * 类型名称
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maternity_leave_type_id", nullable = false, foreignKey = @ForeignKey(name = "fk_maternity_leave_type"))
-    private MaternityLeaveType maternityLeaveType;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
     /**
-     * 假期天数
+     * 是否是流产假
      */
-    @Column(name = "leave_days", nullable = false)
-    private Integer leaveDays;
+    @Column(name = "is_abortion", nullable = false)
+    private Boolean isAbortion = false;
 
     /**
-     * 是否节假日顺延
+     * 备注
      */
-    @Column(name = "is_extendable", nullable = false)
-    private Boolean isExtendable = false;
-
-    /**
-     * 是否有津贴
-     */
-    @Column(name = "has_allowance", nullable = false)
-    private Boolean hasAllowance = true;
-
-    /**
-     * 是否默认选择
-     */
-    @Column(name = "is_default", nullable = false)
-    private Boolean isDefault = false;
-
-    /**
-     * 单选分组标识
-     */
-    @Column(name = "radio_group", nullable = false)
-    private Integer radioGroup = 0;
+    @Column(name = "remark", length = 500)
+    private String remark;
 
     /**
      * 是否启用
@@ -106,4 +87,13 @@ public class MaternityRules {
     @Column(name = "update_by", length = 100)
     private String updateBy;
 
+    @PrePersist
+    protected void onCreate() {
+        if (isAbortion == null) {
+            isAbortion = false;
+        }
+        if (enabled == null) {
+            enabled = true;
+        }
+    }
 }

@@ -27,14 +27,9 @@ public class MaternityRulesResponse {
     private String city;
 
     /**
-     * 产假类型（如：产假、陪产假）
+     * 产假类型
      */
-    private String maternityLeaveType;
-
-    /**
-     * 流产类型（如：早期流产、晚期流产，可为空）
-     */
-    private String abortionLeaveType;
+    private MaternityLeaveTypeResponse maternityLeaveType;
 
     /**
      * 假期天数
@@ -64,7 +59,7 @@ public class MaternityRulesResponse {
     /**
      * 是否启用
      */
-    private Boolean isActive;
+    private Boolean enabled;
 
     /**
      * 创建时间

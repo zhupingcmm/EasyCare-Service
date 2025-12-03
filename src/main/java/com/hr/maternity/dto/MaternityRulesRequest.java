@@ -24,15 +24,10 @@ public class MaternityRulesRequest {
     private String city;
 
     /**
-     * 产假类型（如：产假、陪产假）
+     * 产假类型ID
      */
-    @NotBlank(message = "产假类型不能为空")
-    private String maternityLeaveType;
-
-    /**
-     * 流产类型（如：早期流产、晚期流产，可为空）
-     */
-    private String abortionLeaveType;
+    @NotNull(message = "产假类型ID不能为空")
+    private Integer maternityLeaveTypeId;
 
     /**
      * 假期天数
@@ -68,5 +63,6 @@ public class MaternityRulesRequest {
     /**
      * 是否启用
      */
-    private Boolean isActive;
+    @Builder.Default
+    private Boolean enabled = true;
 }
