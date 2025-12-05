@@ -31,3 +31,26 @@ COMMENT ON COLUMN t_maternity_leave_type.create_date IS '创建时间';
 COMMENT ON COLUMN t_maternity_leave_type.create_by IS '创建人';
 COMMENT ON COLUMN t_maternity_leave_type.update_date IS '更新时间';
 COMMENT ON COLUMN t_maternity_leave_type.update_by IS '更新人';
+
+-- 插入产假类型基础数据（非流产假）
+INSERT INTO t_maternity_leave_type (code, name, is_abortion, enabled) VALUES
+('1001', '法定产假', false, true),
+('1002', '难产假', false, true),
+('1003', '多胞胎产假', false, true),
+('1004', '难产假（剖腹产、会阴Ⅲ度破裂）', false, true),
+('1005', '晚育假/生育假/奖励假', false, true),
+('1006', '奖励假', false, true);
+
+-- 插入流产假类型数据
+INSERT INTO t_maternity_leave_type (code, name, is_abortion, enabled) VALUES
+('1007', '怀孕不满2个月流产', true, true),
+('1008', '怀孕满2个月不满3个月流产', true, true),
+('1009', '怀孕满3个月不满7个月流产', true, true),
+('1010', '怀孕满7个月流产', true, true),
+('1011', '宫外孕', true, true),
+('1012', '妊娠不满12周流产', true, true),
+('1013', '妊娠满12周不满28周流产', true, true),
+('1014', '妊娠满28周流产', true, true),
+('1015', '妊娠满4个月流产', true, true),
+('1016', '妊娠满7个月流产', true, true),
+('1017', '妊娠未满4个月流产', true, true);

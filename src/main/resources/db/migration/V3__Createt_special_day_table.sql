@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS t_special_day CASCADE;
 
 -- 创建特殊日期表
 CREATE TABLE IF NOT EXISTS t_special_day (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     year INTEGER NOT NULL,
     region VARCHAR(10) NOT NULL DEFAULT 'CN',
     date DATE NOT NULL,

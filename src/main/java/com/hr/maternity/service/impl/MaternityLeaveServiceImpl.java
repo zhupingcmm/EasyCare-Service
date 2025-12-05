@@ -96,7 +96,7 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
 
     private void fillCity(MaternityLeaveResponse resp, CityDO city) {
         resp.setCityCode(city.getCode());
-        resp.setCityName(city.getChineseName() != null ? city.getChineseName() : city.getName());
+        resp.setCityName(city.getChineseName());
     }
 
     /**

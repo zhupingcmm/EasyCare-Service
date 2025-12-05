@@ -40,12 +40,6 @@ public class CityDO {
     private UUID id;
 
     /**
-     * 城市名称
-     */
-    @Column(name = "name", nullable = false, length = 100)
-    private String name;
-
-    /**
      * 城市代码
      */
     @Column(name = "code", nullable = false, unique = true, length = 50)
@@ -68,12 +62,6 @@ public class CityDO {
      */
     @Column(name = "province", length = 100)
     private String province;
-
-    /**
-     * 国家代码
-     */
-    @Column(name = "country_code", length = 10)
-    private String countryCode;
 
     /**
      * 是否启用

@@ -1,12 +1,14 @@
 package com.hr.maternity.dto;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 产假规则请求DTO
@@ -18,10 +20,10 @@ import lombok.NoArgsConstructor;
 public class MaternityRulesRequest {
 
     /**
-     * 城市
+     * 城市ID
      */
-    @NotBlank(message = "城市不能为空")
-    private String city;
+    @NotNull(message = "城市ID不能为空")
+    private UUID cityId;
 
     /**
      * 产假类型ID
@@ -30,11 +32,21 @@ public class MaternityRulesRequest {
     private Integer maternityLeaveTypeId;
 
     /**
-     * 假期天数
+     * 默认假期天数
      */
-    @NotNull(message = "假期天数不能为空")
-    @Min(value = 1, message = "假期天数必须大于0")
-    private Integer leaveDays;
+    @NotNull(message = "默认假期天数不能为空")
+    @Min(value = 1, message = "默认假期天数必须大于0")
+    private Integer defaultDays;
+
+    /**
+     * 医嘱天数
+     */
+    private Integer doctorRecommendDays;
+
+    /**
+     * 产假扩展信息
+     */
+    private Map<String, Object> maternityLeaveExt;
 
     /**
      * 是否节假日顺延
@@ -43,22 +55,16 @@ public class MaternityRulesRequest {
     private Boolean isExtendable;
 
     /**
+     * 产假是否顺延
+     */
+    @NotNull(message = "产假是否顺延不能为空")
+    private Boolean holidayExtend;
+
+    /**
      * 是否有津贴
      */
     @NotNull(message = "是否有津贴不能为空")
     private Boolean hasAllowance;
-
-    /**
-     * 是否默认选择
-     */
-    @NotNull(message = "是否默认选择不能为空")
-    private Boolean isDefault;
-
-    /**
-     * 单选分组标识
-     */
-    @NotNull(message = "单选分组标识不能为空")
-    private Integer radioGroup;
 
     /**
      * 是否启用

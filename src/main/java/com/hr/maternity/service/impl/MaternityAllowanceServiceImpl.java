@@ -122,8 +122,7 @@ public class MaternityAllowanceServiceImpl implements MaternityAllowanceService 
 
     private void fillCity(MaternityAllowanceResponse resp, CityDO city) {
         resp.setCityCode(city.getCode());
-        // 优先中文名，其次通用名
-        resp.setCityName(city.getChineseName() != null ? city.getChineseName() : city.getName());
+        resp.setCityName(city.getChineseName());
     }
 
     /**
