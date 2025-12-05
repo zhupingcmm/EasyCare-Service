@@ -8,8 +8,7 @@ CREATE TABLE IF NOT EXISTS t_maternity_rules (
     default_days          INTEGER NOT NULL CHECK (default_days > 0),
     doctor_recommend_days INTEGER,
     maternity_leave_ext   JSONB,
-    is_extendable         BOOLEAN NOT NULL DEFAULT FALSE,
-    holiday_extend        BOOLEAN NOT NULL DEFAULT FALSE,
+    holiday_extend        BOOLEAN NOT NULL DEFAULT TRUE,
     has_allowance         BOOLEAN NOT NULL DEFAULT TRUE,
     enabled               BOOLEAN NOT NULL DEFAULT TRUE,
     create_date           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -25,7 +24,7 @@ CREATE TABLE IF NOT EXISTS t_maternity_rules (
 );
 
 -- 索引
-CREATE UNIQUE INDEX idx_t_maternity_rules_unique ON t_maternity_rules (city_id, maternity_leave_type_id);
+-- CREATE UNIQUE INDEX idx_t_maternity_rules_unique ON t_maternity_rules (city_id, maternity_leave_type_id);
 CREATE INDEX idx_t_maternity_rules_city ON t_maternity_rules (city_id);
 CREATE INDEX idx_t_maternity_rules_maternity_type ON t_maternity_rules (maternity_leave_type_id);
 CREATE INDEX idx_t_maternity_rules_enabled ON t_maternity_rules (enabled);
@@ -38,7 +37,6 @@ COMMENT ON COLUMN t_maternity_rules.maternity_leave_type_id IS '产假类型ID�
 COMMENT ON COLUMN t_maternity_rules.default_days IS '默认假期天数';
 COMMENT ON COLUMN t_maternity_rules.doctor_recommend_days IS '医嘱天数';
 COMMENT ON COLUMN t_maternity_rules.maternity_leave_ext IS '产假扩展信息（JSON格式，存储产假对应天数等）';
-COMMENT ON COLUMN t_maternity_rules.is_extendable IS '是否节假日顺延';
 COMMENT ON COLUMN t_maternity_rules.holiday_extend IS '产假是否顺延';
 COMMENT ON COLUMN t_maternity_rules.has_allowance IS '是否有津贴';
 COMMENT ON COLUMN t_maternity_rules.enabled IS '是否启用';
@@ -46,3 +44,128 @@ COMMENT ON COLUMN t_maternity_rules.create_date IS '创建时间';
 COMMENT ON COLUMN t_maternity_rules.create_by IS '创建人';
 COMMENT ON COLUMN t_maternity_rules.update_date IS '更新时间';
 COMMENT ON COLUMN t_maternity_rules.update_by IS '更新人';
+
+-- 插入产假规则数据
+INSERT INTO t_maternity_rules (city_id, maternity_leave_type_id, default_days, holiday_extend, has_allowance) VALUES
+-- 上海
+((SELECT id FROM t_city WHERE code = 'SH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'SH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 60, true, true),
+((SELECT id FROM t_city WHERE code = 'SH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+
+-- 深圳
+((SELECT id FROM t_city WHERE code = 'SZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'SZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 80, false, false),
+((SELECT id FROM t_city WHERE code = 'SZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'SZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 75, false, true),
+
+-- 广州
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'GZ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 75, false, true),
+
+-- 天津
+((SELECT id FROM t_city WHERE code = 'TJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'TJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'TJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'TJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'TJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'TJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+
+-- 绍兴
+((SELECT id FROM t_city WHERE code = 'SX'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'SX'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SX'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SX'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'SX'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SX'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+
+-- 厦门
+((SELECT id FROM t_city WHERE code = 'XM'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'XM'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'XM'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'XM'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'XM'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'XM'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'XM'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 98, false, true),
+
+-- 成都
+((SELECT id FROM t_city WHERE code = 'CD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'CD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'CD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'CD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'CD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'CD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+
+-- 苏州
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 20, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 98, false, true),
+
+-- 青岛
+((SELECT id FROM t_city WHERE code = 'QD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'QD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'QD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'QD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'QD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'QD'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+
+-- 北京
+((SELECT id FROM t_city WHERE code = 'BJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'BJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'BJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'BJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'BJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'BJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'BJ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 98, false, true),
+
+-- 重庆
+((SELECT id FROM t_city WHERE code = 'CQ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'CQ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'CQ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'CQ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'CQ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'CQ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'CQ'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 98, false, true),
+
+-- 珠海
+((SELECT id FROM t_city WHERE code = 'ZH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'ZH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'ZH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'ZH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'ZH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'ZH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'ZH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 75, false, true),
+
+-- 佛山
+((SELECT id FROM t_city WHERE code = 'FS'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'FS'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'FS'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'FS'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'FS'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'FS'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 42, false, true),
+((SELECT id FROM t_city WHERE code = 'FS'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 75, false, true),
+
+-- 武汉
+((SELECT id FROM t_city WHERE code = 'WH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, false, true),
+((SELECT id FROM t_city WHERE code = 'WH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'WH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, false, true),
+((SELECT id FROM t_city WHERE code = 'WH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'WH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 30, false, true),
+((SELECT id FROM t_city WHERE code = 'WH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 45, false, true),
+((SELECT id FROM t_city WHERE code = 'WH'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 98, false, true);

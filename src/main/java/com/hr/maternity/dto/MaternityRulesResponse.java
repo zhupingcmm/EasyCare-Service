@@ -54,11 +54,6 @@ public class MaternityRulesResponse {
     private Map<String, Object> maternityLeaveExt;
 
     /**
-     * 是否节假日顺延
-     */
-    private Boolean isExtendable;
-
-    /**
      * 产假是否顺延
      */
     private Boolean holidayExtend;

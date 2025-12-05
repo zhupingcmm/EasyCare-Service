@@ -38,7 +38,6 @@ public class MaternityLeaveTypeServiceImpl implements MaternityLeaveTypeService 
         MaternityLeaveType maternityLeaveType = new MaternityLeaveType();
         maternityLeaveType.setCode(request.getCode());
         maternityLeaveType.setName(request.getName());
-        maternityLeaveType.setIsAbortion(request.getIsAbortion());
         maternityLeaveType.setRemark(request.getRemark());
         maternityLeaveType.setEnabled(request.getEnabled());
 
@@ -82,7 +81,6 @@ public class MaternityLeaveTypeServiceImpl implements MaternityLeaveTypeService 
 
         maternityLeaveType.setCode(request.getCode());
         maternityLeaveType.setName(request.getName());
-        maternityLeaveType.setIsAbortion(request.getIsAbortion());
         maternityLeaveType.setRemark(request.getRemark());
         maternityLeaveType.setEnabled(request.getEnabled());
 
@@ -118,11 +116,9 @@ public class MaternityLeaveTypeServiceImpl implements MaternityLeaveTypeService 
     @Override
     public List<MaternityLeaveTypeResponse> listByIsAbortion(Boolean isAbortion) {
         log.info("根据是否流产假查询，isAbortion: {}", isAbortion);
-
-        List<MaternityLeaveType> list = maternityLeaveTypeRepository.findByIsAbortionAndEnabled(isAbortion, true);
-        return list.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        log.warn("isAbortion字段已废弃，返回所有启用的产假类型");
+        
+        return listEnabledMaternityLeaveTypes();
     }
 
     /**
@@ -133,7 +129,6 @@ public class MaternityLeaveTypeServiceImpl implements MaternityLeaveTypeService 
                 .id(maternityLeaveType.getId())
                 .code(maternityLeaveType.getCode())
                 .name(maternityLeaveType.getName())
-                .isAbortion(maternityLeaveType.getIsAbortion())
                 .remark(maternityLeaveType.getRemark())
                 .enabled(maternityLeaveType.getEnabled())
                 .createDate(maternityLeaveType.getCreateDate())

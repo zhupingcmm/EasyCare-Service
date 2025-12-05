@@ -19,8 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 产假规则服务实现类
@@ -53,7 +51,6 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         maternityRules.setDefaultDays(request.getDefaultDays());
         maternityRules.setDoctorRecommendDays(request.getDoctorRecommendDays());
         maternityRules.setMaternityLeaveExt(request.getMaternityLeaveExt());
-        maternityRules.setIsExtendable(request.getIsExtendable());
         maternityRules.setHolidayExtend(request.getHolidayExtend());
         maternityRules.setHasAllowance(request.getHasAllowance());
         maternityRules.setEnabled(request.getEnabled());
@@ -105,7 +102,6 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         maternityRules.setDefaultDays(request.getDefaultDays());
         maternityRules.setDoctorRecommendDays(request.getDoctorRecommendDays());
         maternityRules.setMaternityLeaveExt(request.getMaternityLeaveExt());
-        maternityRules.setIsExtendable(request.getIsExtendable());
         maternityRules.setHolidayExtend(request.getHolidayExtend());
         maternityRules.setHasAllowance(request.getHasAllowance());
         maternityRules.setEnabled(request.getEnabled());
@@ -148,7 +144,6 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                 .defaultDays(maternityRules.getDefaultDays())
                 .doctorRecommendDays(maternityRules.getDoctorRecommendDays())
                 .maternityLeaveExt(maternityRules.getMaternityLeaveExt())
-                .isExtendable(maternityRules.getIsExtendable())
                 .holidayExtend(maternityRules.getHolidayExtend())
                 .hasAllowance(maternityRules.getHasAllowance())
                 .enabled(maternityRules.getEnabled())
@@ -170,7 +165,6 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                 .id(leaveType.getId())
                 .code(leaveType.getCode())
                 .name(leaveType.getName())
-                .isAbortion(leaveType.getIsAbortion())
                 .remark(leaveType.getRemark())
                 .enabled(leaveType.getEnabled())
                 .createDate(leaveType.getCreateDate())

@@ -46,13 +46,4 @@ public interface MaternityLeaveTypeRepository extends JpaRepository<MaternityLea
      * @return 是否存在
      */
     boolean existsByCode(String code);
-
-    /**
-     * 根据是否流产假查询
-     * 
-     * @param isAbortion 是否是流产假
-     * @param enabled 是否启用
-     * @return 产假类型列表
-     */
-    List<MaternityLeaveType> findByIsAbortionAndEnabled(Boolean isAbortion, Boolean enabled);
 }

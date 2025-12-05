@@ -42,12 +42,6 @@ public class MaternityLeaveType {
     private String name;
 
     /**
-     * 是否是流产假
-     */
-    @Column(name = "is_abortion", nullable = false)
-    private Boolean isAbortion = false;
-
-    /**
      * 备注
      */
     @Column(name = "remark", length = 500)
@@ -89,9 +83,6 @@ public class MaternityLeaveType {
 
     @PrePersist
     protected void onCreate() {
-        if (isAbortion == null) {
-            isAbortion = false;
-        }
         if (enabled == null) {
             enabled = true;
         }

@@ -22,8 +22,6 @@ public class MaternityLeaveTypeResponse {
 
     private String name;
 
-    private Boolean isAbortion;
-
     private String remark;
 
     private Boolean enabled;

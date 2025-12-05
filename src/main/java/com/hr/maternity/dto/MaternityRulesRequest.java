@@ -49,12 +49,6 @@ public class MaternityRulesRequest {
     private Map<String, Object> maternityLeaveExt;
 
     /**
-     * 是否节假日顺延
-     */
-    @NotNull(message = "是否节假日顺延不能为空")
-    private Boolean isExtendable;
-
-    /**
      * 产假是否顺延
      */
     @NotNull(message = "产假是否顺延不能为空")
