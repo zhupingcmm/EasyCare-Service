@@ -10,62 +10,86 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 节假日实体类
+ * 特殊日期实体类（节假日/补班）
  */
 @Entity
-@Table(name = "holiday")
+@Table(name = "t_special_day")
 @Data
 @EntityListeners(AuditingEntityListener.class)
 public class Holiday {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", columnDefinition = "uuid")
+    private java.util.UUID id;
 
-    @Column(name = "date", nullable = false, unique = true)
+    @Column(name = "year", nullable = false)
+    private Integer year;
+
+    @Column(name = "region", nullable = false, length = 10)
+    private String region = "CN";
+
+    @Column(name = "date", nullable = false)
     private LocalDate date;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 20)
-    private HolidayType type;
+    @Column(name = "cn_name", nullable = false, length = 100)
+    private String cnName;
 
-    @Column(name = "is_statutory", nullable = false)
-    private Boolean isStatutory = true;
+    @Column(name = "en_name", nullable = false, length = 100)
+    private String enName;
 
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    @Column(name = "type", nullable = false)
+    private Integer type;
+
+    @Column(name = "is_public_holiday", nullable = false)
+    private Boolean isPublicHoliday = true;
+
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled = true;
 
     @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdDate;
+    @Column(name = "create_date", nullable = false, updatable = false)
+    private LocalDateTime createDate;
 
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
+    @Column(name = "create_by", length = 100)
+    private String createBy;
 
     @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "update_date")
     private LocalDateTime updateDate;
 
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
+    @Column(name = "update_by", length = 100)
+    private String updateBy;
 
     @PrePersist
     protected void onCreate() {
-        if (isStatutory == null) {
-            isStatutory = true;
+        if (region == null) {
+            region = "CN";
         }
-        if (isActive == null) {
-            isActive = true;
+        if (isPublicHoliday == null) {
+            isPublicHoliday = true;
+        }
+        if (enabled == null) {
+            enabled = true;
         }
     }
 
     /**
-     * 节假日类型枚举
+     * 特殊日期类型常量
      */
+    public static class SpecialDayType {
+        public static final Integer HOLIDAY = 1;      // 节假日
+        public static final Integer WORKDAY = 2;      // 补班
+    }
+
+    /**
+     * 节假日类型枚举（保留兼容）
+     * @deprecated 使用 SpecialDayType 常量代替
+     */
+    @Deprecated
     public enum HolidayType {
         public_holiday,    // 公共假日
         transfer_workday   // 调休工作日

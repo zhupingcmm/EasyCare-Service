@@ -137,12 +137,22 @@ public class HolidayServiceImpl implements HolidayService {
         for (Map<String, Object> apiHoliday : apiHolidays) {
             try {
                 Holiday holiday = new Holiday();
-                holiday.setDate(LocalDate.parse((String) apiHoliday.get("date")));
-                holiday.setName((String) apiHoliday.get("name"));
+                LocalDate date = LocalDate.parse((String) apiHoliday.get("date"));
+                holiday.setDate(date);
+                holiday.setYear(date.getYear());
+                holiday.setRegion("CN");
+                
+                String name = (String) apiHoliday.get("name");
+                holiday.setName(name);
+                holiday.setCnName(name);
+                holiday.setEnName(name);
 
                 String typeStr = (String) apiHoliday.get("type");
-                holiday.setType(Holiday.HolidayType.valueOf(typeStr));
-                holiday.setIsStatutory(true);
+                // 将字符串类型转换为整数：public_holiday=1, transfer_workday=2
+                Integer type = "public_holiday".equals(typeStr) ? Holiday.SpecialDayType.HOLIDAY : Holiday.SpecialDayType.WORKDAY;
+                holiday.setType(type);
+                holiday.setIsPublicHoliday("public_holiday".equals(typeStr));
+                holiday.setEnabled(true);
 
                 holidays.add(holiday);
             } catch (Exception e) {
@@ -160,45 +170,55 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     @Transactional
     public HolidayResponse createHoliday(HolidayRequest request) {
-        log.info("开始创建节假日，请求参数: {}", request);
+        log.info("开始创建特殊日期，请求参数: {}", request);
 
         Holiday holiday = new Holiday();
+        holiday.setYear(request.getYear());
+        holiday.setRegion(request.getRegion());
         holiday.setDate(request.getDate());
         holiday.setName(request.getName());
+        holiday.setCnName(request.getCnName());
+        holiday.setEnName(request.getEnName());
         holiday.setType(request.getType());
-        holiday.setIsStatutory(request.getIsStatutory());
+        holiday.setIsPublicHoliday(request.getIsPublicHoliday());
+        holiday.setEnabled(request.getEnabled());
 
         Holiday saved = holidayRepository.save(holiday);
-        log.info("节假日创建成功，ID: {}", saved.getId());
+        log.info("特殊日期创建成功，ID: {}", saved.getId());
 
         return convertToResponse(saved);
     }
 
     @Override
     public Page<HolidayResponse> listAllHolidays(Pageable pageable) {
-        log.info("查询所有未删除的节假日，分页参数: {}", pageable);
+        log.info("查询所有启用的特殊日期，分页参数: {}", pageable);
 
-        // 只查询未被逻辑删除的数据
-        Page<Holiday> holidayPage = holidayRepository.findByIsActive(true, pageable);
+        // 只查询启用的数据
+        Page<Holiday> holidayPage = holidayRepository.findByEnabled(true, pageable);
         
         return holidayPage.map(this::convertToResponse);
     }
 
     @Override
     @Transactional
-    public HolidayResponse updateHoliday(Integer id, HolidayRequest request) {
-        log.info("更新节假日，ID: {}, 请求参数: {}", id, request);
+    public HolidayResponse updateHoliday(UUID id, HolidayRequest request) {
+        log.info("更新特殊日期，ID: {}, 请求参数: {}", id, request);
 
         Holiday holiday = holidayRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("节假日不存在，ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("特殊日期不存在，ID: " + id));
 
+        holiday.setYear(request.getYear());
+        holiday.setRegion(request.getRegion());
         holiday.setDate(request.getDate());
         holiday.setName(request.getName());
+        holiday.setCnName(request.getCnName());
+        holiday.setEnName(request.getEnName());
         holiday.setType(request.getType());
-        holiday.setIsStatutory(request.getIsStatutory());
+        holiday.setIsPublicHoliday(request.getIsPublicHoliday());
+        holiday.setEnabled(request.getEnabled());
 
         Holiday updated = holidayRepository.save(holiday);
-        log.info("节假日更新成功，ID: {}", updated.getId());
+        log.info("特殊日期更新成功，ID: {}", updated.getId());
 
         return convertToResponse(updated);
     }
@@ -206,15 +226,15 @@ public class HolidayServiceImpl implements HolidayService {
 
     @Override
     @Transactional
-    public void deleteHoliday(Integer id) {
-        log.info("逻辑删除节假日，ID: {}", id);
+    public void deleteHoliday(UUID id) {
+        log.info("禁用特殊日期，ID: {}", id);
 
         Holiday holiday = holidayRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("节假日不存在，ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("特殊日期不存在，ID: " + id));
 
-        holiday.setIsActive(false);
+        holiday.setEnabled(false);
         holidayRepository.save(holiday);
-        log.info("节假日逻辑删除成功，ID: {}", id);
+        log.info("特殊日期禁用成功，ID: {}", id);
     }
 
     @Override
@@ -230,8 +250,10 @@ public class HolidayServiceImpl implements HolidayService {
             try {
                 String dateStr = (String) data.get("日期");
                 String name = (String) data.get("节假日名称");
+                String cnName = (String) data.get("中文名称");
+                String enName = (String) data.get("英文名称");
                 String typeStr = (String) data.get("类型");
-                String isStatutoryStr = (String) data.get("是否为法定假日");
+                String isPublicHolidayStr = (String) data.get("是否国定假日");
                 
                 // 验证必填字段
                 if (dateStr == null || dateStr.trim().isEmpty() ||
@@ -245,16 +267,19 @@ public class HolidayServiceImpl implements HolidayService {
                 // 解析数据
                 LocalDate date = LocalDate.parse(dateStr.trim());
                 
-                Holiday.HolidayType type;
+                Integer type;
                 try {
-                    type = Holiday.HolidayType.valueOf(typeStr.trim());
-                } catch (IllegalArgumentException e) {
+                    type = Integer.parseInt(typeStr.trim());
+                    if (type != 1 && type != 2) {
+                        throw new IllegalArgumentException("类型必须为1或2");
+                    }
+                } catch (Exception e) {
                     log.warn("无效的类型: {}，跳过该数据行", typeStr);
                     skipCount++;
                     continue;
                 }
                 
-                Boolean isStatutory = "是".equals(isStatutoryStr);
+                Boolean isPublicHoliday = "是".equals(isPublicHolidayStr);
                 
                 // 检查是否存在相同的记录（根据日期）
                 Optional<Holiday> existingHoliday = holidayRepository.findByDate(date);
@@ -273,10 +298,14 @@ public class HolidayServiceImpl implements HolidayService {
                 }
                 
                 // 设置或更新字段
+                holiday.setYear(date.getYear());
+                holiday.setRegion("CN");
                 holiday.setName(name.trim());
+                holiday.setCnName(cnName != null ? cnName.trim() : name.trim());
+                holiday.setEnName(enName != null ? enName.trim() : name.trim());
                 holiday.setType(type);
-                holiday.setIsStatutory(isStatutory);
-                holiday.setIsActive(true);
+                holiday.setIsPublicHoliday(isPublicHoliday);
+                holiday.setEnabled(true);
                 
                 holidayRepository.save(holiday);
                 
@@ -342,15 +371,19 @@ public class HolidayServiceImpl implements HolidayService {
     private HolidayResponse convertToResponse(Holiday holiday) {
         return HolidayResponse.builder()
                 .id(holiday.getId())
+                .year(holiday.getYear())
+                .region(holiday.getRegion())
                 .date(holiday.getDate())
                 .name(holiday.getName())
+                .cnName(holiday.getCnName())
+                .enName(holiday.getEnName())
                 .type(holiday.getType())
-                .isActive(holiday.getIsActive())
-                .isStatutory(holiday.getIsStatutory())
-                .createdAt(holiday.getCreatedDate())
-                .createdBy(holiday.getCreatedBy())
-                .updatedAt(holiday.getUpdateDate())
-                .updatedBy(holiday.getUpdatedBy())
+                .isPublicHoliday(holiday.getIsPublicHoliday())
+                .enabled(holiday.getEnabled())
+                .createDate(holiday.getCreateDate())
+                .createBy(holiday.getCreateBy())
+                .updateDate(holiday.getUpdateDate())
+                .updateBy(holiday.getUpdateBy())
                 .build();
     }
 }

@@ -1,8 +1,11 @@
 package com.hr.maternity.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -10,6 +13,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * 产假规则实体类
@@ -30,34 +34,44 @@ public class MaternityRules {
     private Integer id;
 
     /**
-     * 城市
+     * 城市ID（外键关联）
      */
-    @Column(name = "city", nullable = false, length = 50)
-    private String city;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id", nullable = false, foreignKey = @ForeignKey(name = "fk_city"))
+    private CityDO city;
 
     /**
-     * 产假类型（如：产假、陪产假）
+     * 产假类型（外键关联）
      */
-    @Column(name = "maternity_leave_type", nullable = false, length = 100)
-    private String maternityLeaveType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maternity_leave_type_id", nullable = false, foreignKey = @ForeignKey(name = "fk_maternity_leave_type"))
+    private MaternityLeaveType maternityLeaveType;
 
     /**
-     * 流产类型（如：早期流产、晚期流产，可为空）
+     * 默认假期天数
      */
-    @Column(name = "abortion_leave_type", length = 100)
-    private String abortionLeaveType;
+    @Column(name = "default_days", nullable = false)
+    private Integer defaultDays;
 
     /**
-     * 假期天数
+     * 医嘱天数
      */
-    @Column(name = "leave_days", nullable = false)
-    private Integer leaveDays;
+    @Column(name = "doctor_recommend_days")
+    private Integer doctorRecommendDays;
 
     /**
-     * 是否节假日顺延
+     * 产假扩展信息（JSON格式）
      */
-    @Column(name = "is_extendable", nullable = false)
-    private Boolean isExtendable = false;
+    @Column(name = "maternity_leave_ext", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private Map<String, Object> maternityLeaveExt;
+
+    /**
+     * 产假是否顺延
+     */
+    @Column(name = "holiday_extend", nullable = false)
+    private Boolean holidayExtend = false;
 
     /**
      * 是否有津贴
@@ -66,22 +80,10 @@ public class MaternityRules {
     private Boolean hasAllowance = true;
 
     /**
-     * 是否默认选择
-     */
-    @Column(name = "is_default", nullable = false)
-    private Boolean isDefault = false;
-
-    /**
-     * 单选分组标识
-     */
-    @Column(name = "radio_group", nullable = false)
-    private Integer radioGroup = 0;
-
-    /**
      * 是否启用
      */
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled = true;
 
     /**
      * 创建时间

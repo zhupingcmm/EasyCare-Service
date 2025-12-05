@@ -15,22 +15,17 @@ import java.util.List;
 public interface MaternityRulesRepository extends JpaRepository<MaternityRules, Integer> {
 
     /**
-     * 根据城市查询产假规则
+     * 根据城市ID查询产假规则
      */
-    List<MaternityRules> findByCity(String city);
-
-    /**
-     * 根据城市和产假类型查询产假规则
-     */
-    List<MaternityRules> findByCityAndMaternityLeaveType(String city, String maternityLeaveType);
+    List<MaternityRules> findByCityId(java.util.UUID cityId);
 
     /**
      * 分页查询启用状态的产假规则
      */
-    Page<MaternityRules> findByIsActive(Boolean isActive, Pageable pageable);
+    Page<MaternityRules> findByEnabled(Boolean enabled, Pageable pageable);
 
     /**
-     * 根据城市和激活状态分页查询产假规则
+     * 根据城市ID和启用状态分页查询产假规则
      */
-    Page<MaternityRules> findByCityAndIsActive(String city, Boolean isActive, Pageable pageable);
+    Page<MaternityRules> findByCityIdAndEnabled(java.util.UUID cityId, Boolean enabled, Pageable pageable);
 }

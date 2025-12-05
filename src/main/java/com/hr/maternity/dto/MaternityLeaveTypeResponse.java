@@ -5,36 +5,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
- * 特殊日期响应DTO（节假日/补班）
+ * 产假类型响应DTO
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class HolidayResponse {
+public class MaternityLeaveTypeResponse {
 
-    private UUID id;
+    private Integer id;
 
-    private Integer year;
-
-    private String region;
-
-    private LocalDate date;
+    private String code;
 
     private String name;
 
-    private String cnName;
-
-    private String enName;
-
-    private Integer type;
-
-    private Boolean isPublicHoliday;
+    private String remark;
 
     private Boolean enabled;
 

@@ -1,14 +1,13 @@
 -- 产假计算系统数据库表创建脚本
-
+-- 1. 删除旧的 holiday 表
+DROP TABLE IF EXISTS t_city CASCADE;
 -- 城市表
-CREATE TABLE IF NOT EXISTS city (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL,
+CREATE TABLE IF NOT EXISTS t_city (
+    id SERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
-    chinese_name VARCHAR(100),
-    english_name VARCHAR(100),
+    cn_name VARCHAR(100),
+    en_name VARCHAR(100),
     province VARCHAR(100),
-    country_code VARCHAR(10),
     enabled BOOLEAN NOT NULL DEFAULT true,
     sort_order INTEGER,
     remark VARCHAR(500),
@@ -19,7 +18,5 @@ CREATE TABLE IF NOT EXISTS city (
 );
 
 -- 创建索引
-CREATE INDEX idx_city_code ON city(code);
-CREATE INDEX idx_city_name ON city(name);
-CREATE INDEX idx_city_enabled ON city(enabled);
-CREATE INDEX idx_city_country_code ON city(country_code);
+CREATE INDEX idx_city_code ON t_city(code);
+CREATE INDEX idx_city_enabled ON t_city(enabled);

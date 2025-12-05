@@ -2,7 +2,7 @@ package com.hr.maternity.service.impl;
 
 import com.hr.maternity.dto.MaternityLeaveRequest;
 import com.hr.maternity.dto.MaternityLeaveResponse;
-import com.hr.maternity.entity.City;
+import com.hr.maternity.entity.CityDO;
 import com.hr.maternity.entity.HistoryDO;
 import com.hr.maternity.entity.MaternityLeaveRequestDO;
 import com.hr.maternity.entity.MaternityLeaveResultDO;
@@ -94,9 +94,9 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
         return resp;
     }
 
-    private void fillCity(MaternityLeaveResponse resp, City city) {
+    private void fillCity(MaternityLeaveResponse resp, CityDO city) {
         resp.setCityCode(city.getCode());
-        resp.setCityName(city.getChineseName() != null ? city.getChineseName() : city.getName());
+        resp.setCityName(city.getChineseName());
     }
 
     /**

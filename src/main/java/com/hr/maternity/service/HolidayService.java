@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * 节假日服务接口
@@ -41,14 +42,14 @@ public interface HolidayService {
 
 
     /**
-     * 更新节假日
+     * 更新特殊日期
      */
-    HolidayResponse updateHoliday(Integer id, HolidayRequest request);
+    HolidayResponse updateHoliday(UUID id, HolidayRequest request);
 
     /**
-     * 删除节假日（逻辑删除）
+     * 禁用特殊日期
      */
-    void deleteHoliday(Integer id);
+    void deleteHoliday(UUID id);
 
     /**
      * 批量导入节假日
