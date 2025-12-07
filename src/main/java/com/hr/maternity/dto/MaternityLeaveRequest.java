@@ -62,6 +62,11 @@ public class MaternityLeaveRequest {
     private Boolean  isBreastFeeding = false;
 
     /**
+     * // 孩子个数
+     */
+    private Integer numOfKids; 
+
+    /**
      * 是否流产
      */
     @NotNull(message = "是否流产 不能为空。如流产需传入 miscarriageLeaveDetail: {cityCode, index, days}")
