@@ -37,7 +37,7 @@ public class MaternityLeaveController {
     @Operation(summary = "计算产假天数", description = "根据城市和个人情况计算产假天数")
     public ResponseEntity<MaternityLeaveResponse> calculateMaternityLeave(
             @Valid @RequestBody MaternityLeaveRequest request) {
-        MaternityLeaveResponse response = maternityLeaveService.calculateMaternityLeave(request);
+        MaternityLeaveResponse response = maternityLeaveService.calculateMaternityLeaveNew(request);
         return ResponseEntity.ok(response);
     }
 
