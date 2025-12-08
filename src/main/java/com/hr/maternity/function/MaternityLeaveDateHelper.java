@@ -1,8 +1,8 @@
 package com.hr.maternity.function;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.hr.maternity.dto.MaternityLeaveRequest;
 import com.hr.maternity.entity.MaternityRules;
 import com.hr.maternity.enums.MaternityLeaveTypeEnum;

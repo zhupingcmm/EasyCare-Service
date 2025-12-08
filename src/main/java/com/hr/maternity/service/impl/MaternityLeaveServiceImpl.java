@@ -1,6 +1,6 @@
 package com.hr.maternity.service.impl;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.hr.maternity.dto.MaternityLeaveRequest;
 import com.hr.maternity.dto.MaternityLeaveResponse;
 import com.hr.maternity.entity.CityDO;

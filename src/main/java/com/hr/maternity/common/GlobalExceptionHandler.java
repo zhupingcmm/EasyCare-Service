@@ -55,6 +55,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 业务异常（登录失败、认证失败等）
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
+        String message = ex.getMessage();
+        if (message != null && (message.contains("LDAP") || message.contains("认证") || message.contains("登录"))) {
+            return new ResponseEntity<>(ApiResponse.error(401, message), HttpStatus.UNAUTHORIZED);
+        }
+        return new ResponseEntity<>(ApiResponse.error(400, message != null ? message : "请求失败"), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
      * 兜底异常
      */
     @ExceptionHandler(Exception.class)

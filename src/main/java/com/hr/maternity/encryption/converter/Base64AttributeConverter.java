@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hr.maternity.encryption.config.EncryptionProperties;
 import com.hr.maternity.encryption.exception.FieldEncryptionException;
+import com.hr.maternity.encryption.util.RsaKeyUtil;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -33,12 +36,12 @@ public class Base64AttributeConverter implements AttributeConverter<Object, Stri
             .build();
 
     private final EncryptionProperties encryptionProperties;
-
-    private Cipher getCipher(int mode) throws Exception {
+    
+    private Cipher getAesCipher(int mode) throws Exception {
         // 获取密钥并确保是16字节(128位)或32字节(256位)
         String keyStr = encryptionProperties.getSecretKey();
         byte[] keyBytes = keyStr.getBytes(StandardCharsets.UTF_8);
-        
+
         // 如果密钥长度不是16或32字节，进行填充或截断
         byte[] normalizedKey;
         if (keyBytes.length >= 32) {
@@ -58,10 +61,26 @@ public class Base64AttributeConverter implements AttributeConverter<Object, Stri
                 normalizedKey[i] = 0;
             }
         }
-        
+
         SecretKeySpec secretKey = new SecretKeySpec(normalizedKey, "AES");
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(mode, secretKey);
+        return cipher;
+    }
+
+    private Cipher getRsaCipher(int mode) throws Exception {
+        String publicPem = encryptionProperties.getRsaPublicKeyPem();
+        String privatePem = encryptionProperties.getRsaPrivateKeyPem();
+        Cipher cipher = Cipher.getInstance("RSA");
+        if (mode == Cipher.ENCRYPT_MODE) {
+            PublicKey publicKey = RsaKeyUtil.loadPublicKeyFromPem(publicPem);
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        } else if (mode == Cipher.DECRYPT_MODE) {
+            PrivateKey privateKey = RsaKeyUtil.loadPrivateKeyFromPem(privatePem);
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        } else {
+            throw new IllegalArgumentException("不支持的RSA Cipher模式: " + mode);
+        }
         return cipher;
     }
 
@@ -76,8 +95,14 @@ public class Base64AttributeConverter implements AttributeConverter<Object, Stri
                     OBJECT_MAPPER.writeValueAsString(attribute));
             String payloadJson = OBJECT_MAPPER.writeValueAsString(payload);
             
-            // 使用AES加密
-            Cipher cipher = getCipher(Cipher.ENCRYPT_MODE);
+            Cipher cipher;
+            if ("RSA".equalsIgnoreCase(encryptionProperties.getAlgorithm())) {
+                // 使用RSA公钥加密
+                cipher = getRsaCipher(Cipher.ENCRYPT_MODE);
+            } else {
+                // 默认使用AES对称加密
+                cipher = getAesCipher(Cipher.ENCRYPT_MODE);
+            }
             byte[] encryptedBytes = cipher.doFinal(payloadJson.getBytes(StandardCharsets.UTF_8));
             
             // Base64编码存储
@@ -97,8 +122,14 @@ public class Base64AttributeConverter implements AttributeConverter<Object, Stri
             // Base64解码
             byte[] encryptedBytes = Base64.getDecoder().decode(dbData);
             
-            // 使用AES解密
-            Cipher cipher = getCipher(Cipher.DECRYPT_MODE);
+            Cipher cipher;
+            if ("RSA".equalsIgnoreCase(encryptionProperties.getAlgorithm())) {
+                // 使用RSA私钥解密
+                cipher = getRsaCipher(Cipher.DECRYPT_MODE);
+            } else {
+                // 默认使用AES对称解密
+                cipher = getAesCipher(Cipher.DECRYPT_MODE);
+            }
             byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
             String payloadJson = new String(decryptedBytes, StandardCharsets.UTF_8);
             
