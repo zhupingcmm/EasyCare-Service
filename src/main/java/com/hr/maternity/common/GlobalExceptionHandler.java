@@ -25,6 +25,7 @@ public class GlobalExceptionHandler {
                 .stream()
                 .map(this::formatFieldError)
                 .collect(Collectors.joining("; "));
+
         return new ResponseEntity<>(ApiResponse.error(400, msg), HttpStatus.BAD_REQUEST);
     }
 
@@ -52,7 +53,8 @@ public class GlobalExceptionHandler {
      * 兜底异常
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
-        return new ResponseEntity<>(ApiResponse.error(500, "服务器内部错误"), HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) throws Exception {
+        throw ex;
+        // new ResponseEntity<>(ApiResponse.error(500, "服务器内部错误"), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

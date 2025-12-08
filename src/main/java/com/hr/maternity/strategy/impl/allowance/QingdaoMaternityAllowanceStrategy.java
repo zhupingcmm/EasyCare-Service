@@ -48,8 +48,8 @@ public class QingdaoMaternityAllowanceStrategy implements MaternityAllowanceStra
                 request.getMaternityLeaveStartDate(), request.getMaternityLeaveEndDate());
 
         // 判断是否跨过4月与7月
-        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesApril(monthlyWorkdayList);
-        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesJuly(monthlyWorkdayList);
+        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesSalaryAdjustMonth(monthlyWorkdayList);
+        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesSocialAdjustMonth(monthlyWorkdayList);
 
         // a. 单位申报上年度月平均工资计算补贴金额
         BigDecimal unitDeclaredSalary = request.getUnitMonthlyAverageSalary() != null ? request.getUnitMonthlyAverageSalary() : BigDecimal.ZERO;

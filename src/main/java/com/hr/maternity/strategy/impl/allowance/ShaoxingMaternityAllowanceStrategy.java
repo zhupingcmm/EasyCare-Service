@@ -48,8 +48,8 @@ public class ShaoxingMaternityAllowanceStrategy implements MaternityAllowanceStr
                 request.getMaternityLeaveStartDate(), request.getMaternityLeaveEndDate());
 
         // 判断是否跨过4月与7月
-        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesApril(monthlyWorkdayList);
-        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesJuly(monthlyWorkdayList);
+        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesSalaryAdjustMonth(monthlyWorkdayList);
+        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesSocialAdjustMonth(monthlyWorkdayList);
 
         // a. 当前月基本工资计算补贴金额（绍兴：只与政府发放比较）
         BigDecimal currentBaseSalary = request.getMonthlyBaseSalary() != null ? request.getMonthlyBaseSalary() : BigDecimal.ZERO;

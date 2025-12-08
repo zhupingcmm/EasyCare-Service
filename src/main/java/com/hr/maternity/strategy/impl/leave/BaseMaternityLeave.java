@@ -56,7 +56,7 @@ public class BaseMaternityLeave {
      */
     public int validateAndExtractDaysFromRequest(MiscarriageLeaveDetail reqData) {
         int result = 0;
-        String key = reqData.getCityCode() + "_" + reqData.getIndex();
+        String key = reqData.getCityCode() + "_" + reqData.getCode();
         MiscarriageLeaveDetail cache = MiscarriageLeaveRulesConstants.MISCARRIAGE_LEAVE_RULE_MAP.get(key);
         if (cache != null) {
             if (cache.getNeedOverrideDays()) {

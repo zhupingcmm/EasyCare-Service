@@ -29,8 +29,8 @@ import java.util.Map;
 @Slf4j
 @Service
 public class MaternityAllowanceServiceImpl implements MaternityAllowanceService {
-
-    private final Map<String, MaternityAllowanceStrategy> strategyMap;
+    @Qualifier("BaseMaternityAllowanceStrategy")
+    private MaternityAllowanceStrategy maternityAllowanceStrategy;
     private final CityRepository cityRepository;
     private final MaternityAllowanceRequestRepository allowanceRequestRepository;
     private final MaternityAllowanceResultRepository allowanceResultRepository;
@@ -40,12 +40,10 @@ public class MaternityAllowanceServiceImpl implements MaternityAllowanceService 
     private String defaultLanId;
 
     public MaternityAllowanceServiceImpl(
-            @Qualifier("maternityAllowanceStrategyMap") Map<String, MaternityAllowanceStrategy> strategyMap,
             CityRepository cityRepository,
             MaternityAllowanceRequestRepository allowanceRequestRepository,
             MaternityAllowanceResultRepository allowanceResultRepository,
             HistoryRepository historyRepository) {
-        this.strategyMap = strategyMap;
         this.cityRepository = cityRepository;
         this.allowanceRequestRepository = allowanceRequestRepository;
         this.allowanceResultRepository = allowanceResultRepository;
@@ -81,11 +79,7 @@ public class MaternityAllowanceServiceImpl implements MaternityAllowanceService 
         log.info("更新历史记录(津贴申请)成功，ID: {}", history.getId());
         
         // 5. 计算津贴
-        MaternityAllowanceStrategy strategy = strategyMap.get(request.getCityCode());
-        if (strategy == null) {
-            throw new IllegalArgumentException("不支持的城市代码: " + request.getCityCode());
-        }
-        MaternityAllowanceResponse resp = strategy.calculateMaternityAllowance(request);
+        MaternityAllowanceResponse resp = maternityAllowanceStrategy.calculateMaternityAllowance(request);
         cityRepository.findByCode(request.getCityCode()).ifPresent(city -> fillCity(resp, city));
         
         // 6. 保存计算结果

@@ -21,6 +21,13 @@ public interface CityRepository extends JpaRepository<CityDO, UUID> {
      */
     Optional<CityDO> findByCode(String code);
 
+    /**
+     * 根据城市代码查询启用城市
+     * @param code 城市代码
+     * @return 启用状态的城市信息
+     */
+    Optional<CityDO> findByCodeAndEnabledTrue(String code);
+
 
     /**
      * 查找所有启用的城市

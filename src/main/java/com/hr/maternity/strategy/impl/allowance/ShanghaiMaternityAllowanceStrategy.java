@@ -50,8 +50,8 @@ public class ShanghaiMaternityAllowanceStrategy implements MaternityAllowanceStr
             request.getMaternityLeaveStartDate(), request.getMaternityLeaveEndDate());
         
         // 使用公共方法判断是否跨过4月与7月（考虑跨年场景）
-        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesApril(monthlyWorkdayList);
-        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesJuly(monthlyWorkdayList);
+        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesSalaryAdjustMonth(monthlyWorkdayList);
+        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesSocialAdjustMonth(monthlyWorkdayList);
         
         // 参数验证
         validateRequest(request, baseSalaryAdjusted, socialInsuranceBaseAdjusted);
@@ -186,7 +186,6 @@ public class ShanghaiMaternityAllowanceStrategy implements MaternityAllowanceStr
                 if (unionFee.compareTo(BigDecimal.ZERO) > 0) {
                     firstMonthWage = firstMonthWage.subtract(unionFee);
                 }
-                
                 if (firstMonthWage.compareTo(BigDecimal.ZERO) < 0) { // 产假开始月的应发工资扣除社保，公积金，ESPP后，如果小于0，需计算返还金额
                     refundAmount = refundAmount.subtract(firstMonthWage);
                 }

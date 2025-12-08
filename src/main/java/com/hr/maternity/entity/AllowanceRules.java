@@ -30,22 +30,52 @@ public class AllowanceRules {
     private Integer id;
 
     /**
-     * 城市
+     * 城市ID
      */
-    @Column(name = "city", nullable = false, length = 50)
-    private String city;
+    @Column(name = "city_id", nullable = false)
+    private Integer cityId = 1;
+
+    /**
+     * 城市名称
+     */
+    @Column(name = "city_name", nullable = false, length = 50)
+    private String cityName;
 
     /**
      * 发放方式
      */
-    @Column(name = "payout_method", nullable = false, length = 20)
-    private String payoutMethod;
+    @Column(name = "payout_method", nullable = false)
+    private Integer payoutMethod = 1;
 
     /**
      * 是否启用（用于逻辑删除）
      */
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled = true;
+
+    /**
+     * 是否需要补差
+     */
+    @Column(name = "need_compensation")
+    private Boolean needCompensation = true;
+
+    /**
+     * 薪资调整月份
+     */
+    @Column(name = "salary_adjust_month")
+    private Integer salaryAdjustMonth = 4;
+
+    /**
+     * 社保调整月份
+     */
+    @Column(name = "social_adjust_month")
+    private Integer socialAdjustMonth = 7;
+
+    /**
+     *  一个月的天数，计算日薪资时使用
+     */
+    @Column(name = "month_days")
+    private Integer monthDays = 30;
 
     /**
      * 创建时间

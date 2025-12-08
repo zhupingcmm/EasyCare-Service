@@ -26,7 +26,7 @@ public class MaternityRulesResponse {
     /**
      * 城市ID
      */
-    private UUID cityId;
+    private Integer cityId;
 
     /**
      * 城市名称

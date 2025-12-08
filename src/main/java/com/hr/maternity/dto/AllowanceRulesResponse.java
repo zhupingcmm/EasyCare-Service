@@ -1,5 +1,6 @@
 package com.hr.maternity.dto;
 
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,12 +30,32 @@ public class AllowanceRulesResponse {
     /**
      * 发放方式
      */
-    private String payoutMethod;
+    private Integer payoutMethod;
 
     /**
-     * 是否启用
+     * 是否启用（用于逻辑删除）
      */
-    private Boolean isActive;
+    private Boolean enabled;
+
+    /**
+     * 是否需要补差
+     */
+    private Boolean needCompensation;
+
+    /**
+     * 薪资调整月份
+     */
+    private Integer salaryAdjustMonth;
+
+    /**
+     * 社保调整月份
+     */
+    private Integer socialAdjustMonth;
+
+    /**
+     *  一个月的天数，计算日薪资时使用
+     */
+    private Integer monthDays;
 
     /**
      * 创建时间

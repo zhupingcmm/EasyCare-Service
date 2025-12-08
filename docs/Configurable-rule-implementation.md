@@ -86,16 +86,44 @@ Response
     ]
 }
 ```
+### 4. 津贴生育津贴计算
+#### 基数差异
+- 通用： 用人单位上年度月平均缴费工资/30*产假天数
+- 成都： 用人单位上年度月平均缴费工资/*12/365*产假天数
+- 天津： 用人单位上年度月平均缴费工资/30.4*产假天数
+#### 计算分类
+- 津贴发放到个人账户，需要计算返还
+- 津贴发放到企业账户，无需计算返还
 
-### 4. 津贴规则表结构
+#### 需澄清
+- 津贴发放到企业，每月正常发放工资，已发工资是HR根据已发工资填写，还是需要工具重新计算
+- 公积金，社保，工资，ESPP 的变更日期，可配置
+- 
+
+### 4. 津贴生育津贴计算基数
+
+
+### 5. 津贴规则表结构
 
 ```postgres-psql
 -- Table: t_allowance_rules
 CREATE TABLE t_allowance_rules (
     id                      SERIAL PRIMARY KEY,
     city                    VARCHAR(50) NOT NULL,
-    payout_method           VARCHAR(20) NOT NULL
+    payout_method           VARCHAR(20) NOT NULL,
+    is_active               BOOLEAN NOT NULL DEFAULT true,
+    is_need_compensation    BOOLEAN DEFAULT true,
+    salary_adjust_month     INTEGER DEFAULT 4,
+    social_adjust_month     INTEGER DEFAULT 7,
+    month_days              INTEGER DEFAULT 7,
+    create_date             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_by               VARCHAR(100),
+    update_date             TIMESTAMP,
+    update_by               VARCHAR(100)
 );
 
 CREATE UNIQUE INDEX idx_t_allowance_rules_city ON t_allowance_rules (city);
 ```
+
+### 6. 津贴规则表结构
+

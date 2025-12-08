@@ -32,12 +32,12 @@ import java.util.UUID;
 public class CityDO {
 
     /**
-     * 主键ID - UUID类型
+     * 主键ID
      */
     @Id
-    @UuidGenerator
-    @Column(name = "id", columnDefinition = "uuid")
-    private UUID id;
+    @Column(name = "id")
+    private Integer id;
+
 
     /**
      * 城市代码
