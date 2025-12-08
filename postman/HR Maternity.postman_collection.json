@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "eec6ee1f-0b42-405a-b8ec-9a9918feb504",
+		"_postman_id": "76f7e4d6-e515-413c-8653-7d0b9216f597",
 		"name": "HR Maternity",
 		"description": "Postman collection for Maternity Allowance APIs",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "19497889"
+		"_exporter_id": "13663296"
 	},
 	"item": [
 		{
@@ -20,11 +20,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -52,11 +59,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -84,11 +98,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -116,11 +137,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -148,11 +176,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -180,11 +215,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -217,11 +259,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -249,11 +298,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -281,11 +337,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -313,11 +376,18 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
 									},
 									{
 										"key": "Accept",
-										"value": "application/json"
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -345,25 +415,125 @@
 					"item": []
 				},
 				{
+					"name": "/login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// 完整优化版本 - 包含更多功能\r",
+									"try {\r",
+									"    // 检查响应是否成功\r",
+									"    pm.test(\"响应状态检查\", function () {\r",
+									"        pm.response.to.have.status(200);\r",
+									"    });\r",
+									"    \r",
+									"    // 解析JSON响应\r",
+									"    var jsonData = pm.response.json(); // 更简洁的JSON解析方式\r",
+									"    \r",
+									"    // 验证响应数据结构\r",
+									"    pm.test(\"响应数据验证\", function () {\r",
+									"        pm.expect(jsonData).to.have.property('code');\r",
+									"        pm.expect(jsonData.code).to.equal(0); // 假设0表示成功\r",
+									"    });\r",
+									"    \r",
+									"    // 获取并设置认证token\r",
+									"    var authToken = pm.response.headers.get(\"x-acc-op\");\r",
+									"    \r",
+									"    if (authToken && authToken.trim() !== \"\") {\r",
+									"        pm.environment.set(\"auth\", authToken);\r",
+									"        pm.environment.set(\"auth_timestamp\", new Date().toISOString());\r",
+									"        \r",
+									"        console.log(\"✅ Auth token已更新\");\r",
+									"        console.log(\"🔑 Token:\", authToken.substring(0, 20) + \"...\");\r",
+									"        \r",
+									"        // 测试token设置成功\r",
+									"        pm.test(\"Token设置成功\", function () {\r",
+									"            pm.expect(pm.environment.get(\"auth\")).to.equal(authToken);\r",
+									"        });\r",
+									"        \r",
+									"    } else {\r",
+									"        console.log(\"⚠️ 未找到有效的x-acc-op响应头\");\r",
+									"        \r",
+									"        // 可选：清除旧的token\r",
+									"        pm.environment.unset(\"auth\");\r",
+									"        pm.environment.unset(\"auth_timestamp\");\r",
+									"    }\r",
+									"    \r",
+									"    // 可选：提取其他有用信息\r",
+									"    if (jsonData.data && jsonData.data.user) {\r",
+									"        pm.environment.set(\"current_user\", jsonData.data.user.lanId);\r",
+									"        console.log(\"👤 当前用户:\", jsonData.data.user.lanId);\r",
+									"    }\r",
+									"    \r",
+									"} catch (error) {\r",
+									"    console.error(\"❌ 脚本执行错误:\", error);\r",
+									"    \r",
+									"    pm.test(\"脚本执行检查\", function () {\r",
+									"        pm.expect.fail(\"脚本执行失败: \" + error.message);\r",
+									"    });\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"AXXXXXXX\",\r\n    \"password\": \"123456\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "/holidays",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"type": "text/javascript",
 								"exec": [
 									"pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
 									"const json = pm.response.json();",
 									"pm.test('Has unified wrapper', function () { pm.expect(json).to.have.keys(['code','message','data']); });",
 									"pm.test('code is 0', function () { pm.expect(json.code).to.eql(0); });",
 									"pm.test('data is array', function () { pm.expect(Array.isArray(json.data)).to.be.true; });"
-								]
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "x-acc-op",
+								"value": "{{auth}}",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/support/holidays/2023",
 							"host": [
@@ -385,20 +555,28 @@
 						{
 							"listen": "test",
 							"script": {
-								"type": "text/javascript",
 								"exec": [
 									"pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
 									"const json = pm.response.json();",
 									"pm.test('Has unified wrapper', function () { pm.expect(json).to.have.keys(['code','message','data']); });",
 									"pm.test('code is 0', function () { pm.expect(json.code).to.eql(0); });",
 									"pm.test('data is array', function () { pm.expect(Array.isArray(json.data)).to.be.true; });"
-								]
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "x-acc-op",
+								"value": "{{auth}}",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/support/cities",
 							"host": [
@@ -417,7 +595,13 @@
 					"name": "/workdays",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "x-acc-op",
+								"value": "{{auth}}",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/support/workdays?start=2024-11-01&end=2025-04-25",
 							"host": [
@@ -678,7 +862,13 @@
 					"name": "/workdays",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "x-acc-op",
+								"value": "{{auth}}",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "http://122.152.220.47:9016/api/support/workdays?start=2025-01-15&end=2025-03-10",
 							"protocol": "http",
