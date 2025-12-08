@@ -32,7 +32,7 @@ import java.util.UUID;
 public class CityDO {
 
     /**
-     * 主键ID
+     * 主键ID 
      */
     @Id
     @Column(name = "id")

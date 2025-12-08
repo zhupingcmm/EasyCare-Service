@@ -27,6 +27,16 @@ public class MaternityLeaveRequest {
     private LocalDate expectedDeliveryDate;
 
     /**
+     * 医嘱天数
+     */
+    private Integer doctorRecommendDays;
+
+    /**
+     * 难产类型
+     */
+    private String difficultBirthTypeCode;
+
+    /**
      * 是否多胞胎
      */
     // @NotNull(message = "是否为多胞胎 不能为空")
@@ -62,9 +72,14 @@ public class MaternityLeaveRequest {
     private Boolean  isBreastFeeding = false;
 
     /**
+     * // 孩子个数
+     */
+    private Integer numOfKids; 
+
+    /**
      * 是否流产
      */
-    @NotNull(message = "是否流产 不能为空。如流产需传入 miscarriageLeaveDetail: {cityCode, index, days}")
+    @NotNull(message = "是否流产 不能为空。如流产需传入 miscarriageLeaveDetail: {cityCode, code, days}")
     private Boolean isMiscarriage;
 
     /**

@@ -14,5 +14,7 @@ public interface MaternityLeaveService {
      * @return 产假计算结果
      */
     MaternityLeaveResponse calculateMaternityLeave(MaternityLeaveRequest request);
-    
+
+    MaternityLeaveResponse calculateMaternityLeaveNew(MaternityLeaveRequest request);
+
 }

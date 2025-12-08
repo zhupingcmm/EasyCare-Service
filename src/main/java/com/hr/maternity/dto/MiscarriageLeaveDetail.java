@@ -13,7 +13,7 @@ public class MiscarriageLeaveDetail {
 
     //
     private String cityCode;
-    private Integer index;
+    private String code;
     private Integer days = 0;
 
     /**
