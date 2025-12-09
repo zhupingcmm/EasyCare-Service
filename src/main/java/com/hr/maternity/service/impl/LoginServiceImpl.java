@@ -61,7 +61,7 @@ public class LoginServiceImpl implements LoginService {
         if (rsaEnabled) {
             String decryptedPassword = rsaUtil.decryptLogin(loginRequest);
             loginRequest.setPassword(decryptedPassword);
-            log.debug("RSA密码解密成功，用户名: {}", loginRequest.getUsername());
+            log.info("RSA密码解密成功，用户名: {}", loginRequest.getUsername());
         }
 
         LdapAuthResult ldapResult = authenticateUser(loginRequest);

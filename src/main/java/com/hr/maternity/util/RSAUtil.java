@@ -10,12 +10,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -57,6 +60,15 @@ public class RSAUtil {
 
     @Value("${encryption.rsa-padding:PKCS1}")
     private String rsaPadding;
+
+    @Value("${encryption.rsa-oaep-hash:SHA-256}")
+    private String rsaOaepHash;
+
+    @Value("${encryption.rsa-oaep-mgf:MGF1}")
+    private String rsaOaepMgf;
+
+    @Value("${encryption.rsa-oaep-mgf-hash:SHA-256}")
+    private String rsaOaepMgfHash;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -126,6 +138,8 @@ public class RSAUtil {
 
     /**
      * 解密登录请求中的密码
+     * 前端加密流程：密码 → Base64编码 → RSA加密
+     * 后端解密流程：RSA解密 → Base64解码 → 密码
      * 
      * @param loginRequest 登录请求对象
      * @return 解密后的原始密码
@@ -141,15 +155,12 @@ public class RSAUtil {
 
             validateNonce(loginRequest.getUsername(), nonce);
 
-            String decryptedData = decryptWithPrivateKey(encryptedPassword);
-            log.debug("解密后的数据: {}", decryptedData);
-
-            String originalPassword = extractPasswordFromDecryptedData(decryptedData, nonce);
+            String decryptedPassword = decryptWithPrivateKey(encryptedPassword);
             log.info("密码解密成功，用户名: {}", loginRequest.getUsername());
 
             markNonceAsUsed(loginRequest.getUsername(), nonce);
 
-            return originalPassword;
+            return decryptedPassword;
 
         } catch (Exception e) {
             log.error("解密登录请求失败，用户名: {}", loginRequest.getUsername(), e);
@@ -206,13 +217,70 @@ public class RSAUtil {
     private String decryptWithPrivateKey(String encryptedData) throws Exception {
         PrivateKey privateKey = getPrivateKey();
         
-        Cipher cipher = Cipher.getInstance(rsaTransformation);
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        if (privateKey instanceof RSAPrivateCrtKey) {
+            RSAPrivateCrtKey rsaPrivateKey = (RSAPrivateCrtKey) privateKey;
+            log.info("=== RSA密钥信息 ===");
+            log.info("密钥长度: {} bits", rsaPrivateKey.getModulus().bitLength());
+            log.info("Modulus (Hex前32字符): {}", rsaPrivateKey.getModulus().toString(16).substring(0, 32).toUpperCase());
+            log.info("Public Exponent: {}", rsaPrivateKey.getPublicExponent().toString(16).toUpperCase());
+        }
+        
+        log.info("=== RSA解密配置 ===");
+        log.info("Transformation: {}", rsaTransformation);
+        log.info("Padding: {}", rsaPadding);
+        log.info("OAEP Hash: {}", rsaOaepHash);
+        log.info("OAEP MGF: {}", rsaOaepMgf);
+        log.info("OAEP MGF Hash: {}", rsaOaepMgfHash);
         
         byte[] encryptedBytes = Base64.getDecoder().decode(encryptedData);
-        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+        log.info("加密数据长度: {} bytes, Base64长度: {}", encryptedBytes.length, encryptedData.length());
+        log.debug("加密数据(前50字符): {}", encryptedData.substring(0, Math.min(50, encryptedData.length())));
         
-        return new String(decryptedBytes, StandardCharsets.UTF_8);
+        Cipher cipher = Cipher.getInstance(rsaTransformation);
+        
+        if ("OAEP".equalsIgnoreCase(rsaPadding)) {
+            MGF1ParameterSpec mgfSpec = getMgfParameterSpec(rsaOaepMgfHash);
+            
+            OAEPParameterSpec oaepParams = new OAEPParameterSpec(
+                rsaOaepHash,
+                rsaOaepMgf,
+                mgfSpec,
+                PSource.PSpecified.DEFAULT
+            );
+            
+            log.info("初始化OAEP解密器");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey, oaepParams);
+        } else {
+            log.info("使用默认填充模式: {}", rsaPadding);
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        }
+        
+        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+        log.info("RSA解密成功，解密数据长度: {} bytes", decryptedBytes.length);
+        
+        String base64EncodedPassword = new String(decryptedBytes, StandardCharsets.UTF_8);
+
+        return new String(Base64.getDecoder().decode(base64EncodedPassword), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 根据Hash算法名称获取对应的MGF1ParameterSpec
+     * 
+     * @param hashAlgorithm Hash算法名称
+     * @return MGF1ParameterSpec对象
+     */
+    private MGF1ParameterSpec getMgfParameterSpec(String hashAlgorithm) {
+        return switch (hashAlgorithm.toUpperCase()) {
+            case "SHA-1", "SHA1" -> MGF1ParameterSpec.SHA1;
+            case "SHA-224", "SHA224" -> MGF1ParameterSpec.SHA224;
+            case "SHA-256", "SHA256" -> MGF1ParameterSpec.SHA256;
+            case "SHA-384", "SHA384" -> MGF1ParameterSpec.SHA384;
+            case "SHA-512", "SHA512" -> MGF1ParameterSpec.SHA512;
+            default -> {
+                log.warn("不支持的MGF Hash算法: {}, 使用默认SHA-256", hashAlgorithm);
+                yield MGF1ParameterSpec.SHA256;
+            }
+        };
     }
 
     /**
@@ -345,10 +413,13 @@ public class RSAUtil {
         }
         
         Map<String, String> publicKeyInfo = new HashMap<>();
+        publicKeyInfo.put("modulusHex", rsaPublicModulus);
+        publicKeyInfo.put("exponentHex", rsaPublicExponent);
         publicKeyInfo.put("modulusBase64", rsaPublicModulus);
         publicKeyInfo.put("exponentBase64", rsaPublicExponent);
         
-        log.debug("公钥信息获取成功");
+        log.info("公钥信息获取成功 - Modulus (Hex前32字符): {}", rsaPublicModulus.substring(0, 32));
+        log.info("公钥信息获取成功 - Exponent (Hex): {}", rsaPublicExponent);
         return publicKeyInfo;
     }
 
@@ -374,19 +445,24 @@ public class RSAUtil {
             BigInteger modulus = rsaPrivateKey.getModulus();
             BigInteger publicExponent = rsaPrivateKey.getPublicExponent();
             
+            int keySize = modulus.bitLength();
+            if (keySize < 2048) {
+                log.warn("密钥长度 {} 位小于推荐的 2048 位", keySize);
+            }
+            
             String modulusHex = modulus.toString(16).toUpperCase();
-            String exponentHexPadded = String.format("%064x", publicExponent);
+            String exponentHex = publicExponent.toString(16).toUpperCase();
             
             Map<String, String> publicKeyInfo = new HashMap<>();
             publicKeyInfo.put("modulus", modulusHex);
-            publicKeyInfo.put("exponent", exponentHexPadded);
+            publicKeyInfo.put("exponent", exponentHex);
             publicKeyInfo.put("modulusBase64", Base64.getEncoder().encodeToString(modulus.toByteArray()));
             publicKeyInfo.put("exponentBase64", Base64.getEncoder().encodeToString(publicExponent.toByteArray()));
             
-            log.info("公钥信息提取成功");
-            log.info("请将以下配置添加到配置文件:");
-            log.info("encryption.rsa-public-modulus={}", modulusHex);
-            log.info("encryption.rsa-public-exponent={}", exponentHexPadded);
+            log.info("公钥信息提取成功，密钥长度: {} 位", keySize);
+            log.debug("请将以下配置添加到配置文件:");
+            log.debug("encryption.rsa-public-modulus={}", modulusHex);
+            log.debug("encryption.rsa-public-exponent={}", exponentHex);
             
             return publicKeyInfo;
             

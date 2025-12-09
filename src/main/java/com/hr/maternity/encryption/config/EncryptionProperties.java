@@ -18,11 +18,6 @@ public class EncryptionProperties {
     private String secretKey = "MySecretKey12345";
 
     /**
-     * 加密算法
-     */
-    private String algorithm = "RSA";
-
-    /**
      * RSA 公钥 PEM 内容（当 algorithm=RSA 时使用）
      */
     private String rsaPublicKeyPem = "-----BEGIN PUBLIC KEY-----CHANGE_ME_PUBLIC_KEY-----END PUBLIC KEY-----";
