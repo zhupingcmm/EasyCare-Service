@@ -6,6 +6,7 @@ import com.hr.maternity.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -22,6 +23,9 @@ public class CorsConfig implements WebMvcConfigurer {
 
     private final TokenRepository tokenRepository;
     private final JwtUtil jwtUtil;
+
+    @Value("${app.security.login-validation-enabled:true}")
+    private boolean loginValidationEnabled;
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
@@ -42,6 +46,11 @@ public class CorsConfig implements WebMvcConfigurer {
 
                 // 登录接口和健康检查接口直接放行
                 if ("/api/auth/login".equals(uri) || "/health".equals(uri)) {
+                    return true;
+                }
+
+                // 如果登录校验未启用，直接放行
+                if (!loginValidationEnabled) {
                     return true;
                 }
 
