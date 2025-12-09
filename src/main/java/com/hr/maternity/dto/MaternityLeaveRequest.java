@@ -94,4 +94,6 @@ public class MaternityLeaveRequest {
     // @NotNull(message = "流产假细节 不能为空")
     private MiscarriageLeaveDetail miscarriageLeaveDetail;
 
+    private DifficultBirthLeaveDetail difficultBirthLeaveDetail;
+
 }
