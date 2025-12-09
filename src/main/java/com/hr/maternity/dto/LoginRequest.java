@@ -20,7 +20,12 @@ public class LoginRequest {
     private String username;
 
     @NotBlank(message = "密码不能为空")
-    @Size(max = 256, message = "密码长度不能超过256个字符")
-    @Schema(description = "密码", required = true)
+    @Size(max = 1024, message = "密码长度不能超过1024个字符")
+    @Schema(description = "RSA加密后的密码（原始密码+nonce）", required = true)
     private String password;
+
+    @NotBlank(message = "nonce不能为空")
+    @Size(max = 256, message = "nonce长度不能超过256个字符")
+    @Schema(description = "客户端生成的随机字符串，用于防止重放攻击", required = true)
+    private String nonce;
 }

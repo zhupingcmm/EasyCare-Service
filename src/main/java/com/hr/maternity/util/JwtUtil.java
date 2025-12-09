@@ -41,14 +41,28 @@ public class JwtUtil {
     @Value("${jwt.refresh-token.expiration:600}")
     private Long refreshTokenExpiration;
 
-    @Value("${jwt.algorithm:HS256}")
+    @Value("${jwt.algorithm:RS256}")
     private String jwtAlgorithm;
+
+    @Value("${jwt.issuer:HR}")
+    private String jwtIssuer;
+
+    @Value("${jwt.audience:OCBC}")
+    private String jwtAudience;
 
     @Value("${jwt.private-key-pem:}")
     private String jwtPrivateKeyPem;
 
     @Value("${jwt.public-key-pem:}")
     private String jwtPublicKeyPem;
+
+    private static final String RSA_KEY_ALGORITHM = "RSA";
+    private static final String CLAIM_UNIQUE_NAME = "unique_name";
+    private static final String CLAIM_USER_ID = "user_id";
+    private static final String TOKEN_TYPE_API = "API";
+    private static final String TOKEN_TYPE_REFRESH = "REFRESH";
+    private static final int MILLIS_PER_SECOND = 1000;
+    private static final int MIN_HMAC_KEY_LENGTH = 32;
 
     private volatile PrivateKey cachedPrivateKey;
     private volatile PublicKey cachedPublicKey;
@@ -68,7 +82,7 @@ public class JwtUtil {
             }
             
             if (jwtPrivateKeyPem == null || jwtPrivateKeyPem.isBlank()) {
-                throw new IllegalStateException("JWT私钥PEM未配置 (jwt.private-key-pem)");
+                throw new IllegalStateException("JWT private key PEM not configured (jwt.private-key-pem)");
             }
             
             String normalized = jwtPrivateKeyPem
@@ -77,7 +91,7 @@ public class JwtUtil {
                     .replaceAll("\\s", "");
             byte[] keyBytes = Base64.getDecoder().decode(normalized);
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-            KeyFactory kf = KeyFactory.getInstance("RSA");
+            KeyFactory kf = KeyFactory.getInstance(RSA_KEY_ALGORITHM);
             cachedPrivateKey = kf.generatePrivate(spec);
             return cachedPrivateKey;
         }
@@ -94,7 +108,7 @@ public class JwtUtil {
             }
             
             if (jwtPublicKeyPem == null || jwtPublicKeyPem.isBlank()) {
-                throw new IllegalStateException("JWT公钥PEM未配置 (jwt.public-key-pem)");
+                throw new IllegalStateException("JWT public key PEM not configured (jwt.public-key-pem)");
             }
             
             String normalized = jwtPublicKeyPem
@@ -103,20 +117,45 @@ public class JwtUtil {
                     .replaceAll("\\s", "");
             byte[] keyBytes = Base64.getDecoder().decode(normalized);
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-            KeyFactory kf = KeyFactory.getInstance("RSA");
+            KeyFactory kf = KeyFactory.getInstance(RSA_KEY_ALGORITHM);
             cachedPublicKey = kf.generatePublic(spec);
             return cachedPublicKey;
         }
     }
 
     /**
-     * 生成访问令牌
+     * Get JWS Algorithm based on configuration
+     */
+    private JWSAlgorithm getJWSAlgorithm() {
+        String algo = jwtAlgorithm.toUpperCase();
+        
+        if (algo.startsWith("RS")) {
+            switch (algo) {
+                case "RS256": return JWSAlgorithm.RS256;
+                case "RS384": return JWSAlgorithm.RS384;
+                case "RS512": return JWSAlgorithm.RS512;
+                default: throw new IllegalArgumentException("Unsupported RSA algorithm: " + jwtAlgorithm);
+            }
+        } else if (algo.startsWith("HS")) {
+            switch (algo) {
+                case "HS256": return JWSAlgorithm.HS256;
+                case "HS384": return JWSAlgorithm.HS384;
+                case "HS512": return JWSAlgorithm.HS512;
+                default: throw new IllegalArgumentException("Unsupported HMAC algorithm: " + jwtAlgorithm);
+            }
+        } else {
+            throw new IllegalArgumentException("Unsupported JWT algorithm: " + jwtAlgorithm);
+        }
+    }
+
+    /**
+     * Generate access token
      */
     public String generateAccessToken(String lanId, String userId, String issuer, String audience) {
         try {
-            JWTClaimsSet claimsSet = createClaims(lanId, userId, issuer, audience, "API", accessTokenExpiration);
+            JWTClaimsSet claimsSet = createClaims(lanId, userId, issuer, audience, TOKEN_TYPE_API, accessTokenExpiration);
             SignedJWT signedJWT = new SignedJWT(
-                    new JWSHeader("RS256".equalsIgnoreCase(jwtAlgorithm) ? JWSAlgorithm.RS256 : JWSAlgorithm.HS256),
+                    new JWSHeader(getJWSAlgorithm()),
                     claimsSet
             );
 
@@ -125,19 +164,19 @@ public class JwtUtil {
 
             return signedJWT.serialize();
         } catch (Exception e) {
-            log.error("生成访问令牌时签名失败", e);
-            throw new RuntimeException("生成访问令牌失败: " + e.getMessage(), e);
+            log.error("Failed to sign access token", e);
+            throw new RuntimeException("Failed to generate access token: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 生成刷新令牌
+     * Generate refresh token
      */
     public String generateRefreshToken(String lanId, String userId, String issuer, String audience) {
         try {
-            JWTClaimsSet claimsSet = createClaims(lanId, userId, issuer, audience, "REFRESH", refreshTokenExpiration);
+            JWTClaimsSet claimsSet = createClaims(lanId, userId, issuer, audience, TOKEN_TYPE_REFRESH, refreshTokenExpiration);
             SignedJWT signedJWT = new SignedJWT(
-                    new JWSHeader("RS256".equalsIgnoreCase(jwtAlgorithm) ? JWSAlgorithm.RS256 : JWSAlgorithm.HS256),
+                    new JWSHeader(getJWSAlgorithm()),
                     claimsSet
             );
 
@@ -146,19 +185,19 @@ public class JwtUtil {
 
             return signedJWT.serialize();
         } catch (Exception e) {
-            log.error("生成刷新令牌时签名失败", e);
-            throw new RuntimeException("生成刷新令牌失败: " + e.getMessage(), e);
+            log.error("Failed to sign refresh token", e);
+            throw new RuntimeException("Failed to generate refresh token: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 创建JWT Claims
+     * Create JWT Claims
      */
     private JWTClaimsSet createClaims(String lanId, String userId, String issuer, String audience,
                                       String subject, long ttlSeconds) {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
-        Date exp = new Date(nowMillis + ttlSeconds * 1000);
+        Date exp = new Date(nowMillis + ttlSeconds * MILLIS_PER_SECOND);
 
         return new JWTClaimsSet.Builder()
                 .subject(subject)
@@ -167,26 +206,50 @@ public class JwtUtil {
                 .issueTime(now)
                 .notBeforeTime(now)
                 .expirationTime(exp)
-                .claim("unique_name", lanId)
-                .claim("user_id", userId)
+                .claim(CLAIM_UNIQUE_NAME, lanId)
+                .claim(CLAIM_USER_ID, userId)
                 .build();
     }
 
+    /**
+     * Create JWT Signer
+     */
     private JWSSigner createSigner() throws Exception {
-        if ("RS256".equalsIgnoreCase(jwtAlgorithm)) {
+        if (jwtAlgorithm.toUpperCase().startsWith("RS")) {
+            if (jwtPrivateKeyPem == null || jwtPrivateKeyPem.isEmpty()) {
+                throw new IllegalStateException("JWT private key is required for RSA algorithm");
+            }
             RSAPrivateKey privateKey = (RSAPrivateKey) getPrivateKey();
+            log.debug("Using RSA signer with algorithm: {}", jwtAlgorithm);
             return new RSASSASigner(privateKey);
+        } else if (jwtAlgorithm.toUpperCase().startsWith("HS")) {
+            byte[] hmacKey = getHmacKey();
+            if (hmacKey.length < MIN_HMAC_KEY_LENGTH) {
+                log.warn("HMAC key is too short, recommended at least {} bytes", MIN_HMAC_KEY_LENGTH);
+            }
+            log.debug("Using HMAC signer with algorithm: {}", jwtAlgorithm);
+            return new MACSigner(hmacKey);
         } else {
-            return new MACSigner(getHmacKey());
+            throw new IllegalArgumentException("Unsupported JWT algorithm: " + jwtAlgorithm);
         }
     }
 
+    /**
+     * Create JWT Verifier
+     */
     private JWSVerifier createVerifier() throws Exception {
-        if ("RS256".equalsIgnoreCase(jwtAlgorithm)) {
+        if (jwtAlgorithm.toUpperCase().startsWith("RS")) {
+            if (jwtPublicKeyPem == null || jwtPublicKeyPem.isEmpty()) {
+                throw new IllegalStateException("JWT public key is required for RSA algorithm");
+            }
             RSAPublicKey publicKey = (RSAPublicKey) getPublicKey();
+            log.debug("Using RSA verifier with algorithm: {}", jwtAlgorithm);
             return new RSASSAVerifier(publicKey);
-        } else {
+        } else if (jwtAlgorithm.toUpperCase().startsWith("HS")) {
+            log.debug("Using HMAC verifier with algorithm: {}", jwtAlgorithm);
             return new MACVerifier(getHmacKey());
+        } else {
+            throw new IllegalArgumentException("Unsupported JWT algorithm: " + jwtAlgorithm);
         }
     }
 
@@ -195,62 +258,62 @@ public class JwtUtil {
         JWSVerifier verifier = createVerifier();
 
         if (!signedJWT.verify(verifier)) {
-            throw new RuntimeException("JWT签名验证失败");
+            throw new RuntimeException("JWT signature verification failed");
         }
 
         JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
         Date exp = claims.getExpirationTime();
         if (exp != null && exp.before(new Date())) {
-            throw new RuntimeException("JWT已过期");
+            throw new RuntimeException("JWT has expired");
         }
         return claims;
     }
 
     /**
-     * 验证JWT令牌
+     * Validate JWT token
      */
     public boolean validateToken(String token) {
         try {
             parseAndValidate(token);
             return true;
         } catch (Exception e) {
-            log.error("JWT令牌验证失败: {}", e.getMessage());
+            log.error("JWT token validation failed: {}", e.getMessage());
             return false;
         }
     }
 
     /**
-     * 从JWT令牌中提取Claims
+     * Get Claims from JWT token
      */
     public JWTClaimsSet getClaimsFromToken(String token) {
         try {
             return parseAndValidate(token);
         } catch (Exception e) {
-            log.error("解析JWT令牌失败: {}", e.getMessage());
-            throw new RuntimeException("解析JWT令牌失败: " + e.getMessage(), e);
+            log.error("Failed to parse JWT token: {}", e.getMessage());
+            throw new RuntimeException("Failed to parse JWT token: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 从JWT令牌中提取用户名
+     * Get LAN ID from JWT token
      */
     public String getLanIdFromToken(String token) {
         JWTClaimsSet claims = getClaimsFromToken(token);
-        Object value = claims.getClaim("unique_name");
+        Object value = claims.getClaim(CLAIM_UNIQUE_NAME);
         return value != null ? value.toString() : null;
     }
 
     /**
-     * 从JWT令牌中提取用户ID
+     * Get User ID from JWT token
      */
     public String getUserIdFromToken(String token) {
         JWTClaimsSet claims = getClaimsFromToken(token);
-        Object value = claims.getClaim("user_id");
+        Object value = claims.getClaim(CLAIM_USER_ID);
         return value != null ? value.toString() : null;
     }
 
     /**
-     * 检查JWT令牌是否过期
+     * Check if JWT token is expired
      */
     public boolean isTokenExpired(String token) {
         JWTClaimsSet claims = getClaimsFromToken(token);
@@ -259,21 +322,21 @@ public class JwtUtil {
     }
 
     /**
-     * 获取访问令牌过期时间
+     * Get access token expiry time
      */
     public LocalDateTime getAccessTokenExpiry() {
         return LocalDateTime.now().plusSeconds(accessTokenExpiration);
     }
 
     /**
-     * 获取刷新令牌过期时间
+     * Get refresh token expiry time
      */
     public LocalDateTime getRefreshTokenExpiry() {
         return LocalDateTime.now().plusSeconds(refreshTokenExpiration);
     }
 
     /**
-     * 将Date转换为LocalDateTime
+     * Convert Date to LocalDateTime
      */
     public LocalDateTime dateToLocalDateTime(Date date) {
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();

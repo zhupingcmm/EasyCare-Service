@@ -13,6 +13,7 @@ import com.hr.maternity.repository.UserRepository;
 import com.hr.maternity.repository.UserRoleRepository;
 import com.hr.maternity.service.JwtTokenService;
 import com.hr.maternity.service.LoginService;
+import com.hr.maternity.util.RSAUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,9 +42,13 @@ public class LoginServiceImpl implements LoginService {
     private final UserRoleRepository userRoleRepository;
     private final JwtTokenService jwtTokenService;
     private final LdapAuthService ldapAuthService;
+    private final RSAUtil rsaUtil;
 
     @Value("${login.ldap.enabled:false}")
     private boolean ldapEnabled;
+
+    @Value("${encryption.rsa-enabled:false}")
+    private boolean rsaEnabled;
 
     @Value("${user.role.hr-department:CHN E2P Human Resources}")
     private String hrDepartment;
@@ -52,6 +57,12 @@ public class LoginServiceImpl implements LoginService {
     @Transactional
     public LoginResponse login(LoginRequest loginRequest) {
         log.info("开始用户登录验证，用户名: {}", loginRequest.getUsername());
+
+        if (rsaEnabled) {
+            String decryptedPassword = rsaUtil.decryptLogin(loginRequest);
+            loginRequest.setPassword(decryptedPassword);
+            log.debug("RSA密码解密成功，用户名: {}", loginRequest.getUsername());
+        }
 
         LdapAuthResult ldapResult = authenticateUser(loginRequest);
         User user = loadAndValidateUser(loginRequest.getUsername(), ldapResult);

@@ -4,9 +4,13 @@ import com.hr.maternity.common.ApiResponse;
 import com.hr.maternity.dto.LoginRequest;
 import com.hr.maternity.dto.LoginResponse;
 import com.hr.maternity.dto.LoginSimpleTokenResponse;
+import com.hr.maternity.dto.NonceRequest;
+import com.hr.maternity.dto.NonceResponse;
+import com.hr.maternity.dto.PublicKeyResponse;
 import com.hr.maternity.dto.RefreshTokenRequest;
 import com.hr.maternity.dto.TokenValidationResponse;
 import com.hr.maternity.service.LoginService;
+import com.hr.maternity.util.RSAUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,9 +31,70 @@ import org.springframework.web.bind.annotation.*;
 public class LoginController {
 
     private final LoginService loginService;
+    private final RSAUtil rsaUtil;
 
     @Value("${jwt.access-token.expiration:600}")
     private int accessTokenExpirationSeconds;
+
+    @Value("${encryption.nonce-expiration-minutes:5}")
+    private int nonceExpirationMinutes;
+
+    @Value("${app.dev.extract-key-enabled:false}")
+    private boolean extractKeyEnabled;
+
+    @GetMapping("/publicKey")
+    @Operation(
+        summary = "获取RSA公钥",
+        description = "获取用于前端加密的RSA公钥信息（modulus和exponent）"
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "公钥获取成功",
+        content = @Content(schema = @Schema(implementation = com.hr.maternity.common.ApiResponse.class))
+    )
+    public ResponseEntity<ApiResponse<PublicKeyResponse>> getPublicKey() {
+        log.info("收到获取公钥请求");
+
+        java.util.Map<String, String> publicKeyInfo = rsaUtil.getPublicKey();
+
+        PublicKeyResponse response = PublicKeyResponse.builder()
+                .modulus(publicKeyInfo.get("modulusBase64"))
+                .exponent(publicKeyInfo.get("exponentBase64"))
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/generateNonce")
+    @Operation(
+        summary = "生成nonce",
+        description = "为用户生成用于加密登录的nonce值，防止重放攻击"
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "nonce生成成功",
+        content = @Content(schema = @Schema(implementation = com.hr.maternity.common.ApiResponse.class))
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "400",
+        description = "请求参数错误"
+    )
+    public ResponseEntity<ApiResponse<NonceResponse>> generateNonce(
+            @Valid @RequestBody NonceRequest nonceRequest) {
+
+        log.info("收到生成nonce请求，用户ID: {}", nonceRequest.getUsername());
+
+        String nonce = rsaUtil.generateNonce(nonceRequest.getUsername());
+        long expiresAtMillis = System.currentTimeMillis() + (nonceExpirationMinutes * 60 * 1000L);
+
+        NonceResponse response = NonceResponse.builder()
+                .nonce(nonce)
+                .expiresAt(expiresAtMillis)
+                .expiresIn(nonceExpirationMinutes * 60)
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     @PostMapping("/login")
     @Operation(
@@ -145,6 +210,48 @@ public class LoginController {
                 .build();
                 
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/dev/extract-public-key")
+    @Operation(
+        summary = "从私钥提取公钥信息（开发环境专用）",
+        description = "从配置的RSA私钥中提取公钥的modulus和exponent，用于更新配置文件。此接口默认关闭，仅在开发环境启用。"
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "公钥提取成功",
+        content = @Content(schema = @Schema(implementation = com.hr.maternity.common.ApiResponse.class))
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "此接口在当前环境中已禁用"
+    )
+    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> extractPublicKeyFromPrivateKey() {
+        log.warn("收到提取公钥请求（开发环境专用接口）");
+
+        if (!extractKeyEnabled) {
+            log.error("提取公钥接口已禁用，请在配置文件中设置 app.dev.extract-key-enabled=true");
+            return ResponseEntity
+                    .status(403)
+                    .body(ApiResponse.error(403, "此接口在当前环境中已禁用，请在配置文件中启用"));
+        }
+
+        try {
+            java.util.Map<String, String> publicKeyInfo = rsaUtil.extractPublicKeyFromPrivateKey();
+            
+            log.info("公钥提取成功");
+            log.info("请将以下配置更新到 application.properties:");
+            log.info("encryption.rsa-public-modulus={}", publicKeyInfo.get("modulusBase64"));
+            log.info("encryption.rsa-public-exponent={}", publicKeyInfo.get("exponentBase64"));
+            
+            return ResponseEntity.ok(ApiResponse.success(publicKeyInfo, "公钥提取成功，请查看日志获取配置信息"));
+            
+        } catch (Exception e) {
+            log.error("提取公钥失败", e);
+            return ResponseEntity
+                    .status(500)
+                    .body(ApiResponse.error(500, "提取公钥失败: " + e.getMessage()));
+        }
     }
 
     /**
