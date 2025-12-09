@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +24,11 @@ public interface HolidayRepository extends JpaRepository<Holiday, UUID> {
      * @return 节假日信息
      */
     Optional<Holiday> findByDate(LocalDate date);
+
+    /**
+     * 根据年份与区域查询节假日，按日期排序
+     */
+    List<Holiday> findByYearAndRegionOrderByDate(Integer year, String region);
 
     /**
      * 分页查询启用的特殊日期

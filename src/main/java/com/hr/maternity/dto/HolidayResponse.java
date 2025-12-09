@@ -18,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class HolidayResponse {
 
-    private UUID id;
+    private Integer id;
 
     private Integer year;
 
