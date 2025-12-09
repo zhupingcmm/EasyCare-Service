@@ -27,6 +27,16 @@ public interface WorkdayCalculatorService {
     List<MonthlyWorkdayInfoDO> calculateMonthlyWorkdays(LocalDate start, LocalDate end);
 
     /**
+     * 计算指定日期至当月月末（含）的工作日数
+     */
+    int countWorkdaysFromDateToMonthEnd(LocalDate date);
+
+    /**
+     * 计算当月月初至指定日期（含）的工作日数
+     */
+    int countWorkdaysFromMonthStartToDate(LocalDate date);
+
+    /**
      * 计算指定年月的发薪日天数
      * 发薪日 = 所有日期 - 非调休周末日期
      * 

@@ -70,6 +70,26 @@ public class WorkdayCalculatorServiceImpl implements WorkdayCalculatorService {
         return result;
     }
 
+    @Override
+    public int countWorkdaysFromDateToMonthEnd(LocalDate date) {
+        if (date == null) {
+            throw new IllegalArgumentException("日期不能为空");
+        }
+        LocalDate monthEnd = date.withDayOfMonth(date.lengthOfMonth());
+        Map<Integer, YearHolidayInfo> holidayInfoByYear = loadHolidayInfoByYear(date, monthEnd);
+        return countWorkdaysInRange(date, monthEnd, holidayInfoByYear);
+    }
+
+    @Override
+    public int countWorkdaysFromMonthStartToDate(LocalDate date) {
+        if (date == null) {
+            throw new IllegalArgumentException("日期不能为空");
+        }
+        LocalDate monthStart = date.withDayOfMonth(1);
+        Map<Integer, YearHolidayInfo> holidayInfoByYear = loadHolidayInfoByYear(monthStart, date);
+        return countWorkdaysInRange(monthStart, date, holidayInfoByYear);
+    }
+
     private int countWorkdaysInRange(LocalDate from, LocalDate to, Map<Integer, YearHolidayInfo> holidayInfoByYear) {
         int count = 0;
         for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
@@ -163,6 +183,7 @@ public class WorkdayCalculatorServiceImpl implements WorkdayCalculatorService {
                     // 约定："public_holiday" 为节假日；"transfer_workday" 为周末调休到工作日
                     if ("public_holiday".equalsIgnoreCase(type)) {
                         info.publicHolidays.add(d);
+
                     } else if ("transfer_workday".equalsIgnoreCase(type)) {
                         info.transferWorkdays.add(d);
                     }
@@ -179,6 +200,7 @@ public class WorkdayCalculatorServiceImpl implements WorkdayCalculatorService {
     private static class YearHolidayInfo {
         final Set<LocalDate> publicHolidays = new HashSet<>();
         final Set<LocalDate> transferWorkdays = new HashSet<>();
+        final Set<LocalDate> legalHolidays = new HashSet<>();
     }
 
     /**

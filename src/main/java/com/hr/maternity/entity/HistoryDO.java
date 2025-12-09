@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 历史记录实体类
  */
 @Entity
-@Table(name = "t_history")
+@Table(name = "history")
 @Data
 @EqualsAndHashCode(callSuper = false)
 @EntityListeners(AuditingEntityListener.class)

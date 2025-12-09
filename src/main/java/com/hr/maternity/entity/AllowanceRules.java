@@ -9,6 +9,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -75,7 +76,7 @@ public class AllowanceRules {
      *  一个月的天数，计算日薪资时使用
      */
     @Column(name = "month_days")
-    private Integer monthDays = 30;
+    private BigDecimal monthDays = BigDecimal.valueOf(30);
 
     /**
      * 创建时间
