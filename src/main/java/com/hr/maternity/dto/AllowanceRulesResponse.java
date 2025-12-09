@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.poi.hpsf.Decimal;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -55,7 +57,7 @@ public class AllowanceRulesResponse {
     /**
      *  一个月的天数，计算日薪资时使用
      */
-    private Integer monthDays;
+    private BigDecimal monthDays;
 
     /**
      * 创建时间

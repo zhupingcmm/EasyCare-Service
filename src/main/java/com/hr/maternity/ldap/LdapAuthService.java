@@ -143,7 +143,7 @@ public class LdapAuthService {
                 return LdapAuthResult.failure("User not found in domain: " + domain);
             }
 
-            LdapUserInfo userInfo = results.getFirst();
+            LdapUserInfo userInfo = results.get(0);
             log.info("LDAP authentication successful for user {} in domain {}", username, domain);
             return LdapAuthResult.success(domain, userInfo);
 

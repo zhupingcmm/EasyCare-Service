@@ -20,7 +20,7 @@ import java.util.List;
  * 产假计算结果实体类
  */
 @Entity
-@Table(name = "t_maternity_leave_result")
+@Table(name = "maternity_leave_result")
 @Data
 @EqualsAndHashCode(callSuper = false)
 @EntityListeners(AuditingEntityListener.class)

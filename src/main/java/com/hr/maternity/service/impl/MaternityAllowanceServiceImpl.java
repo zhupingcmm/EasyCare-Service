@@ -13,6 +13,8 @@ import com.hr.maternity.repository.MaternityAllowanceRequestRepository;
 import com.hr.maternity.repository.MaternityAllowanceResultRepository;
 import com.hr.maternity.service.MaternityAllowanceService;
 import com.hr.maternity.strategy.MaternityAllowanceStrategy;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,8 +31,7 @@ import java.util.Map;
 @Slf4j
 @Service
 public class MaternityAllowanceServiceImpl implements MaternityAllowanceService {
-    @Qualifier("BaseMaternityAllowanceStrategy")
-    private MaternityAllowanceStrategy maternityAllowanceStrategy;
+    private final MaternityAllowanceStrategy maternityAllowanceStrategy;
     private final CityRepository cityRepository;
     private final MaternityAllowanceRequestRepository allowanceRequestRepository;
     private final MaternityAllowanceResultRepository allowanceResultRepository;
@@ -40,10 +41,12 @@ public class MaternityAllowanceServiceImpl implements MaternityAllowanceService 
     private String defaultLanId;
 
     public MaternityAllowanceServiceImpl(
+            @Qualifier("baseMaternityAllowanceStrategy") MaternityAllowanceStrategy maternityAllowanceStrategy,
             CityRepository cityRepository,
             MaternityAllowanceRequestRepository allowanceRequestRepository,
             MaternityAllowanceResultRepository allowanceResultRepository,
             HistoryRepository historyRepository) {
+        this.maternityAllowanceStrategy = maternityAllowanceStrategy;
         this.cityRepository = cityRepository;
         this.allowanceRequestRepository = allowanceRequestRepository;
         this.allowanceResultRepository = allowanceResultRepository;
