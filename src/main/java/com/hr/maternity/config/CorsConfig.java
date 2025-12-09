@@ -45,7 +45,10 @@ public class CorsConfig implements WebMvcConfigurer {
                 String uri = request.getRequestURI();
 
                 // 登录接口和健康检查接口直接放行
-                if ("/api/auth/login".equals(uri) || "/health".equals(uri)) {
+                if ("/api/auth/login".equals(uri)
+                    || "/health/alive".equals(uri)
+                    || "/health/ready".equals(uri)
+                    || "/health/info".equals(uri)) {
                     return true;
                 }
 

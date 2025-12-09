@@ -85,15 +85,6 @@ public class LoginServiceImpl implements LoginService {
             return false;
         }
 
-        if (!isPasswordValid(password, username)) {
-            return false;
-        }
-
-        if (!checkMockPasswordRules(password, username)) {
-            log.warn("密码错误（Mock），用户名: {}", username);
-            return false;
-        }
-
         log.info("用户凭据验证成功（Mock），用户名: {}", username);
         return true;
     }
@@ -157,9 +148,10 @@ public class LoginServiceImpl implements LoginService {
      * 使用 Mock 认证
      */
     private void authenticateWithMock(LoginRequest loginRequest) {
-        if (!validateUserCredentials(loginRequest.getUsername(), loginRequest.getPassword())) {
-            throw new RuntimeException("用户名或密码错误");
+        if (!isUserExists(loginRequest.getUsername())) {
+            throw new RuntimeException("用户不存在");
         }
+        log.info("Mock认证通过，用户名: {}", loginRequest.getUsername());
     }
 
     /**
@@ -304,31 +296,6 @@ public class LoginServiceImpl implements LoginService {
         return exists;
     }
 
-    /**
-     * 验证密码基本规则
-     */
-    private boolean isPasswordValid(String password, String username) {
-        if (!StringUtils.hasText(password)) {
-            log.warn("密码为空，用户名: {}", username);
-            return false;
-        }
-
-        if (password.length() < MIN_PASSWORD_LENGTH) {
-            log.warn("密码长度不足（最小{}位），用户名: {}", MIN_PASSWORD_LENGTH, username);
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * 检查 Mock 密码规则
-     */
-    private boolean checkMockPasswordRules(String password, String username) {
-        return "123456".equals(password) ||
-               password.equals(username) ||
-               "password".equals(password);
-    }
 
     /**
      * 提取显示名称
