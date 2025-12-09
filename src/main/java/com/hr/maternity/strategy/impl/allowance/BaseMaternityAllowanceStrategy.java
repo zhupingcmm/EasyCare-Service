@@ -149,8 +149,8 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         List<MonthlyWorkdayInfoDO> monthlyWorkdayList = workdayCalculatorService.calculateMonthlyWorkdays(
                 request.getMaternityLeaveStartDate(), request.getMaternityLeaveEndDate());
 
-        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesSalaryAdjustMonth(monthlyWorkdayList);
-        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesSocialAdjustMonth(monthlyWorkdayList);
+        boolean baseSalaryAdjusted = maternityWageCalculatorService.crossesSalaryAdjustMonth(monthlyWorkdayList,allowanceRules.getSalaryAdjustMonth());
+        boolean socialInsuranceBaseAdjusted = maternityWageCalculatorService.crossesSocialAdjustMonth(monthlyWorkdayList,allowanceRules.getSocialAdjustMonth());
 
         // 计算产假第一个月与最后一个月工资
         BigDecimal startingMonthMaternityWage = BigDecimal.ZERO;

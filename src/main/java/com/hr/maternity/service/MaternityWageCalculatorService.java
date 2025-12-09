@@ -53,7 +53,7 @@ public interface MaternityWageCalculatorService {
      * @param monthlyWorkdayList 产假期间的每月工作日信息
      * @return 是否跨过4月
      */
-    boolean crossesSalaryAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList);
+    boolean crossesSalaryAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int month);
 
      /**
      * 公共判断：是否跨过4月（用于基数4月调整场景），考虑跨年
@@ -67,6 +67,6 @@ public interface MaternityWageCalculatorService {
      * @param monthlyWorkdayList 产假期间的每月工作日信息
      * @return 是否跨过7月
      */
-    boolean crossesSocialAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList);
+    boolean crossesSocialAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int month);
     
 }

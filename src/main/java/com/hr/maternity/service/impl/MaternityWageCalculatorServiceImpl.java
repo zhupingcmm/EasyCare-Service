@@ -327,39 +327,15 @@ public class MaternityWageCalculatorServiceImpl implements MaternityWageCalculat
     /**
      * 公共判断：是否跨过4月（用于基数4月调整场景），考虑跨年
      */
-    public boolean crossesSalaryAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList) {
-        if (monthlyWorkdayList == null || monthlyWorkdayList.isEmpty()) {
-            return false;
-        }
-        int firstYear = monthlyWorkdayList.get(0).getYear();
-        int firstMonth = monthlyWorkdayList.get(0).getMonth();
-        int lastYear = monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getYear();
-        int lastMonth = monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getMonth();
-
-        if (firstYear == lastYear) {
-            return firstMonth < 4 && lastMonth >= 4;
-        } else { // firstYear < lastYear
-            return (firstMonth < 4) || (lastMonth >= 4) || (lastYear - firstYear > 1);
-        }
+    public boolean crossesSalaryAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int month) {
+        return crossesMonth( monthlyWorkdayList, month);
     }
 
     /**
      * 公共判断：是否跨过7月（用于社保基数7月调整场景），考虑跨年
      */
-    public boolean crossesSocialAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList) {
-        if (monthlyWorkdayList == null || monthlyWorkdayList.isEmpty()) {
-            return false;
-        }
-        int firstYear = monthlyWorkdayList.get(0).getYear();
-        int firstMonth = monthlyWorkdayList.get(0).getMonth();
-        int lastYear = monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getYear();
-        int lastMonth = monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getMonth();
-
-        if (firstYear == lastYear) {
-            return firstMonth < 7 && lastMonth >= 7;
-        } else { // firstYear < lastYear
-            return (firstMonth < 7) || (lastMonth >= 7) || (lastYear - firstYear > 1);
-        }
+    public boolean crossesSocialAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int month) {
+        return crossesMonth( monthlyWorkdayList, month);
     }
 
     /**
