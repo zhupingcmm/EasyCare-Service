@@ -266,6 +266,24 @@ compensate的value为现在的返回BigDecimal, refundDetail的value为String格
 
 ---
 
+## 2025-12-10
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我生成 t_history 的 JPA 实体，以及实现这三个 new api
+```
+
+**执行内容：**
+- 新增 `HistoryRecordDO` 实体，对应 `t_history` 表，包含 `hrId`、`employeeId`、`employeeData(jsonb)` 以及 `created_time/updated_time`，并设置 `(hr_id, employee_id)` 唯一约束。
+- 新建 `HistoryRecordRepository`、`HistoryRecordService`/`Impl`，提供新增、查询、删除能力，查询与删除按 HR 维度过滤。
+- 定义 `HistoryAddRequest`、`HistoryQueryRequest`、`HistoryDeleteRequest`、`HistoryRecordDTO`、`HistoryOperationStatusDTO` 等 DTO，使用 `@Valid` 做参数校验。
+- 创建 `HistoryRecordController`，提供 `/api/history/add`、`/api/history/query`、`/api/history/delete` 三个 API，统一返回 `ApiResponse`。
+- 文档 `docs/history-design.md` 已补充表字段命名调整记录（created_time/updated_time）。
+
+---
+
 ## 2025-11-15
 
 ### 输入人：用户
