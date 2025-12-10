@@ -10,8 +10,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HistoryOperationStatusDTO {
-
-    private String status;
-
     private Long affected;
 }

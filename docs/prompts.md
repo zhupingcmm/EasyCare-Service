@@ -686,3 +686,462 @@ org.springframework.data.mapping.PropertyReferenceException: No property 'id,des
 - ✅ 支持"是否为法定假日"字段
 
 **输入人**：用户
+
+---
+
+## 2024-12-10 - 产假津贴返还金额计算设计文档
+
+### 输入人：用户
+
+**提示词：**
+```
+深度解读在com.hr.maternity.strategy.impl.allowance.BaseMaternityAllowanceStrategy的refund函数 
+以及相关代码com.hr.maternity.service.impl.WorkdayCalculatorServiceImpl,com.hr.maternity.service.impl.HolidayServiceImpl，com.hr.maternity.service.impl.RequestDateCompensationServiceImpl
+生成设计文档到 docs目录下，md格式，要求符合clean code原则，设计合理，逻辑清晰，代码容易阅读
+
+业务背景介绍：
+津贴发放到个人账户时isIndividual(AllowanceRulesResponse allowanceRules)=true，产假期间不发放工资，但是 社保，ESPP 和 工会费 以及 其他 ，需要个人支付，所以需要返还这一部分金额。
+需要根据产假的开始日期 和 结束日期，来计算需要返还的金额，需要打印计算过程，代码中有示例
+
+要求：
+1. 优化refund函数，尽量把逻辑合并简化
+2. 统一处理请假开始月和结束月请假时间（包括在同一个月的场景）
+3. 重新设计WorkdayCalculatorServiceImpl和HolidayServiceImpl
+4. 新增API /api/support/holidays?start=2024-11-01&end=2025-04-25返回开始时间和结束时间之间的节假日数据
+5. 每次调用refund只读取一次数据库，读取之后直接使用，不要再次读取数据库
+6. 移除硬编码的工资调整日期（7月），使用动态值
+7. 节假日信息改为读取开始日期到结束日期范围内的信息
+```
+
+**执行内容：**
+- 深度分析了 `BaseMaternityAllowanceStrategy.refund()` 方法及相关服务类的业务逻辑
+- 识别了现有代码的问题：
+  - 多次读取数据库获取节假日信息
+  - 节假日按年读取，效率低
+  - 工资调整月份硬编码为7月
+  - 首月、尾月、同月场景处理逻辑分散
+  - 缺乏统一的上下文管理
+- 生成了完整的设计文档 `docs/maternity-allowance-refund-design.md`，包含：
+  - **业务背景**：详细说明津贴返还的业务场景和计算规则
+  - **现有代码分析**：分析了4个核心类的职责和存在的问题
+  - **优化设计方案**：
+    - 整体架构优化：引入 `RefundCalculationContext` 上下文对象
+    - 节假日API优化：新增按日期范围查询的API
+    - 日期计算优化：统一处理首月、尾月、同月场景
+    - refund方法重构：分离职责，清晰的数据流
+  - **新增类设计**：
+    - `RefundCalculationContext` - 计算上下文
+    - `HolidayInfo` - 节假日信息
+    - `MonthlyWageInfo` - 月度工资信息
+    - `RefundCalculationResult` - 返还计算结果
+    - `PayrollDayCalculator` - 计薪日计算器
+  - **HolidayService重构**：新增按日期范围查询方法
+  - **WorkdayCalculatorService重构**：使用提供的节假日数据，避免重复查询
+  - **RequestDateCompensationService优化**：移除硬编码的调整月份
+  - **API设计**：详细的接口规范和Controller实现
+  - **计算示例**：完整的计算过程演示
+  - **优化总结**：性能、代码质量、可维护性三方面的改进
+  - **实施计划**：分四个阶段的实施步骤
+  - **附录**：关键术语、配置项、数据库表结构
+
+**技术亮点**：
+- ✅ 符合Clean Code原则：单一职责、职责分离、消除重复
+- ✅ 性能优化：从多次数据库查询改为一次性加载
+- ✅ 统一处理：首月、尾月、同月场景使用统一逻辑
+- ✅ 配置化：移除硬编码，使用配置项
+- ✅ 可测试性：各个计算方法独立，便于单元测试
+- ✅ 可扩展性：新增费用项只需修改配置
+- ✅ 清晰的数据流：通过上下文对象明确数据依赖
+
+**文档特点**：
+- 完整的业务背景说明
+- 详细的代码分析和问题识别
+- 清晰的优化方案和实现细节
+- 完整的代码示例
+- 实际的计算过程演示
+- 分阶段的实施计划
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 优化返还详情显示：社保公积金按调整前后分别显示
+
+### 输入人：用户
+
+**需求：**
+中间月的社保公积金不要只打印一个月的总数，要打印所有中间月的详细信息。如果有调整，要按调整前和调整后分别打印出来。
+
+**修改内容：**
+修改了 `BaseMaternityAllowanceStrategy.generateRefundDetails()` 方法中的社保公积金详情显示逻辑：
+
+**优化前：**
+```
+月度个人部分社保公积金合计：4648.16元
+调整后月度个人部分社保公积金合计：4648.16元
+```
+
+**优化后：**
+- **无调整情况**：
+  ```
+  2024.12-2025.3月社保公积金：4648.16×4=18592.64元
+  ```
+
+- **有调整情况**：
+  ```
+  2024.12-2025.6月社保公积金：4648.16×7=32537.12元
+  2025.7-2025.10月社保公积金（调整后）：5000.00×4=20000.00元
+  ```
+
+**技术实现：**
+1. 根据 `context.isSocialInsuranceAdjusted()` 判断是否有社保调整
+2. 如果有调整，从 `allowanceRules.getSocialAdjustMonth()` 获取调整月份（动态配置）
+3. 将完整月份列表分为调整前和调整后两部分
+4. 分别计算并显示每部分的月份范围、单价、数量和总额
+5. 同时优化了ESPP和工会费的显示格式，保持一致性
+
+**修改文件：**
+- `BaseMaternityAllowanceStrategy.java` - `generateRefundDetails()` 方法
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 修正完整月判断逻辑
+
+### 输入人：用户
+
+**问题：**
+产假首月（如9月6日开始请假）的工资折算没有打印出来，因为被错误地判定为"完整月"。
+
+**业务逻辑：**
+- 9月1日-5日：正常上班，发工资
+- 9月6日-30日：请假，不发工资，需要扣除这部分对应的工资折算
+
+**原逻辑错误：**
+```java
+boolean fullMonth = !monthStart.isBefore(start) && !monthEnd.isAfter(end);
+```
+这个逻辑会把"整个月都在请假区间内"的月份判定为完整月，导致9月6日开始的首月也被认为是完整月。
+
+**修正后的逻辑：**
+```java
+// 完整月的定义：该月的第一天等于start，且该月的最后一天等于end
+// 或者说：start是该月1号，end是该月最后一天
+boolean fullMonth = monthStart.equals(start) && monthEnd.equals(end);
+```
+
+**效果：**
+- 9月6日开始请假：`fullMonth = false`，会计算并打印首月工资折算
+- 12月1日-31日整月请假：`fullMonth = true`，作为中间完整月处理
+
+**修改文件：**
+- `WorkdayCalculatorServiceImpl.java` - `calculateMonthlyWorkdaysWithHolidayMap()` 方法第355-357行
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 优化首月和尾月工资计算，避免重复查询数据库
+
+### 输入人：用户
+
+**问题：**
+尾月工资计算需要考虑节假日和周末。比如10月25日结束休假，则10月26日-31日发工资，要去掉周末和节假日。
+
+**发现的问题：**
+虽然 `calculateStartingMonthMaternityWage` 和 `calculateEndingMonthMaternityWage` 已经考虑了节假日和周末，但它们调用的是旧的 `calculatePayrollDaysInRange` 方法，这会导致**重复查询数据库**获取节假日信息。
+
+**优化方案：**
+在 `calculateMonthlyWages` 方法中，直接使用上下文中已经加载好的 `PayrollDayCalculator` 来计算首月和尾月的工资折算，避免重复查询数据库。
+
+**修改前：**
+```java
+// 调用 maternityWageCalculatorService，内部会再次查询数据库
+BigDecimal firstMonthMaternityWage = maternityWageCalculatorService
+    .calculateStartingMonthMaternityWage(...);
+```
+
+**修改后：**
+```java
+// 直接使用上下文中的 PayrollDayCalculator
+PayrollDayCalculator calculator = context.getPayrollDayCalculator();
+int totalPayrollDays = calculator.calculateMonthPayrollDays(startYearMonth);
+int maternityPayrollDays = calculator.calculatePayrollDays(startDate, actualEndInStartMonth);
+BigDecimal ratio = new BigDecimal(maternityPayrollDays)
+    .divide(new BigDecimal(totalPayrollDays), 6, RoundingMode.HALF_UP);
+BigDecimal firstMonthMaternityWage = request.getMonthlyBaseSalary().multiply(ratio);
+```
+
+**优化效果：**
+1. ✅ **性能提升**：从3次数据库查询（初始化1次 + 首月1次 + 尾月1次）减少到1次
+2. ✅ **逻辑一致**：首月、尾月、中间月都使用同一份节假日数据
+3. ✅ **正确处理节假日**：`PayrollDayCalculator` 已经正确实现了节假日和周末的处理逻辑
+4. ✅ **详细日志**：添加了首月和尾月工资折算的调试日志
+
+**计算逻辑：**
+- **首月（9月6日开始请假）**：
+  - 总计薪日：9月整月的计薪日（排除周末和节假日）
+  - 请假计薪日：9月6日-30日的计薪日
+  - 工资折算 = 基本工资 × (请假计薪日 / 总计薪日)
+
+- **尾月（10月25日结束请假）**：
+  - 总计薪日：10月整月的计薪日
+  - 请假计薪日：10月1日-25日的计薪日
+  - 工资折算 = 基本工资 × (请假计薪日 / 总计薪日)
+
+**修改文件：**
+- `BaseMaternityAllowanceStrategy.java` - `calculateMonthlyWages()` 方法第314-402行
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 修复无完整月时社保和ESPP不显示的问题
+
+### 输入人：用户
+
+**问题：**
+中间月的社保和ESPP为什么没显示？
+
+**根本原因：**
+在 `generateRefundDetails` 方法中，社保、ESPP、工会费的显示逻辑被包裹在 `if (!completeMonthsList.isEmpty())` 判断中。当产假只有首月和尾月（比如9月6日-10月25日），没有中间的完整月时，这段代码就不会执行，导致这些费用信息完全不显示。
+
+**业务场景：**
+- 9月6日开始请假，10月25日结束
+- 9月：非完整月（首月）
+- 10月：非完整月（尾月）
+- 没有中间的完整月
+- 但首月和尾月都需要扣除社保、ESPP、工会费
+
+**修复方案：**
+在 `if (!completeMonthsList.isEmpty())` 的 `else` 分支中，添加对社保、ESPP、工会费的显示逻辑：
+
+```java
+} else {
+    // 没有完整月的情况（只有首月和/或尾月）
+    // 仍然需要显示社保、ESPP、工会费的说明
+    if (socialInsuranceBase != null && socialInsuranceBase.compareTo(BigDecimal.ZERO) > 0) {
+        refundDetailsList.add(String.format("月度个人部分社保公积金：%.2f元", socialInsuranceBase));
+    }
+    if (context.isSocialInsuranceAdjusted() && adjustedSocialInsuranceBase != null) {
+        refundDetailsList.add(String.format("调整后月度个人部分社保公积金：%.2f元", adjustedSocialInsuranceBase));
+    }
+    if (espp != null && espp.compareTo(BigDecimal.ZERO) > 0) {
+        refundDetailsList.add(String.format("月度ESPP：%.2f元", espp));
+    }
+    if (unionFee != null && unionFee.compareTo(BigDecimal.ZERO) > 0) {
+        refundDetailsList.add(String.format("月度工会费：%.2f元", unionFee));
+    }
+}
+```
+
+**显示效果：**
+- **有完整月**：显示月份范围和总额（如 "2024.12-2025.3月社保公积金：4648.16×4=18592.64元"）
+- **无完整月**：显示单月金额（如 "月度个人部分社保公积金：4648.16元"）
+
+**修改文件：**
+- `BaseMaternityAllowanceStrategy.java` - `generateRefundDetails()` 方法第699-715行
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 优化完整月判断逻辑（产假连续性）
+
+### 输入人：用户
+
+**问题：**
+需要判断首、尾月是否是整月，其余月份默认就是整月，因为产假是连续的，中间的一定是整月。
+
+**原逻辑问题：**
+```java
+boolean fullMonth = monthStart.equals(start) && monthEnd.equals(end);
+```
+这个逻辑要求该月的第一天等于产假开始日**且**该月的最后一天等于产假结束日，这太严格了，导致中间月也被判定为非完整月。
+
+**业务逻辑：**
+产假是连续的，所以：
+1. **首月**：只需判断是否从1号开始
+2. **尾月**：只需判断是否到月末结束
+3. **中间月**：一定是完整月（从1号到月末）
+
+**优化后的逻辑：**
+```java
+// 先计算总月数
+int totalMonths = (int) startYm.until(endYm, ChronoUnit.MONTHS) + 1;
+
+boolean fullMonth;
+if (totalMonths == 1) {
+    // 只有一个月：必须从1号开始且到月末结束
+    fullMonth = monthStart.equals(start) && monthEnd.equals(end);
+} else if (monthIndex == 0) {
+    // 首月：从1号开始
+    fullMonth = monthStart.equals(start);
+} else if (monthIndex == totalMonths - 1) {
+    // 尾月：到月末结束
+    fullMonth = monthEnd.equals(end);
+} else {
+    // 中间月：一定是完整月
+    fullMonth = true;
+}
+```
+
+**判断结果示例：**
+
+| 产假区间 | 首月 | 中间月 | 尾月 |
+|---------|------|--------|------|
+| 9月6日 - 12月25日 | 9月：非完整月 | 10月、11月：完整月 | 12月：非完整月 |
+| 9月1日 - 12月25日 | 9月：完整月 | 10月、11月：完整月 | 12月：非完整月 |
+| 9月6日 - 12月31日 | 9月：非完整月 | 10月、11月：完整月 | 12月：完整月 |
+| 9月1日 - 12月31日 | 9月：完整月 | 10月、11月：完整月 | 12月：完整月 |
+| 9月6日 - 9月25日 | 9月：非完整月 | - | - |
+
+**优化效果：**
+1. ✅ **逻辑更清晰**：明确区分首月、中间月、尾月的判断规则
+2. ✅ **符合业务**：产假是连续的，中间月一定是完整月
+3. ✅ **减少误判**：中间月不会被错误地判定为非完整月
+
+**修改文件：**
+- `WorkdayCalculatorServiceImpl.java` - `calculateMonthlyWorkdaysWithHolidayMap()` 方法第336-396行
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 发现申请日期补偿计算中的重复数据库查询
+
+### 输入人：用户
+
+**问题：**
+为什么日期还是查询了很多次，检查一下原因。
+
+**排查结果：**
+
+虽然在 `initializeContext` 和 `calculateMonthlyWages` 中已经优化为只查询一次数据库，但在 `generateRefundDetails` 方法中调用 `requestDateCompensationService.calculateRequestDateCompensation` 时，它内部又会查询数据库。
+
+**调用链：**
+```
+generateRefundDetails()
+  → requestDateCompensationService.calculateRequestDateCompensation()
+    → maternityWageCalculatorService.calculateStartingMonthMaternityWage()
+      → workdayCalculatorService.calculatePayrollDaysInMonth() // 查询数据库
+      → workdayCalculatorService.calculatePayrollDaysInRange() // 查询数据库
+```
+
+**当前数据库查询次数：**
+1. ✅ `initializeContext` - 1次（已优化）
+2. ✅ `calculateMonthlyWages` - 0次（已优化，使用上下文中的数据）
+3. ❌ `generateRefundDetails` - 2-4次（通过 `requestDateCompensationService` 间接查询）
+
+**待优化：**
+需要修改 `requestDateCompensationService` 和 `maternityWageCalculatorService`，让它们也能接受 `PayrollDayCalculator` 作为参数，避免重复查询数据库。
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 实施申请日期补偿计算优化（方案1）
+
+### 输入人：用户
+
+**优化方案：**
+重构 `RequestDateCompensationService`，添加新方法接受 `PayrollDayCalculator` 参数，避免重复查询数据库。
+
+**实施步骤：**
+
+1. **在 `RequestDateCompensationService` 接口中添加新方法**：
+   ```java
+   Map<String, Object> calculateRequestDateCompensationWithCalculator(
+       BigDecimal monthlyBaseSalary,
+       BigDecimal adjustedMonthlyBaseSalary,
+       LocalDate maternityLeaveStartDate,
+       LocalDate maternityLeaveRequestDate,
+       BigDecimal socialInsuranceBase,
+       BigDecimal adjustedSocialInsuranceBase,
+       BigDecimal espp,
+       BigDecimal unionFee,
+       Integer salaryAdjustMonth,
+       Integer socialAdjustMonth,
+       PayrollDayCalculator calculator);  // 新增参数
+   ```
+
+2. **在 `RequestDateCompensationServiceImpl` 中实现新方法**：
+   - 复制原有逻辑
+   - 将 `maternityWageCalculatorService.calculateStartingMonthMaternityWage()` 替换为内部方法 `calculateStartingMonthWageWithCalculator()`
+   - 新方法直接使用 `PayrollDayCalculator` 计算计薪日，不再查询数据库
+
+3. **添加私有辅助方法**：
+   ```java
+   private BigDecimal calculateStartingMonthWageWithCalculator(
+       LocalDate maternityLeaveStartDate,
+       LocalDate maternityLeaveEndDate,
+       BigDecimal monthlyBaseSalary,
+       PayrollDayCalculator calculator) {
+       
+       YearMonth startingYearMonth = YearMonth.from(maternityLeaveStartDate);
+       int totalPayrollDays = calculator.calculateMonthPayrollDays(startingYearMonth);
+       int maternityPayrollDays = calculator.calculatePayrollDays(
+           maternityLeaveStartDate, maternityLeaveEndDate);
+       
+       BigDecimal ratio = new BigDecimal(maternityPayrollDays)
+           .divide(new BigDecimal(totalPayrollDays), 6, RoundingMode.HALF_UP);
+       return monthlyBaseSalary.multiply(ratio).setScale(2, RoundingMode.HALF_UP);
+   }
+   ```
+
+4. **修改 `BaseMaternityAllowanceStrategy.generateRefundDetails()`**：
+   - 将调用从 `calculateRequestDateCompensation()` 改为 `calculateRequestDateCompensationWithCalculator()`
+   - 传入 `context.getPayrollDayCalculator()`
+
+**优化效果：**
+
+| 阶段 | 优化前 | 优化后 |
+|------|--------|--------|
+| 初始化 | 1次查询 | 1次查询 |
+| 首尾月计算 | 2次查询 | 0次查询（使用上下文） |
+| 申请日期补偿 | 2-4次查询 | 0次查询（使用上下文） |
+| **总计** | **5-7次** | **1次** ✅ |
+
+**性能提升：**
+- 数据库查询次数从 5-7次 减少到 **1次**
+- 查询效率提升 **80-85%**
+- 所有计算使用同一份节假日数据，确保数据一致性
+
+**修改文件：**
+- `RequestDateCompensationService.java` - 添加新方法接口
+- `RequestDateCompensationServiceImpl.java` - 实现新方法和辅助方法
+- `BaseMaternityAllowanceStrategy.java` - `generateRefundDetails()` 方法调用新方法
+
+**输入人**：用户
+
+---
+
+## 2024-12-10 - 代码清理检查
+
+### 输入人：用户
+
+**检查结果：**
+
+经过检查，当前代码库中**没有需要删除的旧代码**：
+
+1. ✅ **BaseMaternityAllowanceStrategy**：
+   - 旧的 `reFundOld` 方法已经在之前的重构中删除
+   - 所有导入都在使用中
+   - `maternityWageCalculatorService` 仍在使用（用于计算产假应付工资和判断调整月份）
+
+2. ✅ **RequestDateCompensationServiceImpl**：
+   - 旧方法 `calculateRequestDateCompensation()` **保留用于向后兼容**
+   - `maternityWageCalculatorService` 在旧方法中仍在使用
+   - 新方法 `calculateRequestDateCompensationWithCalculator()` 已实现并在使用
+
+3. ✅ **代码质量**：
+   - 没有注释掉的代码
+   - 没有 `@Deprecated` 标记的方法
+   - 没有 TODO 或 FIXME 标记
+   - 所有导入都在使用中
+
+**结论：**
+代码库已经很干净，保留的旧方法是为了向后兼容性，符合最佳实践。不需要删除任何代码。
+
+**输入人**：用户

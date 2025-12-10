@@ -1,5 +1,6 @@
 package com.hr.maternity.service.impl;
 
+import com.hr.maternity.domain.HolidayInfo;
 import com.hr.maternity.dto.HolidayRequest;
 import com.hr.maternity.dto.HolidayResponse;
 import com.hr.maternity.entity.Holiday;
@@ -413,6 +414,36 @@ public class HolidayServiceImpl implements HolidayService {
                 .createBy(holiday.getCreateBy())
                 .updateDate(holiday.getUpdateDate())
                 .updateBy(holiday.getUpdateBy())
+                .build();
+    }
+    
+    @Override
+    public Map<LocalDate, HolidayInfo> getHolidaysByDateRange(LocalDate startDate, LocalDate endDate) {
+        log.info("获取日期范围内的节假日数据: {} 到 {}", startDate, endDate);
+        
+        // 从数据库查询
+        List<Holiday> holidays = holidayRepository.findByDateBetweenOrderByDate(startDate, endDate);
+        
+        // 转换为Map
+        Map<LocalDate, HolidayInfo> holidayMap = holidays.stream()
+                .collect(Collectors.toMap(
+                        Holiday::getDate,
+                        this::convertToHolidayInfo
+                ));
+        
+        log.info("获取到{}条节假日数据", holidayMap.size());
+        return holidayMap;
+    }
+    
+    /**
+     * 转换为HolidayInfo
+     */
+    private HolidayInfo convertToHolidayInfo(Holiday holiday) {
+        return HolidayInfo.builder()
+                .date(holiday.getDate())
+                .name(holiday.getName())
+                .isPublicHoliday(holiday.getIsPublicHoliday())
+                .type(resolveHolidayType(holiday))
                 .build();
     }
 }

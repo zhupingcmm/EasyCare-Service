@@ -68,7 +68,6 @@ public class HistoryRecordServiceImpl implements HistoryRecordService {
                 request.getHrId(),
                 request.getEmployeeIds());
         return HistoryOperationStatusDTO.builder()
-                .status("success")
                 .affected(affected)
                 .build();
     }
