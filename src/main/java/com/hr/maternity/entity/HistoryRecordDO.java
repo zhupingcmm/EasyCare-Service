@@ -2,6 +2,7 @@ package com.hr.maternity.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +12,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import com.hr.maternity.encryption.annotation.JsonbEncryptedField;
+import com.hr.maternity.encryption.converter.JsonbAttributeConverter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
@@ -45,6 +48,8 @@ public class HistoryRecordDO {
 
     @Column(name = "employee_data", columnDefinition = "jsonb", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)
+    @JsonbEncryptedField
+    @Convert(converter = JsonbAttributeConverter.class)
     private JsonNode employeeData;
 
     @CreatedDate
