@@ -227,7 +227,6 @@ encryption.rsa-transformation=RSA/ECB/OAEPWithSHA-256AndMGF1Padding
 encryption.rsa-padding=OAEP
 
 # Nonce Configuration
-encryption.nonce-separator=XXX_Z123
 encryption.nonce-expiration-minutes=5
 encryption.nonce-byte-length=10
 

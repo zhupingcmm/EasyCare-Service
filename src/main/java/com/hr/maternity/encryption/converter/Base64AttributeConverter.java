@@ -36,7 +36,7 @@ public class Base64AttributeConverter implements AttributeConverter<Object, Stri
 
     private Cipher getCipher(int mode) throws Exception {
         // 获取密钥并确保是16字节(128位)或32字节(256位)
-        String keyStr = encryptionProperties.getSecretKey();
+        String keyStr = encryptionProperties.getAesSecretKey();
         byte[] keyBytes = keyStr.getBytes(StandardCharsets.UTF_8);
         
         // 如果密钥长度不是16或32字节，进行填充或截断

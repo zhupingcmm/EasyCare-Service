@@ -1,5 +1,6 @@
 package com.hr.maternity.service.impl;
 
+import com.hr.maternity.config.LoginConfigurationProperties;
 import com.hr.maternity.dto.LoginRequest;
 import com.hr.maternity.dto.LoginResponse;
 import com.hr.maternity.entity.Role;
@@ -43,9 +44,7 @@ public class LoginServiceImpl implements LoginService {
     private final JwtTokenService jwtTokenService;
     private final LdapAuthService ldapAuthService;
     private final RSAUtil rsaUtil;
-
-    @Value("${login.ldap.enabled:false}")
-    private boolean ldapEnabled;
+    private final LoginConfigurationProperties loginConfig;
 
     @Value("${encryption.rsa-enabled:false}")
     private boolean rsaEnabled;
@@ -55,13 +54,15 @@ public class LoginServiceImpl implements LoginService {
 
     @Override
     @Transactional
-    public LoginResponse login(LoginRequest loginRequest) {
-        log.info("开始用户登录验证，用户名: {}", loginRequest.getUsername());
+    public LoginResponse login(LoginRequest loginRequest, boolean skipRsaDecryption) {
+        log.info("开始用户登录验证，用户名: {}, Mock模式: {}", loginRequest.getUsername(), skipRsaDecryption);
 
-        if (rsaEnabled) {
+        boolean needDecryption = rsaEnabled && !skipRsaDecryption;
+        if (needDecryption) {
             String decryptedPassword = rsaUtil.decryptLogin(loginRequest);
             loginRequest.setPassword(decryptedPassword);
-            log.info("RSA密码解密成功，用户名: {}", loginRequest.getUsername());
+        } else if (skipRsaDecryption) {
+            log.info("Mock模式登录，跳过RSA解密，用户名: {}", loginRequest.getUsername());
         }
 
         LdapAuthResult ldapResult = authenticateUser(loginRequest);
@@ -135,7 +136,7 @@ public class LoginServiceImpl implements LoginService {
      * 认证用户（LDAP 或 Mock）
      */
     private LdapAuthResult authenticateUser(LoginRequest loginRequest) {
-        if (ldapEnabled) {
+        if (loginConfig.getLdap().isEnabled()) {
             return authenticateWithLdap(loginRequest);
         } else {
             authenticateWithMock(loginRequest);
@@ -159,6 +160,7 @@ public class LoginServiceImpl implements LoginService {
      * 使用 Mock 认证
      */
     private void authenticateWithMock(LoginRequest loginRequest) {
+        log.info("开始Mock认证，用户名: {}", loginRequest.getUsername());
         if (!isUserExists(loginRequest.getUsername())) {
             throw new RuntimeException("用户不存在");
         }
@@ -169,9 +171,10 @@ public class LoginServiceImpl implements LoginService {
      * 加载并验证用户
      */
     private User loadAndValidateUser(String username, LdapAuthResult ldapResult) {
+        log.info("开始加载用户信息，用户名: {}", username);
         User user;
         
-        if (ldapEnabled && ldapResult != null) {
+        if (loginConfig.getLdap().isEnabled() && ldapResult != null) {
             user = findOrCreateUserFromLdap(username, ldapResult);
         } else {
             user = userRepository.findByLanIdWithRoles(username)
@@ -179,6 +182,7 @@ public class LoginServiceImpl implements LoginService {
         }
 
         validateUserActive(user);
+        log.info("用户信息加载成功，用户ID: {}", user.getId());
         return user;
     }
 

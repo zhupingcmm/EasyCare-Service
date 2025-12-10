@@ -1,6 +1,7 @@
 package com.hr.maternity.controller;
 
 import com.hr.maternity.common.ApiResponse;
+import com.hr.maternity.config.LoginConfigurationProperties;
 import com.hr.maternity.dto.LoginRequest;
 import com.hr.maternity.dto.LoginResponse;
 import com.hr.maternity.dto.LoginSimpleTokenResponse;
@@ -32,6 +33,7 @@ public class LoginController {
 
     private final LoginService loginService;
     private final RSAUtil rsaUtil;
+    private final LoginConfigurationProperties loginConfig;
 
     @Value("${jwt.access-token.expiration:600}")
     private int accessTokenExpirationSeconds;
@@ -115,11 +117,15 @@ public class LoginController {
         description = "用户名或密码错误"
     )
     public ResponseEntity<LoginSimpleTokenResponse> login(
-            @Valid @RequestBody LoginRequest loginRequest) {
+            @Valid @RequestBody LoginRequest loginRequest,
+            @Parameter(description = "Mock登录标记，设置为true时跳过RSA解密（需要配置文件允许）")
+            @RequestHeader(value = "login-mock", required = false, defaultValue = "false") String loginMock) {
 
-        log.info("收到登录请求，用户名: {}", loginRequest.getUsername());
+        boolean skipRsaDecryption = loginConfig.getMock().isEnabled() && "true".equalsIgnoreCase(loginMock);
+        log.info("收到登录请求，用户名: {}, Mock标记: {}, 配置允许Mock: {}, 跳过解密: {}", 
+            loginRequest.getUsername(), loginMock, loginConfig.getMock().isEnabled(), skipRsaDecryption);
 
-        LoginResponse loginResponse = loginService.login(loginRequest);
+        LoginResponse loginResponse = loginService.login(loginRequest, skipRsaDecryption);
         LoginResponse.TokenInfo tokenInfo = loginResponse.getTokenInfo();
 
         LoginSimpleTokenResponse bodyData = LoginSimpleTokenResponse.builder()
