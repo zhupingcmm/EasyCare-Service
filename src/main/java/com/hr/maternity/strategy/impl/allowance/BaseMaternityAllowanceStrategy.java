@@ -57,7 +57,10 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
             throw new IllegalArgumentException("不支持的城市代码: " + request.getCityCode());
         }
 
-        BigDecimal paidWageInMaternity = getMaternityWage(request);
+        // 提前初始化上下文，避免重复查询节假日数据
+        RefundCalculationContext context = initializeContext(request, allowanceRules);
+        
+        BigDecimal paidWageInMaternity = getMaternityWage(request, context);
         if(isIndividual (allowanceRules)){
             validateRequest( request);
             paidWageInMaternity = null;
@@ -140,28 +143,25 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         }
 
         //发放到个人账户，需要计算返还
-        return reFund(request,allowanceRules,response);
+        return reFund(request, allowanceRules, response, context);
     }
 
-    private MaternityAllowanceResponse reFund(MaternityAllowanceRequest request,AllowanceRulesResponse allowanceRules,MaternityAllowanceResponse response){
+    private MaternityAllowanceResponse reFund(MaternityAllowanceRequest request, AllowanceRulesResponse allowanceRules, MaternityAllowanceResponse response, RefundCalculationContext context){
         
         log.info("开始计算返还金额，员工：{}", request.getLanId());
         
-        // 1. 初始化计算上下文（一次性加载所有数据）
-        RefundCalculationContext context = initializeContext(request, allowanceRules);
-        
-        // 2. 计算月度工资信息
+        // 1. 计算月度工资信息
         MonthlyWageInfo monthlyWageInfo = calculateMonthlyWages(request, context);
         
-        // 3. 计算返还金额
+        // 2. 计算返还金额
         RefundCalculationResult refundResult = calculateRefundAmount(
             request, allowanceRules, context, monthlyWageInfo);
         
-        // 4. 生成返还详情
+        // 3. 生成返还详情
         List<String> refundDetails = generateRefundDetails(
             request, allowanceRules, context, monthlyWageInfo, refundResult);
         
-        // 5. 设置响应
+        // 4. 设置响应
         response.setEmployeeRefundAmount(refundResult.getTotalRefund());
         response.setRefundDetails(refundDetails);
         
@@ -180,18 +180,46 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         return unitDeclaredAllowance;
     }
 
-    private BigDecimal getMaternityWage(MaternityAllowanceRequest request) {
-        // 调用 MaternityWageCalculatorService 计算产假应付工资
+    private BigDecimal getMaternityWage(MaternityAllowanceRequest request, RefundCalculationContext context) {
+        // 使用上下文中的月度工作日信息计算产假应付工资，避免重复查询数据库
         BigDecimal paidMaternityWage = BigDecimal.ZERO;
-        if (request.getMonthlyBaseSalary() != null) {
-            paidMaternityWage = maternityWageCalculatorService.calculateMaternityWage(
-                    request.getMaternityLeaveStartDate(),
-                    request.getMaternityLeaveEndDate(),
-                    request.getMonthlyBaseSalary(),
-                    request.getAdjustedMonthlyBaseSalary()
-            );
+        if (request.getMonthlyBaseSalary() == null) {
+            return paidMaternityWage;
         }
-        return paidMaternityWage;
+        
+        List<MonthlyWorkdayInfoDO> monthlyWorkdayList = context.getMonthlyWorkdayList();
+        
+        for (MonthlyWorkdayInfoDO monthlyWorkday : monthlyWorkdayList) {
+            BigDecimal monthlyWage;
+            
+            // 确定当月使用的基本工资（4月及之后使用调整后的工资）
+            BigDecimal currentMonthBaseSalary = request.getMonthlyBaseSalary();
+            if (request.getAdjustedMonthlyBaseSalary() != null && monthlyWorkday.getMonth() >= 4) {
+                currentMonthBaseSalary = request.getAdjustedMonthlyBaseSalary();
+            }
+
+            if (monthlyWorkday.getFullMonth()) {
+                // 完整自然月：直接使用月基本工资
+                monthlyWage = currentMonthBaseSalary;
+            } else {
+                // 非完整月：按比例计算
+                if (monthlyWorkday.getLegalPaydays() == null || monthlyWorkday.getLegalPaydays() == 0) {
+                    log.warn("{}年{}月法定工作天数为0，跳过该月", 
+                            monthlyWorkday.getYear(), monthlyWorkday.getMonth());
+                    continue;
+                }
+                
+                BigDecimal dailyWage = currentMonthBaseSalary.divide(
+                        new BigDecimal(monthlyWorkday.getLegalPaydays()),
+                        4, 
+                        RoundingMode.HALF_UP);
+                monthlyWage = dailyWage.multiply(new BigDecimal(monthlyWorkday.getPaydays()));
+            }
+
+            paidMaternityWage = paidMaternityWage.add(monthlyWage);
+        }
+        
+        return paidMaternityWage.setScale(2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal getAllowanceBasedEmployeeSalary(MaternityAllowanceRequest request, BigDecimal monthDays) {

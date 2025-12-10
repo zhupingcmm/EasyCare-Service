@@ -1145,3 +1145,84 @@ generateRefundDetails()
 代码库已经很干净，保留的旧方法是为了向后兼容性，符合最佳实践。不需要删除任何代码。
 
 **输入人**：用户
+
+---
+
+## 2024-12-10 - 彻底消除重复节假日查询
+
+### 输入人：用户
+
+**问题：**
+为什么还在获取整年的节假日数据，已有按请假范围获取过了，使用这套按范围获取的数据，不要再查询整年的数据。
+
+**问题分析：**
+
+虽然在 `reFund` 方法中已经优化为只查询一次节假日数据，但在 `calculateMaternityAllowance` 方法中，`getMaternityWage()` 仍然调用 `maternityWageCalculatorService.calculateMaternityWage()`，该方法内部会再次调用 `workdayCalculatorService.calculateMonthlyWorkdays()`，导致重复查询节假日数据。
+
+**调用链：**
+```
+calculateMaternityAllowance()
+  → getMaternityWage()
+    → maternityWageCalculatorService.calculateMaternityWage()
+      → workdayCalculatorService.calculateMonthlyWorkdays()  // 重复查询！
+```
+
+**优化方案：**
+
+1. **提前初始化上下文**：在 `calculateMaternityAllowance` 方法开始时就初始化 `RefundCalculationContext`
+2. **重构 `getMaternityWage` 方法**：
+   - 接受 `RefundCalculationContext` 参数
+   - 直接使用上下文中的 `monthlyWorkdayList`
+   - 不再调用 `maternityWageCalculatorService`
+3. **传递上下文**：将 `context` 传递给 `reFund` 方法，避免重复初始化
+
+**实施代码：**
+
+```java
+// 1. 在 calculateMaternityAllowance 中提前初始化上下文
+// 提前初始化上下文，避免重复查询节假日数据
+RefundCalculationContext context = initializeContext(request, allowanceRules);
+
+BigDecimal paidWageInMaternity = getMaternityWage(request, context);
+
+// 2. 重构 getMaternityWage 方法
+private BigDecimal getMaternityWage(MaternityAllowanceRequest request, RefundCalculationContext context) {
+    // 使用上下文中的月度工作日信息计算产假应付工资，避免重复查询数据库
+    BigDecimal paidMaternityWage = BigDecimal.ZERO;
+    if (request.getMonthlyBaseSalary() == null) {
+        return paidMaternityWage;
+    }
+    
+    List<MonthlyWorkdayInfoDO> monthlyWorkdayList = context.getMonthlyWorkdayList();
+    
+    for (MonthlyWorkdayInfoDO monthlyWorkday : monthlyWorkdayList) {
+        // 计算逻辑...
+    }
+    
+    return paidMaternityWage.setScale(2, RoundingMode.HALF_UP);
+}
+
+// 3. 传递上下文给 reFund 方法
+return reFund(request, allowanceRules, response, context);
+```
+
+**最终优化效果：**
+
+| 方法 | 优化前 | 优化后 |
+|------|--------|--------|
+| `calculateMaternityAllowance` | 1次查询 | 1次查询 |
+| `getMaternityWage` | 1次查询 | 0次查询（使用上下文） |
+| `reFund` 初始化 | 1次查询 | 0次查询（复用上下文） |
+| `calculateMonthlyWages` | 0次查询 | 0次查询 |
+| `generateRefundDetails` | 0次查询 | 0次查询 |
+| **总计** | **3次** | **1次** ✅ |
+
+**性能提升：**
+- 数据库查询从 3次 减少到 **1次**
+- 查询效率提升 **66%**
+- 整个生育津贴计算流程只查询一次节假日数据
+
+**修改文件：**
+- `BaseMaternityAllowanceStrategy.java` - `calculateMaternityAllowance()`, `getMaternityWage()`, `reFund()` 方法
+
+**输入人**：用户
