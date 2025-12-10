@@ -78,27 +78,30 @@ public class MaternityLeaveDateHelper {
     }
 
     /**
-     * 通用：从规则扩展字段中，按组键与匹配code提取天数
-     * 期望结构：extMap[groupKey] 为数组，元素包含 {"code":"xxx","days":N}
+     * 通用：从规则扩展字段中，按匹配code提取天数
+     * maternityLeaveExt 直接是 JSONArray 格式：[{"code":"xxx","days":N}]
      */
     private Integer findDaysFromExtFirst(MaternityRules maternityRule, String groupKey, String matchCode) {
-        Map<String, Object> extMap = maternityRule.getMaternityLeaveExt();
-        if (extMap == null) {
+        Object ext = maternityRule.getMaternityLeaveExt();
+        if (ext == null) {
             return maternityRule.getDefaultDays();
         }
-        if (!extMap.containsKey(groupKey)) {
-            throw new RuntimeException(groupKey + ":config not found");
-        }
-        Object val = extMap.get(groupKey);
+        
         JSONArray jsonArray;
-        if (val instanceof JSONArray) {
-            jsonArray = (JSONArray) val;
+        if (ext instanceof JSONArray) {
+            jsonArray = (JSONArray) ext;
+        } else if (ext instanceof java.util.List) {
+            // 如果是 List 类型，转换为 JSONArray
+            jsonArray = JSONArray.parseArray(JSON.toJSONString(ext));
         } else {
-            jsonArray = JSONArray.parseArray(JSON.toJSONString(val));
+            // 其他情况返回默认天数
+            return maternityRule.getDefaultDays();
         }
+        
         if (jsonArray == null || jsonArray.isEmpty()) {
             throw new RuntimeException(matchCode + ":config not found");
         }
+        
         for (int i = 0; i < jsonArray.size(); i++) {
             JSONObject obj = jsonArray.getJSONObject(i);
             if (obj == null) continue;

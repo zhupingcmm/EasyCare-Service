@@ -60,12 +60,12 @@ public class MaternityRules {
     private Integer doctorRecommendDays;
 
     /**
-     * 产假扩展信息（JSON格式）
+     * 产假扩展信息（JSON格式，可以是JSONArray或JSONObject）
      */
     @Column(name = "maternity_leave_ext", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    private Map<String, Object> maternityLeaveExt;
+    private Object maternityLeaveExt;
 
     /**
      * 产假是否顺延
