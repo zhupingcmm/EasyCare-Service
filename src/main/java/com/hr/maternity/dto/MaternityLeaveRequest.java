@@ -94,6 +94,10 @@ public class MaternityLeaveRequest {
     // @NotNull(message = "流产假细节 不能为空")
     private MiscarriageLeaveDetail miscarriageLeaveDetail;
 
-    private DifficultBirthLeaveDetail difficultBirthLeaveDetail;
+    /**
+     *  难产类型
+     * @see com.hr.maternity.enums.DifficultBirthTypeEnum
+     */
+    private String difficultType;
 
 }
