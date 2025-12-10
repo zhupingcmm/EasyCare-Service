@@ -81,7 +81,7 @@ public class JsonbAttributeConverter implements AttributeConverter<JsonNode, Str
     }
 
     private Cipher getCipher(int mode) throws Exception {
-        String keyStr = encryptionProperties.getSecretKey();
+        String keyStr = encryptionProperties.getAesSecretKey();
         byte[] keyBytes = keyStr.getBytes(StandardCharsets.UTF_8);
         byte[] normalizedKey;
         if (keyBytes.length >= 32) {

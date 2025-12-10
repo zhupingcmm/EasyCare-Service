@@ -1,11 +1,11 @@
 package com.hr.maternity.util;
 
 import com.hr.maternity.dto.LoginRequest;
+import com.hr.maternity.encryption.config.EncryptionProperties;
 import com.hr.maternity.entity.Nonce;
 import com.hr.maternity.repository.NonceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +25,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -33,44 +32,14 @@ import java.util.UUID;
 public class RSAUtil {
 
     private final NonceRepository nonceRepository;
-
-    @Value("${encryption.rsa-private-key-pem:}")
-    private String rsaPrivateKeyPem;
-
-    @Value("${encryption.rsa-public-modulus:}")
-    private String rsaPublicModulus;
-
-    @Value("${encryption.rsa-public-exponent:}")
-    private String rsaPublicExponent;
-
-    @Value("${encryption.nonce-separator:XXX_Z123}")
-    private String nonceSeparator;
-
-    @Value("${encryption.nonce-expiration-minutes:5}")
-    private int nonceExpirationMinutes;
-
-    @Value("${encryption.nonce-byte-length:10}")
-    private int nonceByteLength;
-
-    @Value("${encryption.rsa-algorithm:RSA}")
-    private String rsaAlgorithm;
-
-    @Value("${encryption.rsa-transformation:RSA/ECB/PKCS1Padding}")
-    private String rsaTransformation;
-
-    @Value("${encryption.rsa-padding:PKCS1}")
-    private String rsaPadding;
-
-    @Value("${encryption.rsa-oaep-hash:SHA-256}")
-    private String rsaOaepHash;
-
-    @Value("${encryption.rsa-oaep-mgf:MGF1}")
-    private String rsaOaepMgf;
-
-    @Value("${encryption.rsa-oaep-mgf-hash:SHA-256}")
-    private String rsaOaepMgfHash;
+    private final EncryptionProperties encryptionProperties;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String HEX_DIGITS = "0123456789abcdef";
+    private static final String PEM_HEADER = "-----BEGIN PRIVATE KEY-----";
+    private static final String PEM_FOOTER = "-----END PRIVATE KEY-----";
+    
+    private PrivateKey cachedPrivateKey;
 
     /**
      * 生成nonce
@@ -96,7 +65,7 @@ public class RSAUtil {
             .nonceValue(nonceValue)
             .userId(userId)
             .used(false)
-            .expiresAt(LocalDateTime.now().plusMinutes(nonceExpirationMinutes))
+            .expiresAt(LocalDateTime.now().plusMinutes(encryptionProperties.getNonceExpirationMinutes()))
             .build();
 
         nonceRepository.save(nonce);
@@ -111,10 +80,10 @@ public class RSAUtil {
      * @return 随机nonce字符串（十六进制）
      */
     private String generateSecureNonce() {
-        byte[] randomBytes = new byte[nonceByteLength];
+        byte[] randomBytes = new byte[encryptionProperties.getNonceByteLength()];
         SECURE_RANDOM.nextBytes(randomBytes);
         String hexNonce = bytesToHex(randomBytes);
-        log.debug("生成nonce，字节长度: {}, 十六进制长度: {}", nonceByteLength, hexNonce.length());
+        log.debug("生成nonce，字节长度: {}, 十六进制长度: {}", encryptionProperties.getNonceByteLength(), hexNonce.length());
         return hexNonce;
     }
 
@@ -125,13 +94,10 @@ public class RSAUtil {
      * @return 十六进制字符串
      */
     private String bytesToHex(byte[] bytes) {
-        StringBuilder hexString = new StringBuilder();
+        StringBuilder hexString = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) {
-                hexString.append('0');
-            }
-            hexString.append(hex);
+            hexString.append(HEX_DIGITS.charAt((b >> 4) & 0xF));
+            hexString.append(HEX_DIGITS.charAt(b & 0xF));
         }
         return hexString.toString();
     }
@@ -177,7 +143,7 @@ public class RSAUtil {
      */
     @Transactional
     public void validateNonce(String userId, String nonce) {
-        log.debug("开始验证nonce，用户ID: {}, nonce: {}", userId, nonce);
+        log.info("开始验证nonce，用户ID: {}, nonce: {}", userId, nonce);
 
         if (nonce == null || nonce.isBlank()) {
             log.warn("nonce为空，用户ID: {}", userId);
@@ -200,9 +166,9 @@ public class RSAUtil {
                 throw new RuntimeException("nonce已过期，请重新登录");
             }
 
-            log.debug("nonce验证通过，用户ID: {}", userId);
+            log.info("nonce验证通过，用户ID: {}", userId);
         } else {
-            log.debug("nonce不存在，创建新nonce记录，用户ID: {}", userId);
+            log.info("nonce不存在，创建新nonce记录，用户ID: {}", userId);
             createNonceRecord(userId, nonce);
         }
     }
@@ -215,52 +181,56 @@ public class RSAUtil {
      * @throws Exception 解密失败时抛出异常
      */
     private String decryptWithPrivateKey(String encryptedData) throws Exception {
-        PrivateKey privateKey = getPrivateKey();
-        
-        if (privateKey instanceof RSAPrivateCrtKey) {
-            RSAPrivateCrtKey rsaPrivateKey = (RSAPrivateCrtKey) privateKey;
-            log.info("=== RSA密钥信息 ===");
-            log.info("密钥长度: {} bits", rsaPrivateKey.getModulus().bitLength());
-            log.info("Modulus (Hex前32字符): {}", rsaPrivateKey.getModulus().toString(16).substring(0, 32).toUpperCase());
-            log.info("Public Exponent: {}", rsaPrivateKey.getPublicExponent().toString(16).toUpperCase());
-        }
-        
-        log.info("=== RSA解密配置 ===");
-        log.info("Transformation: {}", rsaTransformation);
-        log.info("Padding: {}", rsaPadding);
-        log.info("OAEP Hash: {}", rsaOaepHash);
-        log.info("OAEP MGF: {}", rsaOaepMgf);
-        log.info("OAEP MGF Hash: {}", rsaOaepMgfHash);
+        PrivateKey privateKey = getOrLoadPrivateKey();
         
         byte[] encryptedBytes = Base64.getDecoder().decode(encryptedData);
-        log.info("加密数据长度: {} bytes, Base64长度: {}", encryptedBytes.length, encryptedData.length());
-        log.debug("加密数据(前50字符): {}", encryptedData.substring(0, Math.min(50, encryptedData.length())));
+        log.debug("RSA解密 - 加密数据长度: {} bytes", encryptedBytes.length);
         
-        Cipher cipher = Cipher.getInstance(rsaTransformation);
+        Cipher cipher = createDecryptCipher(privateKey);
+        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
         
-        if ("OAEP".equalsIgnoreCase(rsaPadding)) {
-            MGF1ParameterSpec mgfSpec = getMgfParameterSpec(rsaOaepMgfHash);
-            
+        log.debug("RSA解密成功，Base64解码中...");
+        String base64EncodedPassword = new String(decryptedBytes, StandardCharsets.UTF_8);
+        return new String(Base64.getDecoder().decode(base64EncodedPassword), StandardCharsets.UTF_8);
+    }
+    
+    /**
+     * 创建解密Cipher对象
+     * 
+     * @param privateKey 私钥
+     * @return 配置好的Cipher对象
+     * @throws Exception 创建失败时抛出异常
+     */
+    private Cipher createDecryptCipher(PrivateKey privateKey) throws Exception {
+        Cipher cipher = Cipher.getInstance(encryptionProperties.getRsaTransformation());
+        
+        if ("OAEP".equalsIgnoreCase(encryptionProperties.getRsaPadding())) {
             OAEPParameterSpec oaepParams = new OAEPParameterSpec(
-                rsaOaepHash,
-                rsaOaepMgf,
-                mgfSpec,
+                encryptionProperties.getRsaOaepHash(),
+                encryptionProperties.getRsaOaepMgf(),
+                getMgfParameterSpec(encryptionProperties.getRsaOaepMgfHash()),
                 PSource.PSpecified.DEFAULT
             );
-            
-            log.info("初始化OAEP解密器");
             cipher.init(Cipher.DECRYPT_MODE, privateKey, oaepParams);
         } else {
-            log.info("使用默认填充模式: {}", rsaPadding);
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
         }
         
-        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
-        log.info("RSA解密成功，解密数据长度: {} bytes", decryptedBytes.length);
-        
-        String base64EncodedPassword = new String(decryptedBytes, StandardCharsets.UTF_8);
-
-        return new String(Base64.getDecoder().decode(base64EncodedPassword), StandardCharsets.UTF_8);
+        return cipher;
+    }
+    
+    /**
+     * 获取或加载私钥（带缓存）
+     * 
+     * @return PrivateKey对象
+     * @throws Exception 加载失败时抛出异常
+     */
+    private synchronized PrivateKey getOrLoadPrivateKey() throws Exception {
+        if (cachedPrivateKey == null) {
+            cachedPrivateKey = loadPrivateKey();
+            log.info("RSA私钥已加载并缓存");
+        }
+        return cachedPrivateKey;
     }
 
     /**
@@ -284,49 +254,22 @@ public class RSAUtil {
     }
 
     /**
-     * 从PEM格式的私钥字符串中获取PrivateKey对象
+     * 从PEM格式的私钥字符串中加载PrivateKey对象
      * 
      * @return PrivateKey对象
      * @throws Exception 解析失败时抛出异常
      */
-    private PrivateKey getPrivateKey() throws Exception {
-        String privateKeyPEM = rsaPrivateKeyPem
-            .replace("-----BEGIN PRIVATE KEY-----", "")
-            .replace("-----END PRIVATE KEY-----", "")
+    private PrivateKey loadPrivateKey() throws Exception {
+        String privateKeyPEM = encryptionProperties.getRsaPrivateKeyPem()
+            .replace(PEM_HEADER, "")
+            .replace(PEM_FOOTER, "")
             .replaceAll("\\s", "");
 
         byte[] keyBytes = Base64.getDecoder().decode(privateKeyPEM);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory keyFactory = KeyFactory.getInstance(rsaAlgorithm);
+        KeyFactory keyFactory = KeyFactory.getInstance(encryptionProperties.getRsaAlgorithm());
         
         return keyFactory.generatePrivate(keySpec);
-    }
-
-    /**
-     * 从解密后的数据中提取原始密码
-     * 解密结果格式为: <password><nonceSeparator><nonce>
-     * 
-     * @param decryptedData 解密后的数据
-     * @param expectedNonce 期望的nonce值
-     * @return 原始密码
-     * @throws RuntimeException 格式错误或nonce不匹配时抛出异常
-     */
-    private String extractPasswordFromDecryptedData(String decryptedData, String expectedNonce) {
-        if (!decryptedData.contains(nonceSeparator)) {
-            log.error("解密数据格式错误，缺少nonce分隔符: {}", nonceSeparator);
-            throw new RuntimeException("解密数据格式错误");
-        }
-
-        int separatorIndex = decryptedData.lastIndexOf(nonceSeparator);
-        String password = decryptedData.substring(0, separatorIndex);
-        String actualNonce = decryptedData.substring(separatorIndex + nonceSeparator.length());
-
-        if (!expectedNonce.equals(actualNonce)) {
-            log.error("nonce不匹配，期望: {}, 实际: {}", expectedNonce, actualNonce);
-            throw new RuntimeException("nonce验证失败");
-        }
-
-        return password;
     }
 
     /**
@@ -340,7 +283,7 @@ public class RSAUtil {
             .nonceValue(nonceValue)
             .userId(userId)
             .used(false)
-            .expiresAt(LocalDateTime.now().plusMinutes(nonceExpirationMinutes))
+            .expiresAt(LocalDateTime.now().plusMinutes(encryptionProperties.getNonceExpirationMinutes()))
             .build();
 
         nonceRepository.save(nonce);
@@ -354,15 +297,13 @@ public class RSAUtil {
      * @param nonceValue nonce值
      */
     private void markNonceAsUsed(String userId, String nonceValue) {
-        Optional<Nonce> nonceOpt = nonceRepository.findByNonceValueAndUserId(nonceValue, userId);
-        
-        if (nonceOpt.isPresent()) {
-            Nonce nonce = nonceOpt.get();
-            nonce.setUsed(true);
-            nonce.setUsedAt(LocalDateTime.now());
-            nonceRepository.save(nonce);
-            log.debug("nonce已标记为已使用，用户ID: {}, nonce: {}", userId, nonceValue);
-        }
+        nonceRepository.findByNonceValueAndUserId(nonceValue, userId)
+            .ifPresent(nonce -> {
+                nonce.setUsed(true);
+                nonce.setUsedAt(LocalDateTime.now());
+                nonceRepository.save(nonce);
+                log.info("nonce已标记为已使用，用户ID: {}", userId);
+            });
     }
 
     /**
@@ -402,25 +343,33 @@ public class RSAUtil {
     public Map<String, String> getPublicKey() {
         log.debug("从配置文件获取公钥信息");
         
-        if (rsaPublicModulus == null || rsaPublicModulus.isEmpty()) {
-            log.error("RSA公钥模数未配置，请在配置文件中设置 encryption.rsa-public-modulus");
-            throw new RuntimeException("RSA公钥模数未配置");
-        }
-        
-        if (rsaPublicExponent == null || rsaPublicExponent.isEmpty()) {
-            log.error("RSA公钥指数未配置，请在配置文件中设置 encryption.rsa-public-exponent");
-            throw new RuntimeException("RSA公钥指数未配置");
-        }
+        validatePublicKeyConfiguration();
         
         Map<String, String> publicKeyInfo = new HashMap<>();
-        publicKeyInfo.put("modulusHex", rsaPublicModulus);
-        publicKeyInfo.put("exponentHex", rsaPublicExponent);
-        publicKeyInfo.put("modulusBase64", rsaPublicModulus);
-        publicKeyInfo.put("exponentBase64", rsaPublicExponent);
+        publicKeyInfo.put("modulusHex", encryptionProperties.getRsaPublicModulus());
+        publicKeyInfo.put("exponentHex", encryptionProperties.getRsaPublicExponent());
+        publicKeyInfo.put("modulusBase64", encryptionProperties.getRsaPublicModulus());
+        publicKeyInfo.put("exponentBase64", encryptionProperties.getRsaPublicExponent());
         
-        log.info("公钥信息获取成功 - Modulus (Hex前32字符): {}", rsaPublicModulus.substring(0, 32));
-        log.info("公钥信息获取成功 - Exponent (Hex): {}", rsaPublicExponent);
+        log.debug("公钥信息获取成功");
         return publicKeyInfo;
+    }
+    
+    /**
+     * 验证公钥配置是否完整
+     * 
+     * @throws RuntimeException 配置缺失时抛出异常
+     */
+    private void validatePublicKeyConfiguration() {
+        if (encryptionProperties.getRsaPublicModulus() == null || encryptionProperties.getRsaPublicModulus().isEmpty()) {
+            log.error("RSA公钥模数未配置");
+            throw new RuntimeException("RSA公钥模数未配置，请在配置文件中设置 encryption.rsa-public-modulus");
+        }
+        
+        if (encryptionProperties.getRsaPublicExponent() == null || encryptionProperties.getRsaPublicExponent().isEmpty()) {
+            log.error("RSA公钥指数未配置");
+            throw new RuntimeException("RSA公钥指数未配置，请在配置文件中设置 encryption.rsa-public-exponent");
+        }
     }
 
     /**
@@ -434,20 +383,18 @@ public class RSAUtil {
         log.warn("正在从私钥提取公钥信息，此操作应仅在配置更新时使用");
         
         try {
-            PrivateKey privateKey = getPrivateKey();
+            PrivateKey privateKey = loadPrivateKey();
             
-            if (!(privateKey instanceof RSAPrivateCrtKey)) {
+            if (!(privateKey instanceof RSAPrivateCrtKey rsaPrivateKey)) {
                 throw new RuntimeException("私钥不是RSA CRT格式，无法提取公钥信息");
             }
-            
-            RSAPrivateCrtKey rsaPrivateKey = (RSAPrivateCrtKey) privateKey;
             
             BigInteger modulus = rsaPrivateKey.getModulus();
             BigInteger publicExponent = rsaPrivateKey.getPublicExponent();
             
             int keySize = modulus.bitLength();
-            if (keySize < 2048) {
-                log.warn("密钥长度 {} 位小于推荐的 2048 位", keySize);
+            if (keySize < encryptionProperties.getRsaMinKeySize()) {
+                log.warn("密钥长度 {} 位小于推荐的 {} 位", keySize, encryptionProperties.getRsaMinKeySize());
             }
             
             String modulusHex = modulus.toString(16).toUpperCase();

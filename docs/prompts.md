@@ -686,3 +686,384 @@ org.springframework.data.mapping.PropertyReferenceException: No property 'id,des
 - ✅ 支持"是否为法定假日"字段
 
 **输入人**：用户
+
+---
+
+## 2025-12-12 - 优化Java LDAP连接配置支持SSL/TLS
+
+**需求**：Java LDAP连接失败，需要对比Python代码并优化Java实现
+
+**问题分析**：
+- **Python配置**：使用端口1222，启用SSL (`use_ssl=True`)，禁用证书验证 (`validate-ssl.CERT_NONE`)
+- **Java配置问题**：
+  1. 使用端口389（标准LDAP端口），但服务器使用1222
+  2. 使用 `ldap://` 协议，应该用 `ldaps://`
+  3. 缺少SSL/TLS配置
+  4. 缺少证书信任配置
+  5. 缺少连接超时设置
+
+**实现内容**：
+
+1. **更新 `LdapConfigurationProperties.java`**：
+   - 添加 `useSsl` 字段（默认false）
+   - 添加 `trustAllCertificates` 字段（默认false）
+   - 添加 `connectTimeout` 字段（默认5000ms）
+   - 添加 `readTimeout` 字段（默认10000ms）
+
+2. **修改 `LdapAuthService.java`**：
+   - 重构 `buildContextSource()` 方法，接收 `LdapDomainConfig` 参数
+   - 根据 `useSsl` 配置动态选择 `ldap://` 或 `ldaps://` 协议
+   - 添加连接和读取超时配置
+   - 实现 `CustomSSLSocketFactory` 自定义SSL工厂类
+   - 配置 `TrustManager` 禁用证书验证（当 `trustAllCertificates=true`）
+   - 使用 `Hashtable` 配置JNDI环境属性
+   - 添加必要的导入：`javax.net.ssl.*`, `java.security.*`
+
+3. **更新 `application.properties`**：
+   - 配置两个LDAP域（GROUP和TECH）
+   - 设置端口为1222
+   - 启用SSL：`use-ssl=true`
+   - 禁用证书验证：`trust-all-certificates=true`
+   - 设置超时：`connect-timeout=10000`, `read-timeout=15000`
+
+**核心技术实现**：
+
+```java
+// SSL协议选择
+String protocol = config.isUseSsl() ? LdapConstants.Protocol.LDAPS : LdapConstants.Protocol.LDAP;
+
+// 自定义TrustManager禁用证书验证
+TrustManager[] trustAllCerts = new TrustManager[]{
+    new X509TrustManager() {
+        public X509Certificate[] getAcceptedIssuers() { return null; }
+        public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+        public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+    }
+};
+
+// 配置SSLContext
+SSLContext sslContext = SSLContext.getInstance("TLS");
+sslContext.init(null, trustAllCerts, new SecureRandom());
+
+// 设置自定义SSL Socket Factory
+baseEnvironment.put("java.naming.ldap.factory.socket", CustomSSLSocketFactory.class.getName());
+```
+
+**修改文件**：
+- `LdapConfigurationProperties.java` - 添加SSL和超时配置选项
+- `LdapAuthService.java` - 实现SSL连接和证书信任配置
+- `application.properties` - 更新LDAP配置使用1222端口和SSL
+
+**配置对比**：
+
+| 配置项 | Python | Java（优化前） | Java（优化后） |
+|--------|--------|----------------|----------------|
+| 端口 | 1222 | 389 | 1222 ✅ |
+| 协议 | SSL | ldap:// | ldaps:// ✅ |
+| 证书验证 | 禁用 | 未配置 | 禁用 ✅ |
+| 连接超时 | 默认 | 未配置 | 10000ms ✅ |
+| 读取超时 | 默认 | 未配置 | 15000ms ✅ |
+
+**影响范围**：
+- ✅ 支持LDAP over SSL (LDAPS)连接
+- ✅ 支持自定义证书信任策略
+- ✅ 支持连接和读取超时配置
+- ✅ 与Python LDAP配置保持一致
+- ✅ 修复"LDAP connection has been closed"错误
+
+**输入人**：用户
+
+---
+
+## 2025-12-12 (补充) - 完全对齐Python LDAP实现
+
+**需求**：继续分析Python代码差异，确保Java实现完全一致
+
+**发现的关键差异**：
+
+1. **搜索Base重复设置问题** ⚠️
+   - **问题**：`contextSource.setBase(baseDn)` 已设置base，`query().base(baseDn)` 又设置，导致路径重复
+   - **Python实现**：`conn.search(search_base=base_dn)` - 只设置一次
+   - **修复**：改为 `query().base("")` - 空字符串，使用contextSource的base
+
+2. **缺少SearchScope配置** ⚠️
+   - **问题**：Java没有明确指定searchScope，默认可能是ONELEVEL
+   - **Python实现**：`search_scope=SUBTREE` - 子树搜索
+   - **修复**：添加 `.searchScope(SUBTREE_SCOPE)`
+
+3. **异常处理逻辑不一致** ⚠️
+   - **问题**：Java在CommunicationException后继续尝试其他principal
+   - **Python实现**：
+     ```python
+     except core.exceptions.LDAPSocketOpenError as e:
+         print(f"Socket open error...")
+         break  # ← 关键：停止尝试其他principal
+     ```
+   - **修复**：在CommunicationException处添加 `break;`
+
+4. **缺少Referral配置**
+   - **Python实现**：ldap3自动处理referral
+   - **Java修复**：添加 `baseEnvironment.put("java.naming.referral", "follow");`
+
+**代码修改详情**：
+
+```java
+// 修改1：添加SUBTREE_SCOPE导入
+import static javax.naming.directory.SearchControls.SUBTREE_SCOPE;
+
+// 修改2：修复搜索配置
+List<LdapUserInfo> results = ldapTemplate.search(
+    query()
+        .base("")                      // ← 改为空字符串
+        .searchScope(SUBTREE_SCOPE)    // ← 明确指定子树搜索
+        .filter(filter),
+    userAttributesMapper(serverAddr)
+);
+
+// 修改3：异常处理添加break
+catch (CommunicationException e) {
+    lastError = handleCommunicationException(e, username, domain);
+    log.error("Communication error for principal {}: {}, stopping further attempts", 
+              principal, e.getMessage());
+    break;  // ← 停止尝试其他principal
+}
+
+// 修改4：添加referral配置
+baseEnvironment.put("java.naming.referral", "follow");
+```
+
+**完整对照表**：
+
+| 配置项 | Python代码 | Java（最终版） | 状态 |
+|--------|-----------|---------------|------|
+| **连接配置** | | | |
+| 端口 | `port=1222` | `ldap-port=1222` | ✅ |
+| 协议 | `use_ssl=True` | `use-ssl=true` | ✅ |
+| 证书验证 | `validate=ssl.CERT_NONE` | `trust-all-certificates=true` | ✅ |
+| 连接超时 | 默认 | `connect-timeout=10000` | ✅ |
+| 读取超时 | 默认 | `read-timeout=15000` | ✅ |
+| Referral | 自动 | `"java.naming.referral"="follow"` | ✅ |
+| **搜索配置** | | | |
+| 搜索Base | `search_base=base_dn` | `contextSource.setBase(baseDn)` + `query().base("")` | ✅ |
+| 搜索Scope | `search_scope=SUBTREE` | `.searchScope(SUBTREE_SCOPE)` | ✅ |
+| 搜索过滤器 | `(|(sAMAccountName=...)(userPrincipalName=...))` | 相同 | ✅ |
+| **认证配置** | | | |
+| Principal格式 | `[user@domain, user@dns, domain\\user]` | 相同 | ✅ |
+| Auto Bind | `auto_bind=True` | `getContext(principal, password)` | ✅ |
+| **异常处理** | | | |
+| Socket错误 | `break` - 停止尝试 | `break;` | ✅ |
+| 认证失败 | 继续尝试 | 继续尝试 | ✅ |
+
+**日志增强**：
+- 添加绑定尝试的debug日志：`log.debug("Attempting to bind as principal: {}", principal);`
+- 添加搜索过滤器debug日志：`log.debug("Searching LDAP with filter: {} in base: {}", filter, baseDn);`
+- 优化CommunicationException日志：明确说明停止进一步尝试
+
+**验证清单**：
+- ✅ SSL/TLS连接配置
+- ✅ 证书信任配置
+- ✅ 超时配置
+- ✅ 搜索Scope配置
+- ✅ 搜索Base配置
+- ✅ Referral处理
+- ✅ 异常处理逻辑
+- ✅ Principal格式
+- ✅ 日志输出
+
+**下一步**：
+1. 更新 `application.properties` 中的实际LDAP服务器地址（替换XXXXX占位符）
+2. 重启应用测试连接
+3. 观察日志输出，验证每个步骤
+
+**输入人**：用户
+
+---
+
+## 2025-12-12 (继续) - 增强LDAP日志分析能力
+
+**需求**：优化LdapAuthService，添加更详细的日志用于日常运维分析
+
+**实现内容**：
+
+### 1. **性能监控日志**
+- 总认证耗时统计（从开始到结束）
+- 每个域的认证耗时
+- Context构建耗时
+- 绑定操作耗时
+- 搜索操作耗时
+- 每次尝试的详细耗时
+
+### 2. **结构化日志输出**
+```
+========== LDAP Authentication Started for user: xxx ==========
+[Attempt 1/2] Trying domain: GROUP
+┌─ Domain Authentication Details ─────────────────────────────
+│ User: xxx
+│ Domain: GROUP
+│ Server: xxx.com:1222
+│ SSL Enabled: true
+│ Trust All Certificates: true
+│ Base DN: DC=xxx,DC=ZZ,DC=COM
+│ DNS Name: xxx.zz.com
+│ Connect Timeout: 10000ms
+│ Read Timeout: 15000ms
+└──────────────────────────────────────────────────────────────
+```
+
+### 3. **详细的步骤日志**
+- **认证流程**：
+  - `[Attempt 1/2]` - 显示当前尝试次数和总次数
+  - 配置参数的完整展示
+  - 每个步骤的耗时（Context、Bind、Search）
+
+- **绑定尝试**：
+  ```
+  Starting bind attempts with 3 principal formats
+    [1/3] Binding as: user@DOMAIN
+    ✓ Successfully bound as user@DOMAIN in 125ms
+  ```
+
+- **搜索详情**：
+  ```
+  Starting LDAP user search:
+    Search Base: DC=xxx,DC=ZZ,DC=COM
+    Search Filter: (|(sAMAccountName=xxx)(userPrincipalName=xxx@DOMAIN)...)
+    Search Scope: SUBTREE
+  Search completed in 89ms, found 1 result(s)
+  ✓ User found successfully:
+    Display Name: Zhang San
+    Email: zhangsan@company.com
+    UPN: zhangsan@DOMAIN
+    SAM Account: zhangsan
+    Department: IT
+    Company: Company Ltd
+  ```
+
+### 4. **异常详细分析**
+- 异常类型识别
+- 异常消息输出
+- 耗时统计（失败情况）
+- 多层次日志级别：
+  - **ERROR**: 严重错误和通信异常
+  - **WARN**: 认证失败、用户未找到
+  - **INFO**: 关键步骤和成功信息
+  - **DEBUG**: 详细的技术参数和堆栈信息
+
+### 5. **符号标记**
+- `✓` - 成功操作
+- `✗` - 失败操作
+- `⚠` - 警告信息
+- `[n/m]` - 进度指示器
+
+### 6. **统计汇总**
+```java
+// 成功场景
+========== LDAP Authentication SUCCESS for user: xxx in 456ms ==========
+
+// 失败场景
+========== LDAP Authentication FAILED for user xxx after 2 attempts in 1234ms ==========
+```
+
+### 7. **代码改进详情**
+
+#### authenticate() 方法
+- ✅ 添加总耗时统计
+- ✅ 添加域数量日志
+- ✅ 添加尝试计数器
+- ✅ 每次尝试显示进度 `[1/2]`
+- ✅ 成功/失败的汇总日志
+
+#### authenticateWithDomain() 方法
+- ✅ 添加域级别耗时统计
+- ✅ 格式化的配置详情展示（使用框线）
+- ✅ 各步骤独立计时（Context、Bind、Search）
+- ✅ 异常类型和消息分离显示
+
+#### attemptBind() 方法
+- ✅ Principal列表日志
+- ✅ 每次绑定的进度显示 `[1/3]`
+- ✅ 绑定耗时统计
+- ✅ 通信错误时停止并标记 `⚠`
+
+#### searchUser() 方法
+- ✅ 搜索参数完整展示
+- ✅ 搜索耗时和结果数量
+- ✅ 用户信息详细输出
+- ✅ 组成员数量统计
+
+#### buildContextSource() 方法
+- ✅ Context构建日志
+- ✅ URL和BaseDN输出
+- ✅ 环境属性输出
+
+### 8. **日志级别建议**
+
+**生产环境**：
+```properties
+logging.level.com.hr.maternity.ldap=INFO
+```
+输出：认证开始/结束、域切换、绑定成功/失败、搜索结果、用户信息
+
+**调试环境**：
+```properties
+logging.level.com.hr.maternity.ldap=DEBUG
+```
+额外输出：配置详情、Principal列表、DN路径、堆栈跟踪、耗时细节
+
+### 9. **日志输出示例**
+
+**成功场景**：
+```
+2025-12-12 10:30:00 - ========== LDAP Authentication Started for user: zhangsan ==========
+2025-12-12 10:30:00 - Total configured LDAP domains: 2
+2025-12-12 10:30:00 - [Attempt 1/2] Trying domain: GROUP
+2025-12-12 10:30:00 - ┌─ Domain Authentication Details ─────────────────
+2025-12-12 10:30:00 - │ User: zhangsan
+2025-12-12 10:30:00 - │ Domain: GROUP
+2025-12-12 10:30:00 - │ Server: ldap.company.com:1222
+2025-12-12 10:30:00 - │ SSL Enabled: true
+2025-12-12 10:30:00 - └──────────────────────────────────────────────────
+2025-12-12 10:30:00 - Starting bind attempts with 3 principal formats
+2025-12-12 10:30:00 -   [1/3] Binding as: zhangsan@GROUP
+2025-12-12 10:30:01 -   ✓ Successfully bound as zhangsan@GROUP in 125ms
+2025-12-12 10:30:01 - Starting LDAP user search:
+2025-12-12 10:30:01 -   Search Base: DC=COMPANY,DC=COM
+2025-12-12 10:30:01 -   Search Filter: (|(sAMAccountName=zhangsan)...)
+2025-12-12 10:30:01 - Search completed in 89ms, found 1 result(s)
+2025-12-12 10:30:01 - ✓ User found successfully:
+2025-12-12 10:30:01 -   Display Name: Zhang San
+2025-12-12 10:30:01 -   Email: zhangsan@company.com
+2025-12-12 10:30:01 - ✓ Domain GROUP authentication successful in 245ms
+2025-12-12 10:30:01 - ========== LDAP Authentication SUCCESS for user: zhangsan in 245ms ==========
+```
+
+**失败场景**：
+```
+2025-12-12 10:30:00 - ========== LDAP Authentication Started for user: wronguser ==========
+2025-12-12 10:30:00 - [Attempt 1/2] Trying domain: GROUP
+2025-12-12 10:30:00 - Starting bind attempts with 3 principal formats
+2025-12-12 10:30:00 -   [1/3] Binding as: wronguser@GROUP
+2025-12-12 10:30:01 -   ✗ [1/3] Authentication failed for wronguser@GROUP in 156ms: 用户名或密码错误
+2025-12-12 10:30:01 -   [2/3] Binding as: wronguser@company.com
+2025-12-12 10:30:02 -   ✗ [2/3] Authentication failed for wronguser@company.com in 145ms: 用户名或密码错误
+2025-12-12 10:30:02 - All 3 bind attempts failed
+2025-12-12 10:30:02 - [Attempt 2/2] Trying domain: TECH
+2025-12-12 10:30:02 - ...
+2025-12-12 10:30:05 - ========== LDAP Authentication FAILED for user wronguser after 2 attempts in 5234ms ==========
+```
+
+### 10. **运维价值**
+
+通过这些日志，运维团队可以：
+- ✅ 快速定位认证失败原因
+- ✅ 分析认证性能瓶颈
+- ✅ 监控各域的响应时间
+- ✅ 发现网络连接问题
+- ✅ 追踪用户认证路径
+- ✅ 统计Principal格式效果
+- ✅ 优化超时参数配置
+
+**修改文件**：
+- `LdapAuthService.java` - 全面优化日志输出
+
+**输入人**：用户

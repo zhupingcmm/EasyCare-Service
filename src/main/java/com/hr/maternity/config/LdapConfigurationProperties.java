@@ -36,6 +36,14 @@ public class LdapConfigurationProperties {
         @NotBlank(message = "LDAP base DN cannot be blank")
         private String baseDn;
         
+        private boolean useSsl = false;
+        
+        private boolean trustAllCertificates = false;
+        
+        private int connectTimeout = 5000;
+        
+        private int readTimeout = 10000;
+        
         public boolean isValid() {
             return domain != null && !domain.isBlank()
                     && ldapServer != null && !ldapServer.isBlank()

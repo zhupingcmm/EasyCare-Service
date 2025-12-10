@@ -13,13 +13,18 @@ import org.springframework.stereotype.Service;
 import javax.naming.AuthenticationNotSupportedException;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
+import javax.net.ssl.*;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 
 import static com.hr.maternity.ldap.LdapConstants.Attributes.*;
 import static com.hr.maternity.ldap.LdapConstants.Filter.USER_SEARCH_TEMPLATE;
 import static com.hr.maternity.ldap.LdapConstants.Protocol.LDAP;
 import static org.springframework.ldap.query.LdapQueryBuilder.query;
+import static javax.naming.directory.SearchControls.SUBTREE_SCOPE;
 
 @Slf4j
 @Service
@@ -29,19 +34,34 @@ public class LdapAuthService {
     private final LdapConfigurationProperties ldapProps;
 
     public LdapAuthResult authenticate(String username, String password) {
+        long startTime = System.currentTimeMillis();
+        log.info("========== LDAP Authentication Started for user: {} ==========", username);
+        log.debug("Total configured LDAP domains: {}", ldapProps.getLdap() != null ? ldapProps.getLdap().size() : 0);
+        
         LdapAuthResult validationResult = validateCredentials(username, password);
         if (validationResult != null) {
+            log.warn("LDAP authentication validation failed for user {}: {}", username, validationResult.getErrorMessage());
             return validationResult;
         }
 
+        int attemptCount = 0;
         for (LdapConfigurationProperties.LdapDomainConfig domainConfig : ldapProps.getLdap()) {
+            attemptCount++;
+            log.info("[Attempt {}/{}] Trying domain: {}", attemptCount, ldapProps.getLdap().size(), domainConfig.getDomain());
+            
             LdapAuthResult result = authenticateWithDomain(username, password, domainConfig);
             if (result.isSuccess()) {
+                long duration = System.currentTimeMillis() - startTime;
+                log.info("========== LDAP Authentication SUCCESS for user: {} in {}ms ==========", username, duration);
                 return result;
             }
+            log.debug("[Attempt {}/{}] Failed with domain {}: {}", attemptCount, ldapProps.getLdap().size(), 
+                    domainConfig.getDomain(), result.getErrorMessage());
         }
 
-        log.warn("Failed to authenticate user {} with all configured domains", username);
+        long duration = System.currentTimeMillis() - startTime;
+        log.warn("========== LDAP Authentication FAILED for user {} after {} attempts in {}ms ==========", 
+                username, attemptCount, duration);
         return LdapAuthResult.failure("Authentication failed for all configured domains");
     }
 
@@ -69,26 +89,57 @@ public class LdapAuthService {
      */
     private LdapAuthResult authenticateWithDomain(String username, String password,
                                                    LdapConfigurationProperties.LdapDomainConfig domainConfig) {
+        long domainStartTime = System.currentTimeMillis();
         String domain = domainConfig.getDomain().trim();
         String serverAddr = domainConfig.getLdapServer().trim();
         int port = domainConfig.getLdapPort();
         String baseDn = domainConfig.getBaseDn().trim();
         String dnsName = makeDnsFromBaseDn(baseDn);
 
-        log.info("Attempting LDAP authentication for user {} with domain {}", username, domain);
+        log.info("┌─ Domain Authentication Details ─────────────────────────────");
+        log.info("│ User: {}", username);
+        log.info("│ Domain: {}", domain);
+        log.info("│ Server: {}:{}", serverAddr, port);
+        log.info("│ SSL Enabled: {}", domainConfig.isUseSsl());
+        log.info("│ Trust All Certificates: {}", domainConfig.isTrustAllCertificates());
+        log.info("│ Base DN: {}", baseDn);
+        log.info("│ DNS Name: {}", dnsName);
+        log.info("│ Connect Timeout: {}ms", domainConfig.getConnectTimeout());
+        log.info("│ Read Timeout: {}ms", domainConfig.getReadTimeout());
+        log.info("└──────────────────────────────────────────────────────────────");
 
         try {
-            LdapContextSource contextSource = buildContextSource(serverAddr, port, baseDn);
+            long buildContextStart = System.currentTimeMillis();
+            LdapContextSource contextSource = buildContextSource(domainConfig);
+            log.debug("Context source built in {}ms", System.currentTimeMillis() - buildContextStart);
+            
+            long bindStart = System.currentTimeMillis();
             LdapAuthResult bindResult = attemptBind(username, password, domain, dnsName, contextSource);
+            log.debug("Bind attempt completed in {}ms", System.currentTimeMillis() - bindStart);
 
             if (!bindResult.isSuccess()) {
+                long domainDuration = System.currentTimeMillis() - domainStartTime;
+                log.info("Domain {} authentication failed in {}ms: {}", domain, domainDuration, bindResult.getErrorMessage());
                 return bindResult;
             }
 
-            return searchUser(username, domain, dnsName, baseDn, serverAddr, contextSource);
+            long searchStart = System.currentTimeMillis();
+            LdapAuthResult searchResult = searchUser(username, domain, dnsName, baseDn, serverAddr, contextSource);
+            log.debug("User search completed in {}ms", System.currentTimeMillis() - searchStart);
+            
+            long domainDuration = System.currentTimeMillis() - domainStartTime;
+            if (searchResult.isSuccess()) {
+                log.info("✓ Domain {} authentication successful in {}ms", domain, domainDuration);
+            } else {
+                log.info("✗ Domain {} authentication failed in {}ms: {}", domain, domainDuration, searchResult.getErrorMessage());
+            }
+            
+            return searchResult;
         } catch (Exception e) {
-            log.error("Unexpected error during LDAP authentication for user {} in domain {}: {}", 
-                    username, domain, e.getMessage(), e);
+            long domainDuration = System.currentTimeMillis() - domainStartTime;
+            log.error("Unexpected error during LDAP authentication for user {} in domain {} after {}ms", 
+                    username, domain, domainDuration, e);
+            log.error("Exception type: {}, Message: {}", e.getClass().getSimpleName(), e.getMessage());
             return LdapAuthResult.failure("Authentication error: " + e.getMessage());
         }
     }
@@ -99,28 +150,47 @@ public class LdapAuthService {
     private LdapAuthResult attemptBind(String username, String password, String domain,
                                        String dnsName, LdapContextSource contextSource) {
         List<String> principals = buildPrincipals(username, domain, dnsName);
+        log.info("Starting bind attempts with {} principal formats", principals.size());
+        log.debug("Principal formats to try: {}", principals);
+        
         LdapAuthResult lastError = null;
+        int attemptNumber = 0;
 
         for (String principal : principals) {
+            attemptNumber++;
+            long bindStartTime = System.currentTimeMillis();
             try {
+                log.info("  [{}/{}] Binding as: {}", attemptNumber, principals.size(), principal);
                 contextSource.setUserDn(principal);
                 contextSource.setPassword(password);
                 contextSource.afterPropertiesSet();
                 contextSource.getContext(principal, password);
-                log.info("Successfully bound as {}", principal);
+                
+                long bindDuration = System.currentTimeMillis() - bindStartTime;
+                log.info("  ✓ Successfully bound as {} in {}ms", principal, bindDuration);
                 return LdapAuthResult.success(domain, null);
             } catch (AuthenticationException e) {
+                long bindDuration = System.currentTimeMillis() - bindStartTime;
                 lastError = handleAuthenticationException(e, username, principal, domain);
-                log.warn("Authentication failed for principal {}: {}", principal, lastError.getErrorMessage());
+                log.warn("  ✗ [{}/{}] Authentication failed for {} in {}ms: {}", 
+                        attemptNumber, principals.size(), principal, bindDuration, lastError.getErrorMessage());
             } catch (CommunicationException e) {
+                long bindDuration = System.currentTimeMillis() - bindStartTime;
                 lastError = handleCommunicationException(e, username, domain);
-                log.error("Communication error for principal {}: {}", principal, e.getMessage());
+                log.error("  ✗ [{}/{}] Communication error for {} in {}ms: {}", 
+                        attemptNumber, principals.size(), principal, bindDuration, e.getMessage());
+                log.error("  ⚠ Stopping further bind attempts due to communication error");
+                break;
             } catch (Exception e) {
+                long bindDuration = System.currentTimeMillis() - bindStartTime;
                 lastError = handleGeneralException(e, username, principal, domain);
-                log.debug("Bind failed for principal {}: {}", principal, e.getMessage());
+                log.debug("  ✗ [{}/{}] Bind failed for {} in {}ms: {} - {}", 
+                        attemptNumber, principals.size(), principal, bindDuration, 
+                        e.getClass().getSimpleName(), e.getMessage());
             }
         }
         
+        log.warn("All {} bind attempts failed", principals.size());
         return lastError != null ? lastError : LdapAuthResult.failure("Bind failed for domain: " + domain);
     }
 
@@ -129,26 +199,52 @@ public class LdapAuthService {
      */
     private LdapAuthResult searchUser(String username, String domain, String dnsName,
                                        String baseDn, String serverAddr, LdapContextSource contextSource) {
+        long searchStartTime = System.currentTimeMillis();
         try {
             LdapTemplate ldapTemplate = new LdapTemplate(contextSource);
             String filter = buildUserSearchFilter(username, domain, dnsName);
+            
+            log.info("Starting LDAP user search:");
+            log.info("  Search Base: {}", baseDn);
+            log.info("  Search Filter: {}", filter);
+            log.info("  Search Scope: SUBTREE");
 
             List<LdapUserInfo> results = ldapTemplate.search(
-                    query().base(baseDn).filter(filter),
+                    query()
+                        .base("")  
+                        .searchScope(SUBTREE_SCOPE)
+                        .filter(filter),
                     userAttributesMapper(serverAddr)
             );
 
+            long searchDuration = System.currentTimeMillis() - searchStartTime;
+            log.info("Search completed in {}ms, found {} result(s)", searchDuration, results.size());
+
             if (results.isEmpty()) {
-                log.warn("User {} not found in domain {}", username, domain);
+                log.warn("✗ User {} not found in domain {} after {}ms", username, domain, searchDuration);
+                log.debug("Search filter used: {}", filter);
                 return LdapAuthResult.failure("User not found in domain: " + domain);
             }
 
             LdapUserInfo userInfo = results.get(0);
-            log.info("LDAP authentication successful for user {} in domain {}", username, domain);
+            log.info("✓ User found successfully:");
+            log.info("  Display Name: {}", userInfo.getDisplayName());
+            log.info("  Email: {}", userInfo.getEmail());
+            log.info("  UPN: {}", userInfo.getUserPrincipalName());
+            log.info("  SAM Account: {}", userInfo.getSAMAccountName());
+            log.info("  Department: {}", userInfo.getDepartment());
+            log.info("  Company: {}", userInfo.getCompany());
+            log.debug("  DN: {}", userInfo.getDn());
+            log.debug("  Member Of Groups: {}", userInfo.getMemberOf() != null ? userInfo.getMemberOf().size() : 0);
+            
             return LdapAuthResult.success(domain, userInfo);
 
         } catch (Exception e) {
-            log.error("Exception during LDAP search in domain {}: {}", domain, e.getMessage(), e);
+            long searchDuration = System.currentTimeMillis() - searchStartTime;
+            log.error("✗ Exception during LDAP search in domain {} after {}ms", domain, searchDuration);
+            log.error("Exception type: {}", e.getClass().getName());
+            log.error("Exception message: {}", e.getMessage());
+            log.debug("Stack trace:", e);
             return LdapAuthResult.failure("Search failed: " + e.getMessage());
         }
     }
@@ -192,10 +288,50 @@ public class LdapAuthService {
     /**
      * 构建LDAP上下文源
      */
-    private LdapContextSource buildContextSource(String serverAddr, int port, String baseDn) {
+    private LdapContextSource buildContextSource(LdapConfigurationProperties.LdapDomainConfig config) {
+        log.debug("Building LDAP context source...");
         LdapContextSource contextSource = new LdapContextSource();
-        contextSource.setUrl(LDAP + serverAddr + ":" + port);
-        contextSource.setBase(baseDn);
+        
+        String protocol = config.isUseSsl() ? LdapConstants.Protocol.LDAPS : LdapConstants.Protocol.LDAP;
+        String url = protocol + config.getLdapServer().trim() + ":" + config.getLdapPort();
+        
+        log.debug("  LDAP URL: {}", url);
+        log.debug("  Base DN: {}", config.getBaseDn().trim());
+        
+        contextSource.setUrl(url);
+        contextSource.setBase(config.getBaseDn().trim());
+        
+        Hashtable<String, Object> baseEnvironment = new Hashtable<>();
+        baseEnvironment.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(config.getConnectTimeout()));
+        baseEnvironment.put("com.sun.jndi.ldap.read.timeout", String.valueOf(config.getReadTimeout()));
+        baseEnvironment.put("java.naming.referral", "follow");
+        
+        log.debug("  Environment properties: connect.timeout={}, read.timeout={}, referral=follow", 
+                config.getConnectTimeout(), config.getReadTimeout());
+        
+        if (config.isUseSsl() && config.isTrustAllCertificates()) {
+            log.warn("SSL certificate validation is DISABLED for LDAP connection");
+            try {
+                TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() { return null; }
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                    }
+                };
+                
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, trustAllCerts, new SecureRandom());
+                
+                baseEnvironment.put("java.naming.ldap.factory.socket", CustomSSLSocketFactory.class.getName());
+                CustomSSLSocketFactory.setSslContext(sslContext);
+            } catch (Exception e) {
+                log.error("Failed to configure SSL trust manager: {}", e.getMessage(), e);
+            }
+        }
+        
+        contextSource.setBaseEnvironmentProperties(baseEnvironment);
+        
         return contextSource;
     }
 
@@ -349,5 +485,62 @@ public class LdapAuthService {
         
         log.debug("Bind attempt failed for principal {}: {}", principal, errorMsg);
         return LdapAuthResult.failure("绑定失败: " + errorMsg);
+    }
+    
+    public static class CustomSSLSocketFactory extends SSLSocketFactory {
+        private static SSLContext sslContext;
+        
+        public static void setSslContext(SSLContext context) {
+            sslContext = context;
+        }
+        
+        private SSLSocketFactory getDelegate() {
+            if (sslContext == null) {
+                try {
+                    sslContext = SSLContext.getDefault();
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to get default SSL context", e);
+                }
+            }
+            return sslContext.getSocketFactory();
+        }
+        
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return getDelegate().getDefaultCipherSuites();
+        }
+        
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return getDelegate().getSupportedCipherSuites();
+        }
+        
+        @Override
+        public java.net.Socket createSocket(java.net.Socket socket, String host, int port, boolean autoClose)
+                throws java.io.IOException {
+            return getDelegate().createSocket(socket, host, port, autoClose);
+        }
+        
+        @Override
+        public java.net.Socket createSocket(String host, int port) throws java.io.IOException {
+            return getDelegate().createSocket(host, port);
+        }
+        
+        @Override
+        public java.net.Socket createSocket(String host, int port, java.net.InetAddress localHost, int localPort)
+                throws java.io.IOException {
+            return getDelegate().createSocket(host, port, localHost, localPort);
+        }
+        
+        @Override
+        public java.net.Socket createSocket(java.net.InetAddress host, int port) throws java.io.IOException {
+            return getDelegate().createSocket(host, port);
+        }
+        
+        @Override
+        public java.net.Socket createSocket(java.net.InetAddress address, int port,
+                java.net.InetAddress localAddress, int localPort) throws java.io.IOException {
+            return getDelegate().createSocket(address, port, localAddress, localPort);
+        }
     }
 }

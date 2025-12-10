@@ -220,14 +220,12 @@ public class JwtUtil {
                 throw new IllegalStateException("JWT private key is required for RSA algorithm");
             }
             RSAPrivateKey privateKey = (RSAPrivateKey) getPrivateKey();
-            log.debug("Using RSA signer with algorithm: {}", jwtAlgorithm);
             return new RSASSASigner(privateKey);
         } else if (jwtAlgorithm.toUpperCase().startsWith("HS")) {
             byte[] hmacKey = getHmacKey();
             if (hmacKey.length < MIN_HMAC_KEY_LENGTH) {
                 log.warn("HMAC key is too short, recommended at least {} bytes", MIN_HMAC_KEY_LENGTH);
             }
-            log.debug("Using HMAC signer with algorithm: {}", jwtAlgorithm);
             return new MACSigner(hmacKey);
         } else {
             throw new IllegalArgumentException("Unsupported JWT algorithm: " + jwtAlgorithm);

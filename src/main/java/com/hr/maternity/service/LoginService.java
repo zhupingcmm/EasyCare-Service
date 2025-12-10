@@ -7,8 +7,12 @@ public interface LoginService {
 
     /**
      * 用户登录验证
+     * 
+     * @param loginRequest 登录请求
+     * @param skipRsaDecryption 是否跳过RSA解密
+     * @return 登录响应
      */
-    LoginResponse login(LoginRequest loginRequest);
+    LoginResponse login(LoginRequest loginRequest, boolean skipRsaDecryption);
 
     /**
      * 用户登出
