@@ -37,16 +37,16 @@
 作为资深Spring Boot架构师，重构产假津贴计算系统的项目结构：
 
 1. **包结构设计**：
-   - com.hr.maternity.controller：REST API控制器
-   - com.hr.maternity.service：业务逻辑服务层
-   - com.hr.maternity.repository：数据访问层
-   - com.hr.maternity.entity：JPA实体类
-   - com.hr.maternity.dto：数据传输对象
-   - com.hr.maternity.enums：枚举类型
-   - com.hr.maternity.config：配置类
-   - com.hr.maternity.strategy：策略模式实现
-   - com.hr.maternity.common：通用工具类
-   - com.hr.maternity.exception：异常处理
+   - com.easy.care.controller：REST API控制器
+   - com.easy.care.service：业务逻辑服务层
+   - com.easy.care.repository：数据访问层
+   - com.easy.care.entity：JPA实体类
+   - com.easy.care.dto：数据传输对象
+   - com.easy.care.enums：枚举类型
+   - com.easy.care.config：配置类
+   - com.easy.care.strategy：策略模式实现
+   - com.easy.care.common：通用工具类
+   - com.easy.care.exception：异常处理
 
 2. **核心配置类**：
    - WebConfig：Web配置

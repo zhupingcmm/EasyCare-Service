@@ -294,7 +294,7 @@ springboot+hibernet +JPA实现数据库字段级别的加密，我要实现一�
 ```
 
 **执行内容：**
-- 新增 `com.hr.maternity.demo.encryption` 包，包含 `@EncryptedField` 注解、Base64 属性转换器、异常与负载模型。
+- 新增 `com.easy.care.demo.encryption` 包，包含 `@EncryptedField` 注解、Base64 属性转换器、异常与负载模型。
 - 创建 Demo 实体、Repository、DTO、Service/Impl 以及 Controller，演示字段级加密的创建、查询全部、按 ID 查询。
 - 提供建表示例 SQL 以及 Postman 可直接调用的接口说明。
 
@@ -484,7 +484,7 @@ private Boolean isSuccess;        // 是否成功
 
 **问题**：`AllowanceRulesController.downloadTemplate()` 执行时报错：
 ```
-class com.hr.maternity.common.ApiResponse cannot be cast to class [B
+class com.easy.care.common.ApiResponse cannot be cast to class [B
 ```
 
 **原因分析**：
@@ -695,8 +695,8 @@ org.springframework.data.mapping.PropertyReferenceException: No property 'id,des
 
 **提示词：**
 ```
-深度解读在com.hr.maternity.strategy.impl.allowance.BaseMaternityAllowanceStrategy的refund函数 
-以及相关代码com.hr.maternity.service.impl.WorkdayCalculatorServiceImpl,com.hr.maternity.service.impl.HolidayServiceImpl，com.hr.maternity.service.impl.RequestDateCompensationServiceImpl
+深度解读在com.easy.care.strategy.impl.allowance.BaseMaternityAllowanceStrategy的refund函数 
+以及相关代码com.easy.care.service.impl.WorkdayCalculatorServiceImpl,com.easy.care.service.impl.HolidayServiceImpl，com.easy.care.service.impl.RequestDateCompensationServiceImpl
 生成设计文档到 docs目录下，md格式，要求符合clean code原则，设计合理，逻辑清晰，代码容易阅读
 
 业务背景介绍：

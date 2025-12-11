@@ -2,7 +2,7 @@
 
 - 控制器：`src/main/java/com/hr/maternity/controller/MaternityAllowanceController.java`
 - 服务实现：`src/main/java/com/hr/maternity/service/impl/MaternityAllowanceServiceImpl.java`
-- 统一返回包装：`com.hr.maternity.common.ApiResponse`、`GlobalResponseAdvice`、`GlobalExceptionHandler`
+- 统一返回包装：`com.easy.care.common.ApiResponse`、`GlobalResponseAdvice`、`GlobalExceptionHandler`
 - 城市策略：`src/main/java/com/hr/maternity/strategy/impl/allowance/`
   - 示例：`ShanghaiMaternityAllowanceStrategy`、`ShenzhenMaternityAllowanceStrategy`、`GuangzhouMaternityAllowanceStrategy` 等
 
