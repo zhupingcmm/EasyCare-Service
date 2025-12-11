@@ -31,7 +31,7 @@ public class MaternityLeaveDateHelper {
         int days = switch (type) {
             case BASE -> calcBase(maternityRule);
             case DIFFICULT_BIRTH -> calcDifficult(maternityLeaveRequest, maternityRule);
-            case MULTI_BABIES -> calcMultiBabies(maternityRule);
+            case MULTI_BABIES -> calcMultiBabies(maternityLeaveRequest, maternityRule);
             case AWARD -> calcAward(maternityLeaveRequest, maternityRule);
             default -> 0;
         };
@@ -53,12 +53,15 @@ public class MaternityLeaveDateHelper {
         return findDaysFromExtFirst(maternityRule, MaternityLeaveTypeEnum.DIFFICULT_BIRTH.getCode(), maternityLeaveRequest.getDifficultBirthTypeCode());
     }
 
-    public Integer calcMultiBabies(MaternityRules maternityRule) {
-        return findDaysFromDefault(maternityRule);
+    public Integer calcMultiBabies(MaternityLeaveRequest maternityLeaveRequest, MaternityRules maternityRule) {
+        return (maternityLeaveRequest.getNumberOfBabies() - 1) * findDaysFromDefault(maternityRule);
     }
 
 
     public Integer calcAward(MaternityLeaveRequest maternityLeaveRequest, MaternityRules maternityRule) {
+        if (BooleanUtils.isFalse(maternityLeaveRequest.getHasExtendedDays())) {
+            return 0;
+        }
         return findDaysFromExtFirst(maternityRule, MaternityLeaveTypeEnum.AWARD.getCode(), maternityLeaveRequest.getNumOfKids() + "");
     }
 
@@ -119,7 +122,7 @@ public class MaternityLeaveDateHelper {
         if (startDate == null || days == null || days <= 0) {
             return null;
         }
-        LocalDate endDate = startDate.plusDays(days);
+        LocalDate endDate = startDate.plusDays(days - 1);
         if (BooleanUtils.isNotTrue(holidayExtend)) {
             return endDate;
         }

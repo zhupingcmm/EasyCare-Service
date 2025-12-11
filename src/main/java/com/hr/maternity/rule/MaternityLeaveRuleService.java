@@ -50,13 +50,13 @@ public class MaternityLeaveRuleService {
             timeScope.setName(MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId()).getCode());
             timeScope.setStartAt(innerStartDate);
             timeScope.setEndAt(innerEndDate);
-            int days = (int) ChronoUnit.DAYS.between(innerStartDate, innerEndDate);
+            int days = (int) ChronoUnit.DAYS.between(innerStartDate, innerEndDate) + 1;
             timeScope.setDays(days);
             timeScopeList.add(timeScope);
             totalDays += days;
             innerStartDate = innerEndDate.plusDays(1);
         }
-        return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, startDate.plusDays(totalDays));
+        return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, startDate.plusDays(totalDays - 1));
     }
 
     public MaternityLeaveResponse genMaternityLeaveResponse(MaternityLeaveRequest maternityLeaveRequest,
