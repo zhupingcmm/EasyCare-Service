@@ -5,7 +5,7 @@ import com.easy.care.dto.*;
 import com.easy.care.entity.CityDO;
 import com.easy.care.entity.MaternityLeaveType;
 import com.easy.care.entity.MaternityRules;
-import com.easy.care.enums.DystociaLeaveEnum;
+import com.easy.care.enums.DifficultBirthTypeEnum;
 import com.easy.care.enums.MiscarriageLeaveEnum;
 import com.easy.care.repository.CityRepository;
 import com.easy.care.repository.MaternityLeaveTypeRepository;
@@ -395,7 +395,7 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
 
     /**
      * 从难产假规则中提取列表数据
-     * 从 JSONArray 中获取 code，然后通过 DystociaLeaveEnum 获取对应的 name
+     * 从 JSONArray 中获取 code，然后通过 DifficultBirthTypeEnum 获取对应的 name
      */
     private List<DystociaMiscarriageItemDTO> extractDystociaList(List<MaternityRules> dystociaRules) {
         List<DystociaMiscarriageItemDTO> dysList = new ArrayList<>();
@@ -422,8 +422,8 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                     
                     if (code != null) {
                         // 通过枚举获取对应的名称
-                        DystociaLeaveEnum enumValue = DystociaLeaveEnum.getByCode(code);
-                        if (enumValue != null) {
+                        DifficultBirthTypeEnum enumValue = DifficultBirthTypeEnum.fromCode(code);
+                        if (enumValue != DifficultBirthTypeEnum.UNKNOWN) {
                             dysList.add(DystociaMiscarriageItemDTO.builder()
                                     .code(code)
                                     .name(enumValue.getName())
