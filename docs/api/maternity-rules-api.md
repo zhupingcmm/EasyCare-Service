@@ -20,8 +20,8 @@
 
 ```json
 {
-  "city": "上海",
-  "maternityLeaveType": "产假",
+  "city": "SH",
+  "maternityLeaveType": "1001",
   "abortionLeaveType": null,
   "leaveDays": 158,
   "isExtendable": true,

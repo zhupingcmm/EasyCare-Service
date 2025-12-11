@@ -27,6 +27,11 @@ public class MaternityRulesResponse {
     private Integer cityId;
 
     /**
+     * 城市代码
+     */
+    private String cityCode;
+
+    /**
      * 城市名称
      */
     private String cityName;
@@ -60,6 +65,11 @@ public class MaternityRulesResponse {
      * 是否有津贴
      */
     private Boolean hasAllowance;
+
+    /**
+     * 津贴计发天数
+     */
+    private Integer planAllowanceDay;
 
     /**
      * 是否启用

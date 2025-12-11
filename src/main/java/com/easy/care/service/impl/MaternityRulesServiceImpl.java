@@ -11,6 +11,8 @@ import com.easy.care.repository.CityRepository;
 import com.easy.care.repository.MaternityLeaveTypeRepository;
 import com.easy.care.repository.MaternityRulesRepository;
 import com.easy.care.service.MaternityRulesService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,7 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
     private final MaternityRulesRepository maternityRulesRepository;
     private final MaternityLeaveTypeRepository maternityLeaveTypeRepository;
     private final CityRepository cityRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -39,21 +42,26 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         log.info("开始创建产假规则，请求参数: {}", request);
 
         // 查找城市
-        CityDO city = cityRepository.findById(request.getCityId())
-                .orElseThrow(() -> new IllegalArgumentException("城市不存在，ID: " + request.getCityId()));
+        CityDO city = cityRepository.findByCode(request.getCity())
+                .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + request.getCity()));
 
         // 查找产假类型
-        MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findById(request.getMaternityLeaveTypeId())
-                .orElseThrow(() -> new IllegalArgumentException("产假类型不存在，ID: " + request.getMaternityLeaveTypeId()));
+        MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findByCode(request.getMaternityLeaveTypeCode())
+                .orElseThrow(() -> new IllegalArgumentException("产假类型不存在，代码: " + request.getMaternityLeaveTypeCode()));
 
         MaternityRules maternityRules = new MaternityRules();
         maternityRules.setCity(city);
         maternityRules.setMaternityLeaveType(maternityLeaveType);
         maternityRules.setDefaultDays(request.getDefaultDays());
         maternityRules.setDoctorRecommendDays(request.getDoctorRecommendDays());
-        maternityRules.setMaternityLeaveExt(request.getMaternityLeaveExt());
+        
+        // 将 maternityLeaveExt 序列化为 JSON 字符串
+        String maternityLeaveExtJson = convertToJsonString(request.getMaternityLeaveExt());
+        maternityRules.setMaternityLeaveExt(maternityLeaveExtJson);
+        
         maternityRules.setHolidayExtend(request.getHolidayExtend());
         maternityRules.setHasAllowance(request.getHasAllowance());
+        maternityRules.setPlanAllowanceDay(request.getPlanAllowanceDay());
         maternityRules.setEnabled(request.getEnabled());
 
         MaternityRules saved = maternityRulesRepository.save(maternityRules);
@@ -81,6 +89,25 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         return maternityRulesPage.map(this::convertToResponse);
     }
 
+    @Override
+    public List<MaternityRulesResponse> listAllMaternityRulesWithoutPage(String city) {
+        log.info("查询所有产假规则（不分页），城市: {}", city);
+
+        List<MaternityRules> maternityRulesList;
+        if (city != null && !city.trim().isEmpty()) {
+            // 按城市代码过滤，需要先查找城市ID
+            CityDO cityDO = cityRepository.findByCode(city)
+                    .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + city));
+            maternityRulesList = maternityRulesRepository.findByCityIdAndEnabled(cityDO.getId(), true);
+        } else {
+            // 查询所有
+            maternityRulesList = maternityRulesRepository.findByEnabled(true);
+        }
+        return maternityRulesList.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     @Transactional
@@ -91,20 +118,25 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                 .orElseThrow(() -> new IllegalArgumentException("产假规则不存在，ID: " + id));
 
         // 查找城市
-        CityDO city = cityRepository.findById(request.getCityId())
-                .orElseThrow(() -> new IllegalArgumentException("城市不存在，ID: " + request.getCityId()));
+        CityDO city = cityRepository.findByCode(request.getCity())
+                .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + request.getCity()));
 
         // 查找产假类型
-        MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findById(request.getMaternityLeaveTypeId())
-                .orElseThrow(() -> new IllegalArgumentException("产假类型不存在，ID: " + request.getMaternityLeaveTypeId()));
+        MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findByCode(request.getMaternityLeaveTypeCode())
+                .orElseThrow(() -> new IllegalArgumentException("产假类型不存在，代码: " + request.getMaternityLeaveTypeCode()));
 
         maternityRules.setCity(city);
         maternityRules.setMaternityLeaveType(maternityLeaveType);
         maternityRules.setDefaultDays(request.getDefaultDays());
         maternityRules.setDoctorRecommendDays(request.getDoctorRecommendDays());
-        maternityRules.setMaternityLeaveExt(request.getMaternityLeaveExt());
+        
+        // 将 maternityLeaveExt 序列化为 JSON 字符串
+        String maternityLeaveExtJson = convertToJsonString(request.getMaternityLeaveExt());
+        maternityRules.setMaternityLeaveExt(maternityLeaveExtJson);
+        
         maternityRules.setHolidayExtend(request.getHolidayExtend());
         maternityRules.setHasAllowance(request.getHasAllowance());
+        maternityRules.setPlanAllowanceDay(request.getPlanAllowanceDay());
         maternityRules.setEnabled(request.getEnabled());
 
         MaternityRules updated = maternityRulesRepository.save(maternityRules);
@@ -327,11 +359,17 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         }
 
         for (MaternityRules rule : miscarriageRules) {
-            Object ext = rule.getMaternityLeaveExt();
-            if (ext != null && ext instanceof List) {
-                // maternity_leave_ext 直接是 JSONArray: [{"code":"mc_001", "days":15}]
+            String ext = rule.getMaternityLeaveExt();
+            
+            // 先判断 ext 不为 null
+            if (ext == null || ext.trim().isEmpty()) {
+                continue;
+            }
+            
+            try {
+                // 将 JSON 字符串反序列化为 List
                 @SuppressWarnings("unchecked")
-                List<Map<String, Object>> extList = (List<Map<String, Object>>) ext;
+                List<Map<String, Object>> extList = objectMapper.readValue(ext, List.class);
                 
                 for (Map<String, Object> item : extList) {
                     String code = item.get("code") != null ? item.get("code").toString() : null;
@@ -347,6 +385,8 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                         }
                     }
                 }
+            } catch (JsonProcessingException e) {
+                log.error("解析流产假扩展信息失败，规则ID: {}, JSON: {}", rule.getId(), ext, e);
             }
         }
 
@@ -365,11 +405,17 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         }
 
         for (MaternityRules rule : dystociaRules) {
-            Object ext = rule.getMaternityLeaveExt();
-            if (ext != null && ext instanceof List) {
-                // maternity_leave_ext 直接是 JSONArray: [{"code":"day_001", "days":15}]
+            String ext = rule.getMaternityLeaveExt();
+            
+            // 先判断 ext 不为 null
+            if (ext == null || ext.trim().isEmpty()) {
+                continue;
+            }
+            
+            try {
+                // 将 JSON 字符串反序列化为 List
                 @SuppressWarnings("unchecked")
-                List<Map<String, Object>> extList = (List<Map<String, Object>>) ext;
+                List<Map<String, Object>> extList = objectMapper.readValue(ext, List.class);
                 
                 for (Map<String, Object> item : extList) {
                     String code = item.get("code") != null ? item.get("code").toString() : null;
@@ -385,6 +431,8 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                         }
                     }
                 }
+            } catch (JsonProcessingException e) {
+                log.error("解析难产假扩展信息失败，规则ID: {}, JSON: {}", rule.getId(), ext, e);
             }
         }
 
@@ -396,9 +444,10 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
      */
     private MaternityRulesResponse convertToResponse(MaternityRules maternityRules) {
         CityDO city = maternityRules.getCity();
-        return MaternityRulesResponse.builder()
+        MaternityRulesResponse build = MaternityRulesResponse.builder()
                 .id(maternityRules.getId())
                 .cityId(city != null ? city.getId() : null)
+                .cityCode(city != null ? city.getCode() : null)
                 .cityName(city != null ? city.getChineseName() : null)
                 .maternityLeaveType(convertLeaveTypeToResponse(maternityRules.getMaternityLeaveType()))
                 .defaultDays(maternityRules.getDefaultDays())
@@ -406,12 +455,30 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                 .maternityLeaveExt(maternityRules.getMaternityLeaveExt())
                 .holidayExtend(maternityRules.getHolidayExtend())
                 .hasAllowance(maternityRules.getHasAllowance())
+                .planAllowanceDay(maternityRules.getPlanAllowanceDay())
                 .enabled(maternityRules.getEnabled())
                 .createDate(maternityRules.getCreateDate())
                 .createBy(maternityRules.getCreateBy())
                 .updateDate(maternityRules.getUpdateDate())
                 .updateBy(maternityRules.getUpdateBy())
                 .build();
+        return build;
+    }
+
+    /**
+     * 将对象转换为 JSON 字符串
+     */
+    private String convertToJsonString(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            log.error("转换为 JSON 字符串失败: {}", obj, e);
+            throw new IllegalArgumentException("JSON 序列化失败: " + e.getMessage());
+        }
     }
 
     /**

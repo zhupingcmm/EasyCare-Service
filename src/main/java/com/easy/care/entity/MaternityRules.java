@@ -1,6 +1,5 @@
 package com.easy.care.entity;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -59,12 +58,11 @@ public class MaternityRules {
     private Integer doctorRecommendDays;
 
     /**
-     * 产假扩展信息（JSON格式，可以是JSONArray或JSONObject）
+     * 产假扩展信息（JSON字符串格式）
      */
     @Column(name = "maternity_leave_ext", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    private Object maternityLeaveExt;
+    private String maternityLeaveExt;
 
     /**
      * 产假是否顺延
@@ -77,6 +75,12 @@ public class MaternityRules {
      */
     @Column(name = "has_allowance", nullable = false)
     private Boolean hasAllowance = true;
+
+    /**
+     * 津贴计发天数
+     */
+    @Column(name = "plan_allowance_day")
+    private Integer planAllowanceDay;
 
     /**
      * 是否启用
