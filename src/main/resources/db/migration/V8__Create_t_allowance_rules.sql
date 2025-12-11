@@ -10,9 +10,9 @@ CREATE TABLE t_allowance_rules (
     social_adjust_month INTEGER DEFAULT 7,
     month_days          INTEGER DEFAULT 30,
     create_date         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    create_by           VARCHAR(100),
-    update_date         TIMESTAMP,
-    update_by           VARCHAR(100)
+    create_by           VARCHAR(100) DEFAULT 'system',
+    update_date         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_by           VARCHAR(100) DEFAULT 'system'
 );
 
 -- 添加注释

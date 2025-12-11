@@ -34,4 +34,9 @@ public interface AllowanceRulesRepository extends JpaRepository<AllowanceRules, 
      * 根据城市分页查询激活的津贴规则
      */
     Page<AllowanceRules> findByCityNameAndEnabledTrue(String city, Pageable pageable);
+
+    /**
+     * 根据城市查询所有激活的津贴规则（不分页）
+     */
+    List<AllowanceRules> findAllByCityNameAndEnabledTrue(String city);
 }

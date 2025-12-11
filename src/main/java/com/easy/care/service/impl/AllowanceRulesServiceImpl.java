@@ -3,7 +3,9 @@ package com.easy.care.service.impl;
 import com.easy.care.dto.AllowanceRulesRequest;
 import com.easy.care.dto.AllowanceRulesResponse;
 import com.easy.care.entity.AllowanceRules;
+import com.easy.care.entity.CityDO;
 import com.easy.care.repository.AllowanceRulesRepository;
+import com.easy.care.repository.CityRepository;
 import com.easy.care.service.AllowanceRulesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ import java.util.Map;
 public class AllowanceRulesServiceImpl implements AllowanceRulesService {
 
     private final AllowanceRulesRepository allowanceRulesRepository;
+    private final CityRepository cityRepository;
 
     @Override
     @Transactional
@@ -53,17 +56,40 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
 
     @Override
     public Page<AllowanceRulesResponse> listAllAllowanceRules(String city, Pageable pageable) {
-        log.info("分页查询津贴规则，城市: {}, page: {}, size: {}", city, pageable.getPageNumber(), pageable.getPageSize());
+        log.info("分页查询津贴规则，城市代码: {}, page: {}, size: {}", city, pageable.getPageNumber(), pageable.getPageSize());
 
         Page<AllowanceRules> allowanceRulesPage;
         if (city != null && !city.trim().isEmpty()) {
-            // 按城市过滤
-            allowanceRulesPage = allowanceRulesRepository.findByCityNameAndEnabledTrue(city, pageable);
+            // 通过城市代码查找城市名称
+            CityDO cityDO = cityRepository.findByCode(city)
+                    .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + city));
+            // 按城市名称过滤
+            allowanceRulesPage = allowanceRulesRepository.findByCityNameAndEnabledTrue(cityDO.getChineseName(), pageable);
         } else {
             // 查询所有
             allowanceRulesPage = allowanceRulesRepository.findByEnabledTrue(pageable);
         }
         return allowanceRulesPage.map(this::convertToResponse);
+    }
+
+    @Override
+    public List<AllowanceRulesResponse> listAllAllowanceRulesWithoutPage(String city) {
+        log.info("查询所有津贴规则（不分页），城市代码: {}", city);
+
+        List<AllowanceRules> allowanceRulesList;
+        if (city != null && !city.trim().isEmpty()) {
+            // 通过城市代码查找城市名称
+            CityDO cityDO = cityRepository.findByCode(city)
+                    .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + city));
+            // 按城市名称过滤
+            allowanceRulesList = allowanceRulesRepository.findAllByCityNameAndEnabledTrue(cityDO.getChineseName());
+        } else {
+            // 查询所有
+            allowanceRulesList = allowanceRulesRepository.findAllByEnabledTrue();
+        }
+        return allowanceRulesList.stream()
+                .map(this::convertToResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
