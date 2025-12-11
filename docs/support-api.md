@@ -1,7 +1,7 @@
 # 系统支持接口文档（统一返回包装）
 
 - 控制器：`src/main/java/com/hr/maternity/controller/SupportController.java`
-- 统一返回包装：`com.hr.maternity.common.ApiResponse`、`GlobalResponseAdvice`、`GlobalExceptionHandler`
+- 统一返回包装：`com.easy.care.common.ApiResponse`、`GlobalResponseAdvice`、`GlobalExceptionHandler`
 - 相关实体/服务：
   - 城市实体：`src/main/java/com/hr/maternity/entity/City.java`
   - 节假日服务：`src/main/java/com/hr/maternity/service/HolidayService.java`
@@ -37,7 +37,7 @@
 | updateDate | string(datetime) | 更新时间 |
 | updateBy | string | 更新人 |
 
-#### remark 字段结构（`com.hr.maternity.dto.CityRemark`）
+#### remark 字段结构（`com.easy.care.dto.CityRemark`）
 
 | 字段 | 类型 | 说明 |
 |---|---|---|

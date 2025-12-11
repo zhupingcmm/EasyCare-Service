@@ -207,7 +207,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <executable>true</executable>
-                    <mainClass>com.hr.maternity.MaternityCalculatorApplication</mainClass>
+                    <mainClass>com.easy.care.MaternityCalculatorApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
