@@ -51,6 +51,7 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
     @Override
     public MaternityAllowanceResponse calculateMaternityAllowance(MaternityAllowanceRequest request) {
 
+        log.info("[calculateMaternityAllowance] request {}", request);
         String cityName = cityService.getEnabledCityChineseName(request.getCityCode());
         AllowanceRulesResponse allowanceRules = allowanceRulesService.getEnabledAllowanceRulesByCity(cityName);
         if (allowanceRules == null) {
@@ -516,25 +517,6 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
             }
         }
         
-        // 4. 处理申请日期补偿（使用配置的调整月份）
-        Map<String, Object> requestDateCompensation = 
-            requestDateCompensationService.calculateRequestDateCompensation(
-                request.getMonthlyBaseSalary(),
-                request.getAdjustedMonthlyBaseSalary(),
-                request.getMaternityLeaveStartDate(),
-                request.getMaternityLeaveRequestDate(),
-                advance.getSocialInsuranceBase(),
-                advance.getAdjustedSocialInsuranceBase(),
-                advance.getEspp(),
-                advance.getUnionFee(),
-                allowanceRules.getSalaryAdjustMonth(),
-                allowanceRules.getSocialAdjustMonth()
-            );
-        BigDecimal compensation = (BigDecimal) requestDateCompensation
-            .getOrDefault("compensation", BigDecimal.ZERO);
-        totalRefund = totalRefund.add(compensation);
-        result.setRequestDateCompensation(compensation);
-        
         // 5. 确保返还金额不为负
         result.setTotalRefund(totalRefund.compareTo(BigDecimal.ZERO) < 0 
             ? BigDecimal.ZERO : totalRefund);
@@ -741,31 +723,8 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
                 refundDetailsList.add(String.format("月度工会费：%.2f元", unionFee));
             }
         }
-        
-        // 5. 申请日期补偿详情
-        if (result.getRequestDateCompensation() != null 
-            && result.getRequestDateCompensation().compareTo(BigDecimal.ZERO) > 0) {
-            // 使用优化版本的方法，传入 PayrollDayCalculator 避免重复查询数据库
-            Map<String, Object> compensationResult = requestDateCompensationService.calculateRequestDateCompensationWithCalculator(
-                request.getMonthlyBaseSalary(),
-                request.getAdjustedMonthlyBaseSalary(),
-                request.getMaternityLeaveStartDate(),
-                request.getMaternityLeaveRequestDate(),
-                socialInsuranceBase,
-                adjustedSocialInsuranceBase,
-                espp,
-                unionFee,
-                allowanceRules.getSalaryAdjustMonth(),
-                allowanceRules.getSocialAdjustMonth(),
-                context.getPayrollDayCalculator()
-            );
-            String compensationDetail = (String) compensationResult.getOrDefault("refundDetail", "");
-            if (!compensationDetail.isEmpty()) {
-                refundDetailsList.add(compensationDetail);
-            }
-        }
-        
-        // 6. 总计公式
+
+        // 5. 总计公式
         StringBuilder formula = new StringBuilder("返还金额：");
         boolean hasItems = false;
         

@@ -73,6 +73,11 @@ public interface WorkdayCalculatorService {
         LocalDate start, 
         LocalDate end,
         Map<LocalDate, HolidayInfo> holidayMap);
+
+    MonthlyWorkdayInfoDO calculateSingleMonthWorkday(
+            LocalDate start,
+            LocalDate end,
+            Map<LocalDate, HolidayInfo> holidayMap);
     
     /**
      * 创建计薪日计算器

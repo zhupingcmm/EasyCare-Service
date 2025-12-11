@@ -419,10 +419,13 @@ public class HolidayServiceImpl implements HolidayService {
     
     @Override
     public Map<LocalDate, HolidayInfo> getHolidaysByDateRange(LocalDate startDate, LocalDate endDate) {
-        log.info("获取日期范围内的节假日数据: {} 到 {}", startDate, endDate);
+        LocalDate firstDateInStartMonth = startDate.withDayOfMonth(1);
+        LocalDate lastDateInEndMonth = endDate.withDayOfMonth(endDate.lengthOfMonth());
+
+        log.info("获取日期范围内的节假日数据: {} 到 {}", firstDateInStartMonth, lastDateInEndMonth);
         
         // 从数据库查询
-        List<Holiday> holidays = holidayRepository.findByDateBetweenOrderByDate(startDate, endDate);
+        List<Holiday> holidays = holidayRepository.findByDateBetweenOrderByDate(firstDateInStartMonth, lastDateInEndMonth);
         
         // 转换为Map
         Map<LocalDate, HolidayInfo> holidayMap = holidays.stream()

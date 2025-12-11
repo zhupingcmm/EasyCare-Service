@@ -400,4 +400,63 @@ public class WorkdayCalculatorServiceImpl implements WorkdayCalculatorService {
     public PayrollDayCalculator createPayrollDayCalculator(Map<LocalDate, HolidayInfo> holidayMap) {
         return new PayrollDayCalculator(holidayMap);
     }
+    
+    /**
+     * 计算单月的工作日信息
+     * 
+     * @param start 开始日期
+     * @param end 结束日期
+     * @param holidayMap 节假日映射
+     * @return 单月工作日信息
+     */
+    public MonthlyWorkdayInfoDO calculateSingleMonthWorkday(
+            LocalDate start,
+            LocalDate end,
+            Map<LocalDate, HolidayInfo> holidayMap) {
+        
+        // 参数处理：如果start为null，end不为null，则start为end所在月第一天
+        if (start == null && end != null) {
+            start = end.withDayOfMonth(1);
+        }
+        // 如果end为null，start不为null，则end为start所在月最后一天
+        else if (end == null && start != null) {
+            end = start.withDayOfMonth(start.lengthOfMonth());
+        }
+        // 如果end和start同时为null，则抛出异常
+        else if (start == null && end == null) {
+            throw new IllegalArgumentException("开始日期和结束日期不能同时为空");
+        }
+        
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("结束日期不能早于开始日期");
+        }
+        
+        YearMonth ym = YearMonth.from(start);
+        PayrollDayCalculator calculator = new PayrollDayCalculator(holidayMap);
+        
+        // 当月范围的开始与结束
+        LocalDate monthStart = ym.atDay(1);
+        LocalDate monthEnd = ym.atEndOfMonth();
+        LocalDate rangeStart = monthStart.isBefore(start) ? start : monthStart;
+        LocalDate rangeEnd = monthEnd.isAfter(end) ? end : monthEnd;
+        
+        // 计算工作日和计薪日
+        int workdays = calculator.calculateLeaveDays(rangeStart, rangeEnd);
+        int legalWorkdays = calculator.calculateLeaveDays(monthStart, monthEnd);
+        int paydays = calculator.calculatePayrollDays(rangeStart, rangeEnd);
+        int legalPaydays = calculator.calculatePayrollDays(monthStart, monthEnd);
+        
+        // 判断是否为完整月：从1号开始且到月末结束
+        boolean fullMonth = paydays == legalPaydays;
+        
+        return MonthlyWorkdayInfoDO.builder()
+                .year(ym.getYear())
+                .month(ym.getMonthValue())
+                .workdays(workdays)
+                .legalWorkdays(legalWorkdays)
+                .paydays(paydays)
+                .legalPaydays(legalPaydays)
+                .fullMonth(fullMonth)
+                .build();
+    }
 }

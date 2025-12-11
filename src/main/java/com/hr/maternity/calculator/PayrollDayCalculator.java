@@ -38,7 +38,7 @@ public class PayrollDayCalculator {
                 count++;
             }
         }
-        log.debug("计算计薪日：{} 到 {}，共 {} 天", start, end, count);
+
         return count;
     }
     
@@ -93,7 +93,7 @@ public class PayrollDayCalculator {
                 count++;
             }
         }
-        log.debug("计算工作日：{} 到 {}，共 {} 天", start, end, count);
+
         return count;
     }
     
