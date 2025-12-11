@@ -1,6 +1,7 @@
 package com.easy.care.repository;
 
 import com.easy.care.entity.AllowanceRules;
+import com.easy.care.entity.CityDO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,7 +19,7 @@ public interface AllowanceRulesRepository extends JpaRepository<AllowanceRules, 
     /**
      * 根据城市查询津贴规则
      */
-    Optional<AllowanceRules> findByCityNameAndEnabledTrue(String city);
+    Optional<AllowanceRules> findByCityAndEnabledTrue(CityDO city);
 
     /**
      * 分页查询所有激活的津贴规则
@@ -33,10 +34,10 @@ public interface AllowanceRulesRepository extends JpaRepository<AllowanceRules, 
     /**
      * 根据城市分页查询激活的津贴规则
      */
-    Page<AllowanceRules> findByCityNameAndEnabledTrue(String city, Pageable pageable);
+    Page<AllowanceRules> findByCityAndEnabledTrue(CityDO city, Pageable pageable);
 
     /**
      * 根据城市查询所有激活的津贴规则（不分页）
      */
-    List<AllowanceRules> findAllByCityNameAndEnabledTrue(String city);
+    List<AllowanceRules> findAllByCityAndEnabledTrue(CityDO city);
 }

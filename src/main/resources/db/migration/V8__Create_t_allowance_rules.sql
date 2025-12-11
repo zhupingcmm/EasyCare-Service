@@ -1,25 +1,32 @@
-DROP TABLE IF EXISTS t_allowance_rules;
-CREATE TABLE t_allowance_rules (
+DROP TABLE IF EXISTS t_allowance_rules CASCADE;
+
+CREATE TABLE IF NOT EXISTS t_allowance_rules (
     id                  SERIAL PRIMARY KEY,
-    city_id             INTEGER NOT NULL DEFAULT 1,
-    city_name           VARCHAR(50) NOT NULL,
+    city_id             INTEGER NOT NULL,
     payout_method       INTEGER NOT NULL DEFAULT 1,
     enabled             BOOLEAN NOT NULL DEFAULT TRUE,
     need_compensation   BOOLEAN DEFAULT TRUE,
     salary_adjust_month INTEGER DEFAULT 4,
     social_adjust_month INTEGER DEFAULT 7,
-    month_days          INTEGER DEFAULT 30,
+    month_days          DECIMAL(5,2) DEFAULT 30,
     create_date         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     create_by           VARCHAR(100) DEFAULT 'system',
     update_date         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_by           VARCHAR(100) DEFAULT 'system'
+    update_by           VARCHAR(100) DEFAULT 'system',
+    
+    -- 外键约束
+    CONSTRAINT fk_allowance_city FOREIGN KEY (city_id) 
+        REFERENCES t_city(id) ON DELETE RESTRICT
 );
+
+-- 索引
+CREATE INDEX idx_t_allowance_rules_city ON t_allowance_rules (city_id);
+CREATE INDEX idx_t_allowance_rules_enabled ON t_allowance_rules (enabled);
 
 -- 添加注释
 COMMENT ON TABLE t_allowance_rules IS '津贴规则表';
 COMMENT ON COLUMN t_allowance_rules.id IS '主键ID';
-COMMENT ON COLUMN t_allowance_rules.city_id IS '城市';
-COMMENT ON COLUMN t_allowance_rules.city_name IS '城市名称';
+COMMENT ON COLUMN t_allowance_rules.city_id IS '城市ID（外键关联 t_city）';
 COMMENT ON COLUMN t_allowance_rules.payout_method IS '发放方式: 1 个人账户，2 单位账户';
 COMMENT ON COLUMN t_allowance_rules.enabled IS '是否激活（用于逻辑删除）';
 COMMENT ON COLUMN t_allowance_rules.need_compensation IS '是否需要补差';

@@ -31,16 +31,11 @@ public class AllowanceRules {
     private Integer id;
 
     /**
-     * 城市ID
+     * 城市关联
      */
-    @Column(name = "city_id", nullable = false)
-    private Integer cityId = 1;
-
-    /**
-     * 城市名称
-     */
-    @Column(name = "city_name", nullable = false, length = 50)
-    private String cityName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id", nullable = false)
+    private CityDO city;
 
     /**
      * 发放方式

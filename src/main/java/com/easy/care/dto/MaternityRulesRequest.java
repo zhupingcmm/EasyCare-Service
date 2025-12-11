@@ -22,7 +22,7 @@ public class MaternityRulesRequest {
      * 城市代码
      */
 //    @NotNull(message = "城市代码不能为空")
-    private String city;
+    private String cityCode;
 
     /**
      * 产假类型代码

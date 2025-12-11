@@ -42,8 +42,8 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
         log.info("开始创建产假规则，请求参数: {}", request);
 
         // 查找城市
-        CityDO city = cityRepository.findByCode(request.getCity())
-                .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + request.getCity()));
+        CityDO city = cityRepository.findByCode(request.getCityCode())
+                .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + request.getCityCode()));
 
         // 查找产假类型
         MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findByCode(request.getMaternityLeaveTypeCode())
@@ -118,8 +118,8 @@ public class MaternityRulesServiceImpl implements MaternityRulesService {
                 .orElseThrow(() -> new IllegalArgumentException("产假规则不存在，ID: " + id));
 
         // 查找城市
-        CityDO city = cityRepository.findByCode(request.getCity())
-                .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + request.getCity()));
+        CityDO city = cityRepository.findByCode(request.getCityCode())
+                .orElseThrow(() -> new IllegalArgumentException("城市不存在，代码: " + request.getCityCode()));
 
         // 查找产假类型
         MaternityLeaveType maternityLeaveType = maternityLeaveTypeRepository.findByCode(request.getMaternityLeaveTypeCode())

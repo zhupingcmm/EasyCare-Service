@@ -55,9 +55,9 @@ public class MaternityRulesController {
      * 当传入page和size参数时，返回分页数据
      */
     @GetMapping
-    @Operation(summary = "查询产假规则", description = "查询所有产假规则，支持按城市过滤。不传page/size参数返回全部，传入则返回分页数据")
+    @Operation(summary = "查询产假规则", description = "查询所有产假规则，支持按城市代码过滤。不传page/size参数返回全部，传入则返回分页数据")
     public ApiResponse<?> listAllMaternityRules(
-            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String cityCode,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
             @RequestParam(required = false, defaultValue = "updateDate") String sort,
@@ -71,13 +71,13 @@ public class MaternityRulesController {
             Sort.Direction sortDirection = "ASC".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
             Pageable pageable = org.springframework.data.domain.PageRequest.of(pageNum, pageSize, Sort.by(sortDirection, sort));
             
-            log.info("收到分页查询产假规则请求，城市: {}, 分页参数: page={}, size={}", city, pageNum, pageSize);
-            Page<MaternityRulesResponse> pageResult = maternityRulesService.listAllMaternityRules(city, pageable);
+            log.info("收到分页查询产假规则请求，城市代码: {}, 分页参数: page={}, size={}", cityCode, pageNum, pageSize);
+            Page<MaternityRulesResponse> pageResult = maternityRulesService.listAllMaternityRules(cityCode, pageable);
             return ApiResponse.success(pageResult);
         } else {
             // 无分页参数，返回所有数据
-            log.info("收到查询所有产假规则请求（不分页），城市: {}", city);
-            List<MaternityRulesResponse> list = maternityRulesService.listAllMaternityRulesWithoutPage(city);
+            log.info("收到查询所有产假规则请求（不分页），城市代码: {}", cityCode);
+            List<MaternityRulesResponse> list = maternityRulesService.listAllMaternityRulesWithoutPage(cityCode);
             return ApiResponse.success(list);
         }
     }
