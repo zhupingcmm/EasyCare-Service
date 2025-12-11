@@ -49,9 +49,9 @@ public class MaternityRulesResponse {
     private Integer doctorRecommendDays;
 
     /**
-     * 产假扩展信息
+     * 产假扩展信息（可以是JSONArray或JSONObject）
      */
-    private Map<String, Object> maternityLeaveExt;
+    private Object maternityLeaveExt;
 
     /**
      * 产假是否顺延

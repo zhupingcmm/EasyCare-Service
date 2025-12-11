@@ -1,9 +1,12 @@
 package com.hr.maternity.service;
 
+import com.hr.maternity.calculator.PayrollDayCalculator;
+import com.hr.maternity.domain.HolidayInfo;
 import com.hr.maternity.domain.MonthlyWorkdayInfoDO;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 工作日计算服务
@@ -27,6 +30,16 @@ public interface WorkdayCalculatorService {
     List<MonthlyWorkdayInfoDO> calculateMonthlyWorkdays(LocalDate start, LocalDate end);
 
     /**
+     * 计算指定日期至当月月末（含）的工作日数
+     */
+    int countWorkdaysFromDateToMonthEnd(LocalDate date);
+
+    /**
+     * 计算当月月初至指定日期（含）的工作日数
+     */
+    int countWorkdaysFromMonthStartToDate(LocalDate date);
+
+    /**
      * 计算指定年月的发薪日天数
      * 发薪日 = 所有日期 - 非调休周末日期
      * 
@@ -46,4 +59,26 @@ public interface WorkdayCalculatorService {
      * @throws IllegalArgumentException 当开始/结束日期为空或结束日期早于开始日期时抛出
      */
     int calculatePayrollDaysInRange(LocalDate start, LocalDate end);
+    
+    /**
+     * 计算月度工作日信息（使用提供的节假日数据）
+     * 优化版本：避免重复查询数据库
+     * 
+     * @param start 开始日期
+     * @param end 结束日期
+     * @param holidayMap 节假日数据映射
+     * @return 月度工作日信息列表
+     */
+    List<MonthlyWorkdayInfoDO> calculateMonthlyWorkdaysWithHolidayMap(
+        LocalDate start, 
+        LocalDate end,
+        Map<LocalDate, HolidayInfo> holidayMap);
+    
+    /**
+     * 创建计薪日计算器
+     * 
+     * @param holidayMap 节假日数据映射
+     * @return 计薪日计算器
+     */
+    PayrollDayCalculator createPayrollDayCalculator(Map<LocalDate, HolidayInfo> holidayMap);
 }

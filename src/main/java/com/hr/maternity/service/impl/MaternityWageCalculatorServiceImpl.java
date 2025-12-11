@@ -327,26 +327,22 @@ public class MaternityWageCalculatorServiceImpl implements MaternityWageCalculat
     /**
      * 公共判断：是否跨过4月（用于基数4月调整场景），考虑跨年
      */
-    public boolean crossesApril(List<MonthlyWorkdayInfoDO> monthlyWorkdayList) {
-        if (monthlyWorkdayList == null || monthlyWorkdayList.isEmpty()) {
-            return false;
-        }
-        int firstYear = monthlyWorkdayList.get(0).getYear();
-        int firstMonth = monthlyWorkdayList.get(0).getMonth();
-        int lastYear = monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getYear();
-        int lastMonth = monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getMonth();
-
-        if (firstYear == lastYear) {
-            return firstMonth < 4 && lastMonth >= 4;
-        } else { // firstYear < lastYear
-            return (firstMonth < 4) || (lastMonth >= 4) || (lastYear - firstYear > 1);
-        }
+    public boolean crossesSalaryAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int month) {
+        return crossesMonth( monthlyWorkdayList, month);
     }
 
     /**
      * 公共判断：是否跨过7月（用于社保基数7月调整场景），考虑跨年
      */
-    public boolean crossesJuly(List<MonthlyWorkdayInfoDO> monthlyWorkdayList) {
+    public boolean crossesSocialAdjustMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int month) {
+        return crossesMonth( monthlyWorkdayList, month);
+    }
+
+    /**
+     * 公共判断：是否跨过月
+     */
+    @Override
+    public boolean crossesMonth(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int month) {
         if (monthlyWorkdayList == null || monthlyWorkdayList.isEmpty()) {
             return false;
         }
@@ -356,9 +352,9 @@ public class MaternityWageCalculatorServiceImpl implements MaternityWageCalculat
         int lastMonth = monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getMonth();
 
         if (firstYear == lastYear) {
-            return firstMonth < 7 && lastMonth >= 7;
+            return firstMonth < month && lastMonth >= month;
         } else { // firstYear < lastYear
-            return (firstMonth < 7) || (lastMonth >= 7) || (lastYear - firstYear > 1);
+            return (firstMonth < month) || (lastMonth >= month) || (lastYear - firstYear > 1);
         }
     }
 }

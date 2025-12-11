@@ -28,4 +28,9 @@ public interface MaternityRulesRepository extends JpaRepository<MaternityRules, 
      * 根据城市ID和启用状态分页查询产假规则
      */
     Page<MaternityRules> findByCityIdAndEnabled(Integer cityId, Boolean enabled, Pageable pageable);
+
+    /**
+     * 根据城市ID和启用状态查询产假规则列表
+     */
+    List<MaternityRules> findByCityIdAndEnabled(Integer cityId, Boolean enabled);
 }

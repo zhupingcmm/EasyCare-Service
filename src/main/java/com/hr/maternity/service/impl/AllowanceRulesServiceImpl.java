@@ -31,9 +31,9 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
         log.info("开始创建津贴规则，请求参数: {}", request);
 
         AllowanceRules allowanceRules = new AllowanceRules();
-        allowanceRules.setCity(request.getCity());
+        allowanceRules.setCityName(request.getCity());
         allowanceRules.setPayoutMethod(request.getPayoutMethod());
-        allowanceRules.setIsActive(true);
+        allowanceRules.setEnabled(true);
 
         AllowanceRules saved = allowanceRulesRepository.save(allowanceRules);
         log.info("津贴规则创建成功，ID: {}", saved.getId());
@@ -58,10 +58,10 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
         Page<AllowanceRules> allowanceRulesPage;
         if (city != null && !city.trim().isEmpty()) {
             // 按城市过滤
-            allowanceRulesPage = allowanceRulesRepository.findByCityAndIsActiveTrue(city, pageable);
+            allowanceRulesPage = allowanceRulesRepository.findByCityNameAndEnabledTrue(city, pageable);
         } else {
             // 查询所有
-            allowanceRulesPage = allowanceRulesRepository.findByIsActiveTrue(pageable);
+            allowanceRulesPage = allowanceRulesRepository.findByEnabledTrue(pageable);
         }
         return allowanceRulesPage.map(this::convertToResponse);
     }
@@ -74,7 +74,7 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
         AllowanceRules allowanceRules = allowanceRulesRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("津贴规则不存在，ID: " + id));
 
-        allowanceRules.setCity(request.getCity());
+        allowanceRules.setCityName(request.getCity());
         allowanceRules.setPayoutMethod(request.getPayoutMethod());
 
         AllowanceRules updated = allowanceRulesRepository.save(allowanceRules);
@@ -91,9 +91,17 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
         AllowanceRules allowanceRules = allowanceRulesRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("津贴规则不存在，ID: " + id));
 
-        allowanceRules.setIsActive(false);
+        allowanceRules.setEnabled(false);
         allowanceRulesRepository.save(allowanceRules);
         log.info("津贴规则逻辑删除成功，ID: {}", id);
+    }
+
+    @Override
+    public AllowanceRulesResponse getEnabledAllowanceRulesByCity(String cityName) {
+        log.info("根据城市查询启用津贴规则，城市: {}", cityName);
+        AllowanceRules allowanceRules = allowanceRulesRepository.findByCityNameAndEnabledTrue(cityName)
+                .orElseThrow(() -> new IllegalArgumentException("该城市无启用的津贴规则: " + cityName));
+        return convertToResponse(allowanceRules);
     }
 
     @Override
@@ -105,29 +113,29 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
         for (Map<String, Object> data : dataList) {
             try {
                 String city = (String) data.get("城市");
-                String payoutMethod = (String) data.get("津贴发放方式");
+                Integer payoutMethod = (Integer) data.get("津贴发放方式");
                 
                 // 验证必填字段
                 if (city == null || city.trim().isEmpty() || 
-                    payoutMethod == null || payoutMethod.trim().isEmpty()) {
+                    payoutMethod == null) {
                     log.warn("跳过不完整的数据行: {}", data);
                     continue;
                 }
                 
                 // 检查该城市是否已存在激活的规则
-                allowanceRulesRepository.findByCityAndIsActiveTrue(city.trim())
+                allowanceRulesRepository.findByCityNameAndEnabledTrue(city.trim())
                     .ifPresent(existing -> {
                         // 如果存在，先逻辑删除旧规则
-                        existing.setIsActive(false);
+                        existing.setEnabled(false);
                         allowanceRulesRepository.save(existing);
                         log.info("城市 {} 已存在规则，已逻辑删除旧规则", city.trim());
                     });
                 
                 // 创建新的津贴规则
                 AllowanceRules allowanceRules = new AllowanceRules();
-                allowanceRules.setCity(city.trim());
-                allowanceRules.setPayoutMethod(payoutMethod.trim());
-                allowanceRules.setIsActive(true);
+                allowanceRules.setCityName(city.trim());
+                allowanceRules.setPayoutMethod(payoutMethod);
+                allowanceRules.setEnabled(true);
                 
                 allowanceRulesRepository.save(allowanceRules);
                 successCount++;
@@ -146,9 +154,13 @@ public class AllowanceRulesServiceImpl implements AllowanceRulesService {
     private AllowanceRulesResponse convertToResponse(AllowanceRules allowanceRules) {
         return AllowanceRulesResponse.builder()
                 .id(allowanceRules.getId())
-                .city(allowanceRules.getCity())
+                .city(allowanceRules.getCityName())
                 .payoutMethod(allowanceRules.getPayoutMethod())
-                .isActive(allowanceRules.getIsActive())
+                .needCompensation(allowanceRules.getNeedCompensation())
+                .enabled(allowanceRules.getEnabled())
+                .salaryAdjustMonth(allowanceRules.getSalaryAdjustMonth())
+                .socialAdjustMonth(allowanceRules.getSocialAdjustMonth())
+                .monthDays(allowanceRules.getMonthDays())
                 .createDate(allowanceRules.getCreateDate())
                 .createBy(allowanceRules.getCreateBy())
                 .updateDate(allowanceRules.getUpdateDate())

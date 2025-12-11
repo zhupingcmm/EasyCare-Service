@@ -41,6 +41,11 @@ public interface AllowanceRulesService {
     void deleteAllowanceRules(Integer id);
 
     /**
+     * 根据城市查询启用的津贴规则
+     */
+    AllowanceRulesResponse getEnabledAllowanceRulesByCity(String cityName);
+
+    /**
      * 批量导入津贴规则
      */
     int batchImportAllowanceRules(List<Map<String, Object>> dataList);

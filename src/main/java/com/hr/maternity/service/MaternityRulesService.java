@@ -43,4 +43,18 @@ public interface MaternityRulesService {
      * 批量导入产假规则
      */
     int batchImportMaternityRules(List<Map<String, Object>> dataList);
+
+    /**
+     * 根据城市代码查询产假政策
+     * @param cityCode 城市代码
+     * @return 产假政策键值对列表
+     */
+    List<com.hr.maternity.dto.MaternityPolicyResponse> findMaternityPolicyByCityCode(String cityCode);
+
+    /**
+     * 根据城市代码查询难产和流产假信息
+     * @param cityCode 城市代码
+     * @return 难产和流产假信息
+     */
+    com.hr.maternity.dto.DystociaMiscarriageResponse queryDystociaMiscarriageByCityCode(String cityCode);
 }

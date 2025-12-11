@@ -13,6 +13,8 @@ import com.hr.maternity.repository.MaternityAllowanceRequestRepository;
 import com.hr.maternity.repository.MaternityAllowanceResultRepository;
 import com.hr.maternity.service.MaternityAllowanceService;
 import com.hr.maternity.strategy.MaternityAllowanceStrategy;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,8 +31,7 @@ import java.util.Map;
 @Slf4j
 @Service
 public class MaternityAllowanceServiceImpl implements MaternityAllowanceService {
-
-    private final Map<String, MaternityAllowanceStrategy> strategyMap;
+    private final MaternityAllowanceStrategy maternityAllowanceStrategy;
     private final CityRepository cityRepository;
     private final MaternityAllowanceRequestRepository allowanceRequestRepository;
     private final MaternityAllowanceResultRepository allowanceResultRepository;
@@ -40,12 +41,12 @@ public class MaternityAllowanceServiceImpl implements MaternityAllowanceService 
     private String defaultLanId;
 
     public MaternityAllowanceServiceImpl(
-            @Qualifier("maternityAllowanceStrategyMap") Map<String, MaternityAllowanceStrategy> strategyMap,
+            @Qualifier("baseMaternityAllowanceStrategy") MaternityAllowanceStrategy maternityAllowanceStrategy,
             CityRepository cityRepository,
             MaternityAllowanceRequestRepository allowanceRequestRepository,
             MaternityAllowanceResultRepository allowanceResultRepository,
             HistoryRepository historyRepository) {
-        this.strategyMap = strategyMap;
+        this.maternityAllowanceStrategy = maternityAllowanceStrategy;
         this.cityRepository = cityRepository;
         this.allowanceRequestRepository = allowanceRequestRepository;
         this.allowanceResultRepository = allowanceResultRepository;
@@ -53,56 +54,9 @@ public class MaternityAllowanceServiceImpl implements MaternityAllowanceService 
     }
 
     @Override
-    @Transactional
     public MaternityAllowanceResponse calculateMaternityAllowance(MaternityAllowanceRequest request) {
-        log.info("开始计算津贴，请求参数: {}", request);
-        
-        // 1. 校验日期
         validateDateOrder(request);
-        
-        // 2. 根据 requestId 和 defaultLanId 从 history 表获取记录
-        Long requestId = request.getRequestId();
-        List<HistoryDO> histories = historyRepository.findByMaternityLeaveRequestId(requestId);
-        HistoryDO history = histories.stream()
-                .filter(h -> defaultLanId.equals(h.getLanId()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "未找到对应的历史记录，requestId: " + requestId + ", lanId: " + defaultLanId));
-        log.info("找到历史记录，ID: {}", history.getId());
-        
-        // 3. 保存津贴申请记录
-        MaternityAllowanceRequestDO requestEntity = convertToAllowanceRequestEntity(request);
-        requestEntity = allowanceRequestRepository.save(requestEntity);
-        log.info("保存津贴申请记录成功，ID: {}", requestEntity.getId());
-        
-        // 4. 更新历史记录，保存津贴申请ID
-        history.setMaternityAllowanceRequestId(requestEntity.getId());
-        historyRepository.save(history);
-        log.info("更新历史记录(津贴申请)成功，ID: {}", history.getId());
-        
-        // 5. 计算津贴
-        MaternityAllowanceStrategy strategy = strategyMap.get(request.getCityCode());
-        if (strategy == null) {
-            throw new IllegalArgumentException("不支持的城市代码: " + request.getCityCode());
-        }
-        MaternityAllowanceResponse resp = strategy.calculateMaternityAllowance(request);
-        cityRepository.findByCode(request.getCityCode()).ifPresent(city -> fillCity(resp, city));
-        
-        // 6. 保存计算结果
-        MaternityAllowanceResultDO resultEntity = convertToAllowanceResultEntity(resp, requestEntity.getId());
-        resultEntity = allowanceResultRepository.save(resultEntity);
-        log.info("保存津贴计算结果成功，ID: {}", resultEntity.getId());
-        
-        // 7. 更新历史记录，保存津贴结果ID并更新记录类型为津贴
-        history.setMaternityAllowanceResultId(resultEntity.getId());
-        history.setRecordType(RecordTypeEnum.ALLOWANCE);
-        historyRepository.save(history);
-        log.info("更新历史记录(津贴结果)成功，记录类型已更新为ALLOWANCE，ID: {}", history.getId());
-        
-        // 8. 设置ID到响应中
-        resp.setRequestId(requestEntity.getId());
-        resp.setResultId(resultEntity.getId());
-        
+        MaternityAllowanceResponse resp = maternityAllowanceStrategy.calculateMaternityAllowance(request);
         return resp;
     }
 

@@ -20,5 +20,15 @@ public class EncryptionProperties {
     /**
      * 加密算法
      */
-    private String algorithm = "AES";
+    private String algorithm = "RSA";
+
+    /**
+     * RSA 公钥 PEM 内容（当 algorithm=RSA 时使用）
+     */
+    private String rsaPublicKeyPem = "-----BEGIN PUBLIC KEY-----CHANGE_ME_PUBLIC_KEY-----END PUBLIC KEY-----";
+
+    /**
+     * RSA 私钥 PEM 内容（当 algorithm=RSA 时使用）
+     */
+    private String rsaPrivateKeyPem = "-----BEGIN PRIVATE KEY-----CHANGE_ME_PRIVATE_KEY-----END PRIVATE KEY-----";
 }

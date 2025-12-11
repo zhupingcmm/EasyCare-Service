@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,15 +18,20 @@ public interface AllowanceRulesRepository extends JpaRepository<AllowanceRules, 
     /**
      * 根据城市查询津贴规则
      */
-    Optional<AllowanceRules> findByCityAndIsActiveTrue(String city);
+    Optional<AllowanceRules> findByCityNameAndEnabledTrue(String city);
 
     /**
      * 分页查询所有激活的津贴规则
      */
-    Page<AllowanceRules> findByIsActiveTrue(Pageable pageable);
+    Page<AllowanceRules> findByEnabledTrue(Pageable pageable);
+
+    /**
+     * 查询所有激活的津贴规则
+     */
+    List<AllowanceRules> findAllByEnabledTrue();
 
     /**
      * 根据城市分页查询激活的津贴规则
      */
-    Page<AllowanceRules> findByCityAndIsActiveTrue(String city, Pageable pageable);
+    Page<AllowanceRules> findByCityNameAndEnabledTrue(String city, Pageable pageable);
 }

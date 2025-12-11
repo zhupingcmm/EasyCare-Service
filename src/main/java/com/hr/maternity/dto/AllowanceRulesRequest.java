@@ -25,5 +25,5 @@ public class AllowanceRulesRequest {
      * 发放方式
      */
     @NotBlank(message = "发放方式不能为空")
-    private String payoutMethod;
+    private Integer payoutMethod;
 }

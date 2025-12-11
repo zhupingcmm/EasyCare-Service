@@ -1,6 +1,7 @@
 package com.hr.maternity.common;
 
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 /**
  * 全局异常处理，统一返回 { code, message, data }
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -25,6 +27,8 @@ public class GlobalExceptionHandler {
                 .stream()
                 .map(this::formatFieldError)
                 .collect(Collectors.joining("; "));
+
+        log.error("参数校验失败(MethodArgumentNotValidException): {}", msg, ex);
         return new ResponseEntity<>(ApiResponse.error(400, msg), HttpStatus.BAD_REQUEST);
     }
 
@@ -37,6 +41,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+        log.error("参数校验失败(ConstraintViolationException): {}", ex.getMessage(), ex);
         return new ResponseEntity<>(ApiResponse.error(400, ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
@@ -45,14 +50,29 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.error("非法参数异常: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(ApiResponse.error(422, ex.getMessage()), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    /**
+     * 业务异常（登录失败、认证失败等）
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
+        String message = ex.getMessage();
+        if (message != null && (message.contains("LDAP") || message.contains("认证") || message.contains("登录"))) {
+            return new ResponseEntity<>(ApiResponse.error(401, message), HttpStatus.UNAUTHORIZED);
+        }
+        return new ResponseEntity<>(ApiResponse.error(400, message != null ? message : "请求失败"), HttpStatus.BAD_REQUEST);
     }
 
     /**
      * 兜底异常
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
-        return new ResponseEntity<>(ApiResponse.error(500, "服务器内部错误"), HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) throws Exception {
+        log.error("未处理异常", ex);
+        throw ex;
+        // new ResponseEntity<>(ApiResponse.error(500, "服务器内部错误"), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

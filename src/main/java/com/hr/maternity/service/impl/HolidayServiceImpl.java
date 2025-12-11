@@ -1,5 +1,6 @@
 package com.hr.maternity.service.impl;
 
+import com.hr.maternity.domain.HolidayInfo;
 import com.hr.maternity.dto.HolidayRequest;
 import com.hr.maternity.dto.HolidayResponse;
 import com.hr.maternity.entity.Holiday;
@@ -15,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 节假日服务实现类
@@ -87,24 +89,52 @@ public class HolidayServiceImpl implements HolidayService {
 
         log.info("获取{}年节假日数据", year);
 
-//        // 1. 首先从数据库查询
-//        List<Holiday> dbHolidays = holidayRepository.findByYearAndRegionOrderByDate(yearInt, region);
-//        if (!dbHolidays.isEmpty()) {
-//            log.info("从数据库获取到{}年节假日数据，共{}条", year, dbHolidays.size());
-//            return convertHolidaysToMap(dbHolidays);
-//        }
+        // 1. 首先从数据库查询
+        List<Holiday> dbHolidays = holidayRepository.findByYearAndRegionOrderByDate(yearInt, region);
+        if (!dbHolidays.isEmpty()) {
+            log.info("从数据库获取到{}年节假日数据，共{}条", year, dbHolidays.size());
+            return convertHolidaysToMap(dbHolidays);
+        }
 
         // 2. 数据库没有数据，从第三方API获取
         log.info("数据库中没有{}年节假日数据，从第三方API获取", year);
         List<Map<String, Object>> apiHolidays = fetchHolidaysFromApi(year);
 
         // 3. 将API数据保存到数据库
-//        if (!apiHolidays.isEmpty()) {
-//            saveHolidaysToDatabase(apiHolidays, yearInt, region);
-//            log.info("已将{}年节假日数据保存到数据库，共{}条", year, apiHolidays.size());
-//        }
+        if (!apiHolidays.isEmpty()) {
+            saveHolidaysToDatabase(apiHolidays, yearInt, region);
+            log.info("已将{}年节假日数据保存到数据库，共{}条", year, apiHolidays.size());
+        }
 
         return apiHolidays;
+    }
+
+    private List<Map<String, Object>> convertHolidaysToMap(List<Holiday> holidays) {
+        return holidays.stream()
+                .map(this::convertHolidayToMap)
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, Object> convertHolidayToMap(Holiday holiday) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("date", holiday.getDate().toString());
+        map.put("name", holiday.getName());
+        map.put("name_cn", holiday.getCnName());
+        map.put("name_en", holiday.getEnName());
+        map.put("type", resolveHolidayType(holiday));
+        map.put("isPublicHoliday", holiday.getIsPublicHoliday());
+        return map;
+    }
+
+    private String resolveHolidayType(Holiday holiday) {
+        Integer type = holiday.getType();
+        if (Objects.equals(type, Holiday.SpecialDayType.HOLIDAY)) {
+            return "public_holiday";
+        }
+        if (Objects.equals(type, Holiday.SpecialDayType.WORKDAY)) {
+            return "transfer_workday";
+        }
+        return Boolean.TRUE.equals(holiday.getIsPublicHoliday()) ? "public_holiday" : "transfer_workday";
     }
 
     /**
@@ -384,6 +414,36 @@ public class HolidayServiceImpl implements HolidayService {
                 .createBy(holiday.getCreateBy())
                 .updateDate(holiday.getUpdateDate())
                 .updateBy(holiday.getUpdateBy())
+                .build();
+    }
+    
+    @Override
+    public Map<LocalDate, HolidayInfo> getHolidaysByDateRange(LocalDate startDate, LocalDate endDate) {
+        log.info("获取日期范围内的节假日数据: {} 到 {}", startDate, endDate);
+        
+        // 从数据库查询
+        List<Holiday> holidays = holidayRepository.findByDateBetweenOrderByDate(startDate, endDate);
+        
+        // 转换为Map
+        Map<LocalDate, HolidayInfo> holidayMap = holidays.stream()
+                .collect(Collectors.toMap(
+                        Holiday::getDate,
+                        this::convertToHolidayInfo
+                ));
+        
+        log.info("获取到{}条节假日数据", holidayMap.size());
+        return holidayMap;
+    }
+    
+    /**
+     * 转换为HolidayInfo
+     */
+    private HolidayInfo convertToHolidayInfo(Holiday holiday) {
+        return HolidayInfo.builder()
+                .date(holiday.getDate())
+                .name(holiday.getName())
+                .isPublicHoliday(holiday.getIsPublicHoliday())
+                .type(resolveHolidayType(holiday))
                 .build();
     }
 }
