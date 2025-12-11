@@ -1,19 +1,20 @@
-package com.hr.maternity.function;
+package com.hr.maternity.helper;
 
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.hr.maternity.dto.MaternityLeaveExtDTO;
 import com.hr.maternity.dto.MaternityLeaveRequest;
 import com.hr.maternity.entity.MaternityRules;
+import com.hr.maternity.enums.AwardLeaveEnum;
 import com.hr.maternity.enums.MaternityLeaveTypeEnum;
 import com.hr.maternity.util.EasyCareDateUtil;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
-import java.util.Map;
+import java.util.List;
 
 @Service
 public class MaternityLeaveDateHelper {
@@ -62,7 +63,8 @@ public class MaternityLeaveDateHelper {
         if (BooleanUtils.isFalse(maternityLeaveRequest.getHasExtendedDays())) {
             return 0;
         }
-        return findDaysFromExtFirst(maternityRule, MaternityLeaveTypeEnum.AWARD.getCode(), maternityLeaveRequest.getNumOfKids() + "");
+        AwardLeaveEnum awdCode = ConfigDataConvertHelper.convertKidsToAwardLeaveEnum(maternityLeaveRequest.getNumberOfKids());
+        return findDaysFromExtFirst(maternityRule, MaternityLeaveTypeEnum.AWARD.getCode(), awdCode.getCode());
     }
 
 
@@ -89,35 +91,25 @@ public class MaternityLeaveDateHelper {
         if (ext == null) {
             return maternityRule.getDefaultDays();
         }
-        
-        JSONArray jsonArray;
-        if (ext instanceof JSONArray) {
-            jsonArray = (JSONArray) ext;
-        } else if (ext instanceof java.util.List) {
-            // 如果是 List 类型，转换为 JSONArray
-            jsonArray = JSONArray.parseArray(JSON.toJSONString(ext));
-        } else {
-            // 其他情况返回默认天数
-            return maternityRule.getDefaultDays();
-        }
-        
-        if (jsonArray == null || jsonArray.isEmpty()) {
+
+        String extStr = (String) ext;
+        List<MaternityLeaveExtDTO> extList = JSONArray.parseArray(extStr, MaternityLeaveExtDTO.class);
+
+        if (CollectionUtils.isEmpty(extList)) {
             throw new RuntimeException(matchCode + ":config not found");
         }
-        
-        for (int i = 0; i < jsonArray.size(); i++) {
-            JSONObject obj = jsonArray.getJSONObject(i);
-            if (obj == null) continue;
-            String code = obj.getString("code");
-            if (matchCode.equalsIgnoreCase(code)) {
-                Integer d = obj.getInteger("days");
-                if (d == null) {
-                    throw new RuntimeException(matchCode + ":days not configured");
-                }
-                return d;
+
+        MaternityLeaveExtDTO matched = null;
+        for (MaternityLeaveExtDTO maternityLeaveExtDTO : extList) {
+            if (maternityLeaveExtDTO.getCode().equals(matchCode)) {
+                matched = maternityLeaveExtDTO;
+                break;
             }
         }
-        throw new RuntimeException(matchCode + ":days not configured");
+        if (matched == null) {
+            throw new RuntimeException(matchCode + ":days not configured");
+        }
+        return matched.getDays();
     }
 
 

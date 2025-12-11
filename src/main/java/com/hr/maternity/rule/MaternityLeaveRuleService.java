@@ -5,7 +5,7 @@ import com.hr.maternity.dto.MaternityLeaveResponse;
 import com.hr.maternity.dto.TimeScope;
 import com.hr.maternity.entity.MaternityRules;
 import com.hr.maternity.enums.MaternityLeaveTypeEnum;
-import com.hr.maternity.function.MaternityLeaveDateHelper;
+import com.hr.maternity.helper.MaternityLeaveDateHelper;
 import com.hr.maternity.util.MaternityRulesUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
