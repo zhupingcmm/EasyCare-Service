@@ -34,7 +34,7 @@
 
 ### 2. 通用工具类
 
-**文件**: `com.hr.maternity.util.ExcelParser`
+**文件**: `com.easy.care.util.ExcelParser`
 
 **功能**:
 - ✅ 支持 .xls 和 .xlsx 格式
@@ -307,8 +307,8 @@ spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
 
 # 日志级别
-logging.level.com.hr.maternity.service.BatchTestService=DEBUG
-logging.level.com.hr.maternity.service.MaternityBatchTestService=DEBUG
+logging.level.com.easy.care.service.BatchTestService=DEBUG
+logging.level.com.easy.care.service.MaternityBatchTestService=DEBUG
 ```
 
 ## 测试建议
