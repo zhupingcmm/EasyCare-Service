@@ -35,5 +35,11 @@ public interface CityRepository extends JpaRepository<CityDO, UUID> {
      */
     List<CityDO> findByEnabledTrueOrderBySortOrder();
 
+    /**
+     * 根据中文名称查找城市
+     * @param chineseName 中文名称
+     * @return 城市信息
+     */
+    Optional<CityDO> findByChineseName(String chineseName);
 
 }

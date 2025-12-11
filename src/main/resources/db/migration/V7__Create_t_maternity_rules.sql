@@ -3,13 +3,14 @@ DROP TABLE IF EXISTS t_maternity_rules CASCADE;
 -- 产假规则表（使用外键关联）
 CREATE TABLE IF NOT EXISTS t_maternity_rules (
     id                    SERIAL PRIMARY KEY,
-    city_id               INTEGER NOT NULL,
-    maternity_leave_type_id  INTEGER NOT NULL,
+    city_id               INTEGER,
+    maternity_leave_type_id  INTEGER,
     default_days          INTEGER NOT NULL CHECK (default_days > 0),
     doctor_recommend_days INTEGER,
     maternity_leave_ext   JSONB,
-    holiday_extend        BOOLEAN NOT NULL DEFAULT TRUE,
-    has_allowance         BOOLEAN NOT NULL DEFAULT TRUE,
+    holiday_extend        BOOLEAN  DEFAULT TRUE,
+    has_allowance         BOOLEAN  DEFAULT TRUE,
+    plan_allowance_day    INTEGER,
     enabled               BOOLEAN NOT NULL DEFAULT TRUE,
     create_date           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     create_by             VARCHAR(100) DEFAULT 'system',
@@ -39,6 +40,7 @@ COMMENT ON COLUMN t_maternity_rules.doctor_recommend_days IS '医嘱天数';
 COMMENT ON COLUMN t_maternity_rules.maternity_leave_ext IS '产假扩展信息（JSON格式，存储产假对应天数等）';
 COMMENT ON COLUMN t_maternity_rules.holiday_extend IS '产假是否顺延';
 COMMENT ON COLUMN t_maternity_rules.has_allowance IS '是否有津贴';
+COMMENT ON COLUMN t_maternity_rules.plan_allowance_day IS '津贴计发天数';
 COMMENT ON COLUMN t_maternity_rules.enabled IS '是否启用';
 COMMENT ON COLUMN t_maternity_rules.create_date IS '创建时间';
 COMMENT ON COLUMN t_maternity_rules.create_by IS '创建人';
