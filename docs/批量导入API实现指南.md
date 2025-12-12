@@ -131,7 +131,7 @@ public ApiResponse<String> importLeaveTypes(@RequestParam("file") MultipartFile 
 
 **需要添加的导入**:
 ```java
-import com.easy.care.util.ExcelParser;
+import com.ocbc.ms.easy.care.util.ExcelParser;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 ```
@@ -160,7 +160,7 @@ public ApiResponse<String> importMiscarriageTypes(@RequestParam("file") Multipar
 
 **需要添加的导入**:
 ```java
-import com.easy.care.util.ExcelParser;
+import com.ocbc.ms.easy.care.util.ExcelParser;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 ```
@@ -189,7 +189,7 @@ public ApiResponse<String> importMaternityRules(@RequestParam("file") MultipartF
 
 **需要添加的导入**:
 ```java
-import com.easy.care.util.ExcelParser;
+import com.ocbc.ms.easy.care.util.ExcelParser;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 ```

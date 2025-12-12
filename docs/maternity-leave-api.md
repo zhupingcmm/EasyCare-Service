@@ -2,7 +2,7 @@
 
 - 控制器：`src/main/java/com/hr/maternity/controller/MaternityLeaveController.java`
 - 服务实现：`src/main/java/com/hr/maternity/service/impl/MaternityLeaveServiceImpl.java`
-- 统一返回包装：`com.easy.care.common.ApiResponse`、`GlobalResponseAdvice`、`GlobalExceptionHandler`
+- 统一返回包装：`common.com.ocbc.ms.easy.care.ApiResponse`、`GlobalResponseAdvice`、`GlobalExceptionHandler`
 - 城市策略：`src/main/java/com/hr/maternity/strategy/impl/leave/`
   - 示例：`ShanghaiMaternityLeaveStrategy`、`ShenzhenMaternityLeaveStrategy`、`GuangzhouMaternityLeaveStrategy` 等
 

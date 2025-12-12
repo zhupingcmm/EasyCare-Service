@@ -8,7 +8,7 @@
 
 ### 1. ExcelParser（通用 Excel 解析工具）
 
-位置：`com.easy.care.util.ExcelParser`
+位置：`util.com.ocbc.ms.easy.care.ExcelParser`
 
 **主要功能：**
 - 支持 `.xls` 和 `.xlsx` 格式
@@ -25,7 +25,7 @@
 
 ### 2. BatchTestService（批量测试服务）
 
-位置：`com.easy.care.service.BatchTestService`
+位置：`service.com.ocbc.ms.easy.care.BatchTestService`
 
 **核心方法：**
 - `runBatchTest(MultipartFile file)` - 执行批量测试
@@ -37,7 +37,7 @@
 
 ### 3. BatchTestController（批量测试控制器）
 
-位置：`com.easy.care.controller.BatchTestController`
+位置：`controller.com.ocbc.ms.easy.care.BatchTestController`
 
 **API 接口：**
 ```
