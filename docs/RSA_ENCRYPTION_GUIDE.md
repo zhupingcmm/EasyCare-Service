@@ -8,7 +8,7 @@
 
 ### 1. RSAUtil 工具类
 
-位置：`com.hr.maternity.util.RSAUtil`
+位置：`util.com.ocbc.ms.easy.care.RSAUtil`
 
 主要方法：
 - `decryptLogin(LoginRequest)` - 解密登录请求中的密码
@@ -18,7 +18,7 @@
 
 ### 2. Nonce实体
 
-位置：`com.hr.maternity.entity.Nonce`
+位置：`entity.com.ocbc.ms.easy.care.Nonce`
 
 字段说明：
 - `id` - 主键ID

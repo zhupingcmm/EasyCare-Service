@@ -294,7 +294,7 @@ springboot+hibernet +JPA实现数据库字段级别的加密，我要实现一�
 ```
 
 **执行内容：**
-- 新增 `com.hr.maternity.demo.encryption` 包，包含 `@EncryptedField` 注解、Base64 属性转换器、异常与负载模型。
+- 新增 `com.ocbc.ms.easy.care.demo.encryption` 包，包含 `@EncryptedField` 注解、Base64 属性转换器、异常与负载模型。
 - 创建 Demo 实体、Repository、DTO、Service/Impl 以及 Controller，演示字段级加密的创建、查询全部、按 ID 查询。
 - 提供建表示例 SQL 以及 Postman 可直接调用的接口说明。
 
@@ -484,7 +484,7 @@ private Boolean isSuccess;        // 是否成功
 
 **问题**：`AllowanceRulesController.downloadTemplate()` 执行时报错：
 ```
-class com.hr.maternity.common.ApiResponse cannot be cast to class [B
+class common.com.ocbc.ms.easy.care.ApiResponse cannot be cast to class [B
 ```
 
 **原因分析**：
@@ -1000,13 +1000,13 @@ baseEnvironment.put("java.naming.referral", "follow");
 
 **生产环境**：
 ```properties
-logging.level.com.hr.maternity.ldap=INFO
+logging.level.com.ocbc.ms.easy.care.ldap=INFO
 ```
 输出：认证开始/结束、域切换、绑定成功/失败、搜索结果、用户信息
 
 **调试环境**：
 ```properties
-logging.level.com.hr.maternity.ldap=DEBUG
+logging.level.com.ocbc.ms.easy.care.ldap=DEBUG
 ```
 额外输出：配置详情、Principal列表、DN路径、堆栈跟踪、耗时细节
 

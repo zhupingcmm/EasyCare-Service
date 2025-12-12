@@ -36,17 +36,17 @@ curl -X POST http://localhost:8080/api/batch-test/run \
 ## 核心组件
 
 ### 1. ExcelParser（可重用工具类）
-- 位置：`com.hr.maternity.util.ExcelParser`
+- 位置：`util.com.ocbc.ms.easy.care.ExcelParser`
 - 功能：通用 Excel 解析，支持 .xls 和 .xlsx
 - 特性：自动类型识别、安全取值方法
 
 ### 2. BatchTestService（业务服务）
-- 位置：`com.hr.maternity.service.BatchTestService`
+- 位置：`service.com.ocbc.ms.easy.care.BatchTestService`
 - 功能：批量测试执行、结果统计
 - 扩展点：`executeTestCase()` 方法需根据业务逻辑实现
 
 ### 3. BatchTestController（REST 接口）
-- 位置：`com.hr.maternity.controller.BatchTestController`
+- 位置：`controller.com.ocbc.ms.easy.care.BatchTestController`
 - 功能：文件上传、参数验证、结果返回
 
 ## 自定义业务逻辑

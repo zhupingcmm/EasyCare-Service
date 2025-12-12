@@ -12,12 +12,12 @@
 ## 实现内容
 
 ### 1. 新增包结构
-- `com.hr.maternity.email` - 邮件功能包
-- `com.hr.maternity.email.config` - 邮件配置
-- `com.hr.maternity.email.dto` - 请求响应DTO
-- `com.hr.maternity.email.service` - 邮件服务接口
-- `com.hr.maternity.email.service.impl` - 邮件服务实现
-- `com.hr.maternity.email.controller` - 邮件控制器
+- `com.ocbc.ms.easy.care.email` - 邮件功能包
+- `com.ocbc.ms.easy.care.email.config` - 邮件配置
+- `com.ocbc.ms.easy.care.email.dto` - 请求响应DTO
+- `com.ocbc.ms.easy.care.email.service` - 邮件服务接口
+- `com.ocbc.ms.easy.care.email.service.impl` - 邮件服务实现
+- `com.ocbc.ms.easy.care.email.controller` - 邮件控制器
 
 ### 2. 核心功能
 - 支持PDF文件路径参数
