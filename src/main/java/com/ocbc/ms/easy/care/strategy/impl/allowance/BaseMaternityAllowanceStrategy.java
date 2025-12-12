@@ -320,13 +320,18 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         info.setFirstMonthFull(firstMonthFull);
         info.setLastMonthFull(lastMonthFull);
         
+        // 判断开始日期和结束日期是否在同一个月
+        LocalDate startDate = request.getMaternityLeaveStartDate();
+        LocalDate endDate = request.getMaternityLeaveEndDate();
+        boolean sameMonth = startDate.getYear() == endDate.getYear() 
+            && startDate.getMonthValue() == endDate.getMonthValue();
+        
         // 计算首月工资（如果不是完整月）
         if (!firstMonthFull) {
             // 使用上下文中的计薪日计算器，避免重复查询数据库
-            LocalDate startDate = request.getMaternityLeaveStartDate();
             LocalDate startMonthEnd = startDate.withDayOfMonth(startDate.lengthOfMonth());
-            LocalDate actualEndInStartMonth = request.getMaternityLeaveEndDate().isBefore(startMonthEnd) 
-                ? request.getMaternityLeaveEndDate() : startMonthEnd;
+            LocalDate actualEndInStartMonth = endDate.isBefore(startMonthEnd) 
+                ? endDate : startMonthEnd;
             
             PayrollDayCalculator calculator = context.getPayrollDayCalculator();
             YearMonth startYearMonth = YearMonth.from(startDate);
@@ -361,18 +366,17 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
             info.setFirstMonthWage(firstMonthWage);
         }
         
-        // 计算尾月工资（如果不是完整月）
-        if (!lastMonthFull) {
+        // 计算尾月工资（如果不是完整月且不在同一个月）
+        if (!lastMonthFull && !sameMonth) {
             BigDecimal adjustedSalary = context.isSalaryAdjusted() 
                 && request.getAdjustedMonthlyBaseSalary() != null
                 ? request.getAdjustedMonthlyBaseSalary()
                 : request.getMonthlyBaseSalary();
             
             // 使用上下文中的计薪日计算器，避免重复查询数据库
-            LocalDate endDate = request.getMaternityLeaveEndDate();
             LocalDate endMonthStart = endDate.withDayOfMonth(1);
-            LocalDate actualStartInEndMonth = request.getMaternityLeaveStartDate().isAfter(endMonthStart)
-                ? request.getMaternityLeaveStartDate() : endMonthStart;
+            LocalDate actualStartInEndMonth = startDate.isAfter(endMonthStart)
+                ? startDate : endMonthStart;
             
             PayrollDayCalculator calculator = context.getPayrollDayCalculator();
             YearMonth endYearMonth = YearMonth.from(endDate);
@@ -719,22 +723,6 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
                     firstMonth.getYear(), firstMonth.getMonth(),
                     lastMonth.getYear(), lastMonth.getMonth(),
                     unionFee, completeMonths, unionFee.multiply(new BigDecimal(completeMonths))));
-            }
-        } else {
-            // 没有完整月的情况（只有首月和/或尾月）
-            // 仍然需要显示社保、ESPP、工会费的说明
-            if (socialInsuranceBase != null && socialInsuranceBase.compareTo(BigDecimal.ZERO) > 0) {
-                refundDetailsList.add(String.format("月度个人部分社保公积金：%.2f元", socialInsuranceBase));
-            }
-            if (context.isSocialInsuranceAdjusted() && adjustedSocialInsuranceBase != null 
-                && adjustedSocialInsuranceBase.compareTo(BigDecimal.ZERO) > 0) {
-                refundDetailsList.add(String.format("调整后月度个人部分社保公积金：%.2f元", adjustedSocialInsuranceBase));
-            }
-            if (espp != null && espp.compareTo(BigDecimal.ZERO) > 0) {
-                refundDetailsList.add(String.format("月度ESPP：%.2f元", espp));
-            }
-            if (unionFee != null && unionFee.compareTo(BigDecimal.ZERO) > 0) {
-                refundDetailsList.add(String.format("月度工会费：%.2f元", unionFee));
             }
         }
 
