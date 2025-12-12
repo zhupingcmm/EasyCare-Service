@@ -22,9 +22,8 @@ import java.util.List;
 
 import static com.hr.maternity.ldap.LdapConstants.Attributes.*;
 import static com.hr.maternity.ldap.LdapConstants.Filter.USER_SEARCH_TEMPLATE;
-import static com.hr.maternity.ldap.LdapConstants.Protocol.LDAP;
 import static org.springframework.ldap.query.LdapQueryBuilder.query;
-import static javax.naming.directory.SearchControls.SUBTREE_SCOPE;
+import org.springframework.ldap.query.SearchScope;
 
 @Slf4j
 @Service
@@ -212,7 +211,7 @@ public class LdapAuthService {
             List<LdapUserInfo> results = ldapTemplate.search(
                     query()
                         .base("")  
-                        .searchScope(SUBTREE_SCOPE)
+                        .searchScope(SearchScope.SUBTREE)
                         .filter(filter),
                     userAttributesMapper(serverAddr)
             );
