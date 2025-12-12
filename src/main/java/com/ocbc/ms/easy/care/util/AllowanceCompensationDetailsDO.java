@@ -1,4 +1,4 @@
-package com.easy.care.domain;
+package com.ocbc.ms.easy.care.util;
 
 
 import com.ocbc.ms.easy.care.dto.AllowanceRulesResponse;

@@ -1,9 +1,9 @@
 package com.easy.care.strategy.impl.allowance;
 
 
-import com.easy.care.domain.AllowanceCompensationDetailsDO;
+import com.ocbc.ms.easy.care.util.AllowanceCompensationDetailsDO;
 
-import com.easy.care.util.JsonUtil;
+import com.ocbc.ms.easy.care.util.JsonUtil;
 import com.ocbc.ms.easy.care.calculator.PayrollDayCalculator;
 import com.ocbc.ms.easy.care.domain.*;
 import com.ocbc.ms.easy.care.dto.AllowanceRulesResponse;
@@ -25,7 +25,6 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static com.ocbc.ms.easy.care.constant.AllowanceRuleConstants.PAYOUT_METHOD_CORPORATE;
 import static com.ocbc.ms.easy.care.constant.AllowanceRuleConstants.PAYOUT_METHOD_INDIVIDUAL;

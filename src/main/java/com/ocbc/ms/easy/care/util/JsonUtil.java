@@ -1,4 +1,4 @@
-package com.easy.care.util;
+package com.ocbc.ms.easy.care.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
