@@ -1,6 +1,7 @@
 package com.ocbc.ms.easy.care.service;
 
 import com.ocbc.ms.easy.care.dto.LoginResponse;
+import com.ocbc.ms.easy.care.entity.Token;
 import com.ocbc.ms.easy.care.entity.User;
 
 public interface JwtTokenService {

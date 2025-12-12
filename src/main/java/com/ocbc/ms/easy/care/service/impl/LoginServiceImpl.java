@@ -1,19 +1,21 @@
 package com.ocbc.ms.easy.care.service.impl;
 
+import com.ocbc.ms.easy.care.config.LoginConfigurationProperties;
+import com.ocbc.ms.easy.care.dto.LdapUserInfo;
 import com.ocbc.ms.easy.care.dto.LoginRequest;
 import com.ocbc.ms.easy.care.dto.LoginResponse;
 import com.ocbc.ms.easy.care.entity.Role;
 import com.ocbc.ms.easy.care.entity.User;
 import com.ocbc.ms.easy.care.entity.UserRole;
-import com.ocbc.ms.easy.care.ldap.LdapAuthResult;
-import com.ocbc.ms.easy.care.ldap.LdapAuthService;
-import com.ocbc.ms.easy.care.ldap.LdapUserInfo;
+import com.ocbc.ms.easy.care.mapper.LdapUserInfoAttributesMapper;
+import com.ocbc.ms.easy.care.service.LdapService;
+import lombok.RequiredArgsConstructor;
 import com.ocbc.ms.easy.care.repository.RoleRepository;
 import com.ocbc.ms.easy.care.repository.UserRepository;
 import com.ocbc.ms.easy.care.repository.UserRoleRepository;
 import com.ocbc.ms.easy.care.service.JwtTokenService;
 import com.ocbc.ms.easy.care.service.LoginService;
-import lombok.RequiredArgsConstructor;
+import com.ocbc.ms.easy.care.util.RSAUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,27 +35,52 @@ public class LoginServiceImpl implements LoginService {
     private static final String ROLE_EMPLOYEE = "Employee";
     private static final String NORMALIZED_ROLE_HR_ADMIN = "HR_ADMIN";
     private static final String NORMALIZED_ROLE_EMPLOYEE = "EMPLOYEE";
-    private static final int MIN_PASSWORD_LENGTH = 6;
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final JwtTokenService jwtTokenService;
-    private final LdapAuthService ldapAuthService;
+    private final RSAUtil rsaUtil;
+    private final LoginConfigurationProperties loginConfig;
+    private final LdapService ldapService;
 
-    @Value("${login.ldap.enabled:false}")
-    private boolean ldapEnabled;
+    @Value("${encryption.rsa-enabled:false}")
+    private boolean rsaEnabled;
 
     @Value("${user.role.hr-department:CHN E2P Human Resources}")
     private String hrDepartment;
 
     @Override
     @Transactional
-    public LoginResponse login(LoginRequest loginRequest) {
-        log.info("开始用户登录验证，用户名: {}", loginRequest.getUsername());
+    public LoginResponse login(LoginRequest loginRequest, boolean skipRsaDecryption) {
+        log.info("开始用户登录验证，用户名: {}, Mock模式: {}", loginRequest.getUsername(), skipRsaDecryption);
 
-        LdapAuthResult ldapResult = authenticateUser(loginRequest);
-        User user = loadAndValidateUser(loginRequest.getUsername(), ldapResult);
+        boolean needDecryption = rsaEnabled && !skipRsaDecryption;
+        if (needDecryption) {
+            String decryptedPassword = rsaUtil.decryptLogin(loginRequest);
+            loginRequest.setPassword(decryptedPassword);
+        } else if (skipRsaDecryption) {
+            log.info("Mock模式登录，跳过RSA解密，用户名: {}", loginRequest.getUsername());
+        }
+
+        LdapUserInfo ldapUserInfo = null;
+        if (loginConfig.getLdap().isEnabled()) {
+            boolean isValidUser = ldapService.validateUserAndPassword(loginRequest.getUsername(), loginRequest.getPassword());
+            if (!isValidUser) {
+                throw new RuntimeException("LDAP认证失败：用户名或密码错误");
+            }
+            
+            List<LdapUserInfo> ldapUserInfoList = ldapService.getUserInfo(
+                loginRequest.getUsername(), 
+                new LdapUserInfoAttributesMapper(true, ldapService)
+            );
+            
+            if (!ldapUserInfoList.isEmpty()) {
+                ldapUserInfo = ldapUserInfoList.getFirst();
+            }
+        }
+
+        User user = loadAndValidateUser(loginRequest.getUsername(), ldapUserInfo);
         LoginResponse loginResponse = buildLoginResponse(user);
 
         log.info("用户登录成功，用户名: {}, 用户ID: {}", loginRequest.getUsername(), user.getId());
@@ -81,7 +107,7 @@ public class LoginServiceImpl implements LoginService {
     public boolean validateUserCredentials(String username, String password) {
         log.debug("验证用户凭据（Mock实现），用户名: {}", username);
 
-        if (!isUserExists(username)) {
+        if (isUserExists(username)) {
             return false;
         }
 
@@ -120,35 +146,13 @@ public class LoginServiceImpl implements LoginService {
                 .build();
     }
 
-    /**
-     * 认证用户（LDAP 或 Mock）
-     */
-    private LdapAuthResult authenticateUser(LoginRequest loginRequest) {
-        if (ldapEnabled) {
-            return authenticateWithLdap(loginRequest);
-        } else {
-            authenticateWithMock(loginRequest);
-            return null;
-        }
-    }
-
-    /**
-     * 使用 LDAP 认证
-     */
-    private LdapAuthResult authenticateWithLdap(LoginRequest loginRequest) {
-        log.info("LDAP认证已开启，开始通过LDAP验证用户，用户名: {}", loginRequest.getUsername());
-        LdapAuthResult result = ldapAuthService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
-        if (!result.isSuccess()) {
-            throw new RuntimeException("LDAP认证失败");
-        }
-        return result;
-    }
 
     /**
      * 使用 Mock 认证
      */
     private void authenticateWithMock(LoginRequest loginRequest) {
-        if (!isUserExists(loginRequest.getUsername())) {
+        log.info("开始Mock认证，用户名: {}", loginRequest.getUsername());
+        if (isUserExists(loginRequest.getUsername())) {
             throw new RuntimeException("用户不存在");
         }
         log.info("Mock认证通过，用户名: {}", loginRequest.getUsername());
@@ -157,38 +161,39 @@ public class LoginServiceImpl implements LoginService {
     /**
      * 加载并验证用户
      */
-    private User loadAndValidateUser(String username, LdapAuthResult ldapResult) {
+    private User loadAndValidateUser(String username, LdapUserInfo ldapUserInfo) {
+        log.info("开始加载用户信息，用户名: {}", username);
         User user;
         
-        if (ldapEnabled && ldapResult != null) {
-            user = findOrCreateUserFromLdap(username, ldapResult);
+        if (loginConfig.getLdap().isEnabled() && ldapUserInfo != null) {
+            user = findOrCreateUserFromLdap(username, ldapUserInfo);
         } else {
             user = userRepository.findByLanIdWithRoles(username)
                     .orElseThrow(() -> new RuntimeException("用户不存在: " + username));
         }
 
         validateUserActive(user);
+        log.info("用户信息加载成功，用户ID: {}", user.getId());
         return user;
     }
 
     /**
      * 从LDAP查找或创建用户
      */
-    private User findOrCreateUserFromLdap(String lanId, LdapAuthResult ldapResult) {
+    private User findOrCreateUserFromLdap(String lanId, LdapUserInfo ldapUserInfo) {
         return userRepository.findByLanIdWithRoles(lanId)
-                .map(existingUser -> updateUserFromLdap(existingUser, ldapResult))
-                .orElseGet(() -> createUserFromLdap(lanId, ldapResult));
+                .map(existingUser -> updateUserFromLdap(existingUser, ldapUserInfo))
+                .orElseGet(() -> createUserFromLdap(lanId, ldapUserInfo));
     }
 
     /**
      * 从LDAP创建新用户
      */
-    private User createUserFromLdap(String lanId, LdapAuthResult ldapResult) {
+    private User createUserFromLdap(String lanId, LdapUserInfo ldapUserInfo) {
         log.info("创建新用户，LAN ID: {}", lanId);
         
-        LdapUserInfo ldapInfo = ldapResult.getUserInfo();
-        String displayName = extractDisplayName(ldapInfo, lanId);
-        String email = extractEmail(ldapInfo);
+        String displayName = ldapUserInfo.getName() != null ? ldapUserInfo.getName() : lanId;
+        String email = ldapUserInfo.getEmail();
         
         User newUser = User.builder()
                 .id(UUID.randomUUID().toString())
@@ -202,7 +207,7 @@ public class LoginServiceImpl implements LoginService {
                 .build();
         
         newUser = userRepository.save(newUser);
-        assignRoleBasedOnDepartment(newUser, ldapInfo);
+        assignRoleBasedOnDepartment(newUser, ldapUserInfo.getDepartment());
         
         log.info("用户创建成功，用户ID: {}, LAN ID: {}", newUser.getId(), lanId);
         return userRepository.findByLanIdWithRoles(lanId)
@@ -212,22 +217,21 @@ public class LoginServiceImpl implements LoginService {
     /**
      * 更新用户信息（从LDAP）
      */
-    private User updateUserFromLdap(User user, LdapAuthResult ldapResult) {
-        LdapUserInfo ldapInfo = ldapResult.getUserInfo();
-        if (ldapInfo == null) {
+    private User updateUserFromLdap(User user, LdapUserInfo ldapUserInfo) {
+        if (ldapUserInfo == null) {
             return user;
         }
 
         boolean changed = false;
 
-        if (shouldUpdateDisplayName(ldapInfo, user)) {
-            user.setDisplayName(ldapInfo.getDisplayName());
+        if (ldapUserInfo.getName() != null && !ldapUserInfo.getName().equals(user.getDisplayName())) {
+            user.setDisplayName(ldapUserInfo.getName());
             changed = true;
         }
 
-        if (shouldUpdateEmail(ldapInfo, user)) {
-            user.setEmail(ldapInfo.getEmail());
-            user.setNormalizedEmail(normalizeEmail(ldapInfo.getEmail()));
+        if (ldapUserInfo.getEmail() != null && !ldapUserInfo.getEmail().equals(user.getEmail())) {
+            user.setEmail(ldapUserInfo.getEmail());
+            user.setNormalizedEmail(normalizeEmail(ldapUserInfo.getEmail()));
             changed = true;
         }
 
@@ -242,8 +246,7 @@ public class LoginServiceImpl implements LoginService {
     /**
      * 根据部门分配角色
      */
-    private void assignRoleBasedOnDepartment(User user, LdapUserInfo ldapInfo) {
-        String department = extractDepartment(ldapInfo);
+    private void assignRoleBasedOnDepartment(User user, String department) {
         boolean isHrDepartment = isHrDepartment(department);
         
         String roleName = isHrDepartment ? ROLE_HR_ADMIN : ROLE_EMPLOYEE;
@@ -293,39 +296,10 @@ public class LoginServiceImpl implements LoginService {
         if (!exists) {
             log.warn("用户不存在: {}", username);
         }
-        return exists;
+        return !exists;
     }
 
 
-    /**
-     * 提取显示名称
-     */
-    private String extractDisplayName(LdapUserInfo ldapInfo, String defaultValue) {
-        return Optional.ofNullable(ldapInfo)
-                .map(LdapUserInfo::getDisplayName)
-                .filter(StringUtils::hasText)
-                .orElse(defaultValue);
-    }
-
-    /**
-     * 提取邮箱
-     */
-    private String extractEmail(LdapUserInfo ldapInfo) {
-        return Optional.ofNullable(ldapInfo)
-                .map(LdapUserInfo::getEmail)
-                .filter(StringUtils::hasText)
-                .orElse(null);
-    }
-
-    /**
-     * 提取部门
-     */
-    private String extractDepartment(LdapUserInfo ldapInfo) {
-        return Optional.ofNullable(ldapInfo)
-                .map(LdapUserInfo::getDepartment)
-                .filter(StringUtils::hasText)
-                .orElse(null);
-    }
 
     /**
      * 规范化邮箱
@@ -339,22 +313,6 @@ public class LoginServiceImpl implements LoginService {
      */
     private boolean isHrDepartment(String department) {
         return StringUtils.hasText(department) && department.equals(hrDepartment);
-    }
-
-    /**
-     * 判断是否需要更新显示名称
-     */
-    private boolean shouldUpdateDisplayName(LdapUserInfo ldapInfo, User user) {
-        return StringUtils.hasText(ldapInfo.getDisplayName())
-                && !ldapInfo.getDisplayName().equals(user.getDisplayName());
-    }
-
-    /**
-     * 判断是否需要更新邮箱
-     */
-    private boolean shouldUpdateEmail(LdapUserInfo ldapInfo, User user) {
-        return StringUtils.hasText(ldapInfo.getEmail())
-                && !ldapInfo.getEmail().equals(user.getEmail());
     }
 
 }

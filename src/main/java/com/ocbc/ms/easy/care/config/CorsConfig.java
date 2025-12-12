@@ -46,6 +46,8 @@ public class CorsConfig implements WebMvcConfigurer {
 
                 // 登录接口和健康检查接口直接放行
                 if ("/api/auth/login".equals(uri)
+                    || "/api/auth/generateNonce".equals(uri)
+                    || "/api/auth/publicKey".equals(uri)
                     || "/health/alive".equals(uri)
                     || "/health/ready".equals(uri)
                     || "/health/info".equals(uri)) {

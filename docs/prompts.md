@@ -1226,3 +1226,860 @@ return reFund(request, allowanceRules, response, context);
 - `BaseMaternityAllowanceStrategy.java` - `calculateMaternityAllowance()`, `getMaternityWage()`, `reFund()` 方法
 
 **输入人**：用户
+
+---
+
+## 2024-12-12 - 重构LDAP认证实现，采用Spring LDAP标准方式
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我参照截图中的ldap读取方法，现在我要废除之前的ldap方法，用截图中类似的方法，帮我实现把
+```
+
+**执行内容：**
+采用Spring LDAP标准方式重构LDAP认证，替换原有的自定义实现：
+
+1. **创建LDAP配置类** (`LdapConfig.java`)：
+   - 创建 `ActiveDirectoryLdapAuthenticationProvider` Bean
+   - 创建 `LdapTemplate` Bean
+   - 支持LDAP配置的动态加载
+   - 支持SSL和非SSL连接
+   - 实现可选注入（LDAP未配置时不影响启动）
+
+2. **创建常量类** (`CommonConstants.java`)：
+   - 定义LDAP属性常量：`SAM_ACCOUNT_NAME`、`MEMBEROF`、`CN`、`DISPLAY_NAME`、`MAIL`等
+   - 统一管理LDAP相关常量
+
+3. **创建AdGroup响应对象**：
+   - `AdGroupResp.java` - AD组信息响应DTO
+   - `AdGroupAttributesMapper.java` - LDAP属性映射器
+   - 支持从LDAP的memberOf属性中提取AD组信息
+   - 自动解析DN并提取CN值
+   - 支持HTML格式输出（用<br/>分隔）
+
+4. **创建LDAP工具类** (`LdapUtils.java`)：
+   - `newLdapName()` - 解析LDAP DN字符串
+   - `getRdns()` - 提取RDN列表
+   - 提供统一的LDAP名称处理方法
+
+5. **创建LdapService接口和实现类**：
+   - `LdapService.java` - LDAP服务接口
+   - `LdapServiceImpl.java` - 使用LdapTemplate实现
+   - `searchAdGroup()` - 按lanId查询AD组信息
+   - 使用 `LdapQueryBuilder` 构建查询
+   - 支持LDAP未配置时的优雅降级
+
+6. **重构LoginServiceImpl**：
+   - 移除 `LdapAuthService` 依赖
+   - 注入 `LdapTemplate`（可选注入）
+   - 创建内部类 `LdapUserData` 替代 `LdapUserInfo`
+   - 创建内部类 `LdapUserAttributesMapper` 进行属性映射
+   - 使用 `LdapTemplate.search()` 替代原有的复杂认证逻辑
+   - 简化用户创建和更新逻辑
+   - 移除多余的辅助方法
+
+**技术改进：**
+- ✅ 使用Spring LDAP标准方式，替代自定义实现
+- ✅ 使用 `LdapTemplate` 进行LDAP操作
+- ✅ 使用 `LdapQueryBuilder` 构建查询
+- ✅ 使用 `AttributesMapper` 进行属性映射
+- ✅ 支持可选注入，LDAP未配置时不影响系统启动
+- ✅ 简化代码逻辑，提高可维护性
+- ✅ 统一常量管理
+- ✅ 符合Spring最佳实践
+
+**创建的文件：**
+- `com.ocbc.ms.easy.care.config.LdapConfig` - LDAP配置类
+- `com.ocbc.ms.easy.care.constants.CommonConstants` - 常量类
+- `com.ocbc.ms.easy.care.dto.AdGroupResp` - AD组响应DTO
+- `com.ocbc.ms.easy.care.mapper.AdGroupAttributesMapper` - 属性映射器
+- `com.ocbc.ms.easy.care.util.LdapUtils` - LDAP工具类
+- `com.ocbc.ms.easy.care.service.LdapService` - LDAP服务接口
+- `com.ocbc.ms.easy.care.service.impl.LdapServiceImpl` - LDAP服务实现
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.service.impl.LoginServiceImpl` - 重构LDAP认证逻辑
+
+**保留的文件（待废弃）：**
+- `com.ocbc.ms.easy.care.ldap.LdapUserInfo` - 旧的用户信息类
+- `com.ocbc.ms.easy.care.ldap.LdapConstants` - 旧的常量类
+
+**下一步建议：**
+- 测试新的LDAP认证功能
+- 确认无问题后删除旧的LDAP相关类
+- 更新相关文档和配置说明
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 优化依赖注入方式，使用构造器注入
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我把@Autowired(注入方法修改为private final形式注入
+```
+
+**执行内容：**
+将 `@Autowired(required = false)` 字段注入改为构造器注入方式：
+
+1. **修改 `LdapServiceImpl.java`**：
+   - 移除 `@RequiredArgsConstructor` 注解
+   - 移除 `@Autowired(required = false)` 字段注入
+   - 将 `ldapTemplate` 改为 `private final` 字段
+   - 手动编写构造器，使用 `@Nullable` 注解标记可选依赖
+   - 构造器注入：`public LdapServiceImpl(@Nullable LdapTemplate ldapTemplate)`
+
+2. **修改 `LoginServiceImpl.java`**：
+   - 移除 `@RequiredArgsConstructor` 注解
+   - 移除 `@Autowired(required = false)` 字段注入
+   - 将 `ldapTemplate` 改为 `private final` 字段
+   - 手动编写构造器，整合所有依赖注入
+   - 使用 `@Nullable` 注解标记可选的 `LdapTemplate` 参数
+   - 保留 `@Value` 注解的字段注入（rsaEnabled, hrDepartment）
+
+**技术改进：**
+- ✅ 使用构造器注入替代字段注入
+- ✅ 使用 `private final` 确保依赖不可变
+- ✅ 使用 `@Nullable` 注解明确标识可选依赖
+- ✅ 符合Spring最佳实践和Clean Code原则
+- ✅ 提高代码的可测试性和可维护性
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.service.impl.LdapServiceImpl` - 改为构造器注入
+- `com.ocbc.ms.easy.care.service.impl.LoginServiceImpl` - 改为构造器注入
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 重构LDAP配置，使用ad前缀
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我重构LdapConfigurationProperties,我想把配置文件app.ldap[0].domain重构为ad.开头的
+```
+
+**执行内容：**
+将LDAP配置前缀从 `app.ldap` 重构为 `ad.domains`，使配置更符合Active Directory的语义：
+
+1. **修改 `LdapConfigurationProperties.java`**：
+   - 将 `@ConfigurationProperties(prefix = "app")` 改为 `@ConfigurationProperties(prefix = "ad")`
+   - 将字段 `private List<LdapDomainConfig> ldap` 改为 `private List<LdapDomainConfig> domains`
+   - 保持内部类 `LdapDomainConfig` 的结构不变
+
+2. **修改 `LdapConfig.java`**：
+   - 将所有 `ldapProps.getLdap()` 改为 `ldapProps.getDomains()`
+   - 更新日志信息，从"No LDAP configuration"改为"No AD configuration"
+
+3. **修改 `application.properties`**：
+   - 将 `app.ldap[0].domain` 改为 `ad.domains[0].domain`
+   - 将 `app.ldap[0].ldap-server` 改为 `ad.domains[0].ldap-server`
+   - 将 `app.ldap[1].*` 改为 `ad.domains[1].*`
+   - 更新注释，从"LDAP Configuration"改为"Active Directory Configuration"
+
+**配置变更对比：**
+
+**之前：**
+```properties
+# LDAP Configuration
+app.ldap[0].domain=GROUP
+app.ldap[0].ldap-server=XXXXX.ZZ.COM
+app.ldap[1].domain=TECH
+```
+
+**现在：**
+```properties
+# Active Directory Configuration
+ad.domains[0].domain=GROUP
+ad.domains[0].ldap-server=XXXXX.ZZ.COM
+ad.domains[1].domain=TECH
+```
+
+**技术改进：**
+- ✅ 配置前缀更明确，`ad.` 比 `app.ldap` 更直观
+- ✅ 字段名 `domains` 比 `ldap` 更语义化
+- ✅ 保持支持多域配置的灵活性
+- ✅ 符合Active Directory的命名习惯
+- ✅ 代码可读性和维护性提升
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.config.LdapConfigurationProperties` - 配置类重构
+- `com.ocbc.ms.easy.care.config.LdapConfig` - 更新配置引用
+- `application.properties` - 更新配置项
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 简化AD配置，从多域改为单域
+
+### 输入人：用户
+
+**提示词：**
+```
+继续帮我把ad.domains[1].domain修改为ad.domain，也就是现在配置文件只有一个，不会有多个
+```
+
+**执行内容：**
+将AD配置从支持多域的数组形式简化为单域配置：
+
+1. **修改 `LdapConfigurationProperties.java`**：
+   - 将 `private List<LdapDomainConfig> domains` 改为 `private LdapDomainConfig domain`
+   - 移除不再使用的 `ArrayList` 和 `List` 导入
+   - 简化配置结构，从数组改为单个对象
+
+2. **修改 `LdapConfig.java`**：
+   - 将 `ldapProps.getDomains()` 改为 `ldapProps.getDomain()`
+   - 将 `getDomains().isEmpty()` 检查改为 `getDomain() == null`
+   - 移除 `.get(0)` 数组索引访问
+
+3. **修改 `application.properties`**：
+   - 将 `ad.domains[0].domain` 改为 `ad.domain.domain`
+   - 将 `ad.domains[0].ldap-server` 改为 `ad.domain.ldap-server`
+   - 删除第二个域的配置（`ad.domains[1].*`）
+   - 移除数组索引，简化配置层级
+
+4. **修改 `LdapAuthService.java`**（旧代码）：
+   - 移除多域循环逻辑
+   - 直接使用单个域配置
+   - 简化日志输出
+
+**配置变更对比：**
+
+**之前：**
+```properties
+# Active Directory Configuration
+ad.domains[0].domain=GROUP
+ad.domains[0].ldap-server=XXXXX.ZZ.COM
+ad.domains[1].domain=TECH
+ad.domains[1].ldap-server=TECH.ZZ.NET
+```
+
+**现在：**
+```properties
+# Active Directory Configuration
+ad.domain.domain=GROUP
+ad.domain.ldap-server=XXXXX.ZZ.COM
+```
+
+**代码变更对比：**
+
+**之前：**
+```java
+private List<LdapDomainConfig> domains = new ArrayList<>();
+
+if (ldapProps.getDomains() == null || ldapProps.getDomains().isEmpty()) {
+    return null;
+}
+LdapDomainConfig config = ldapProps.getDomains().get(0);
+```
+
+**现在：**
+```java
+private LdapDomainConfig domain;
+
+if (ldapProps.getDomain() == null) {
+    return null;
+}
+LdapDomainConfig config = ldapProps.getDomain();
+```
+
+**技术改进：**
+- ✅ 简化配置结构，移除不必要的数组层级
+- ✅ 减少配置复杂度，更易于理解和维护
+- ✅ 符合单一AD域的实际使用场景
+- ✅ 代码更简洁，移除循环和索引访问
+- ✅ 提高配置文件的可读性
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.config.LdapConfigurationProperties` - 从List改为单对象
+- `com.ocbc.ms.easy.care.config.LdapConfig` - 更新配置访问方式
+- `application.properties` - 简化配置格式
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 扁平化AD配置结构
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我把ad.domain.修改为ad.
+```
+
+**执行内容：**
+完全扁平化AD配置结构，移除嵌套层级：
+
+1. **修改 `LdapConfigurationProperties.java`**：
+   - 移除内部类 `LdapDomainConfig`
+   - 将所有配置字段直接提升到 `LdapConfigurationProperties` 类中
+   - 保留 `isValid()` 验证方法
+   - 简化类结构，从嵌套配置改为扁平配置
+
+2. **修改 `LdapConfig.java`**：
+   - 移除 `LdapDomainConfig config` 中间变量
+   - 直接访问 `ldapProps.getDomain()`、`ldapProps.getBaseDn()` 等
+   - 使用 `ldapProps.isValid()` 进行配置验证
+   - 简化 `buildLdapUrl()` 方法，移除参数直接访问 `ldapProps`
+
+3. **修改 `application.properties`**：
+   - 将 `ad.domain.domain` 改为 `ad.domain`
+   - 将 `ad.domain.ldap-server` 改为 `ad.ldap-server`
+   - 将 `ad.domain.base-dn` 改为 `ad.base-dn`
+   - 所有配置项都使用 `ad.` 直接前缀
+
+4. **修改 `LdapAuthService.java`**（旧代码）：
+   - 移除 `authenticateWithDomain` 的 `domainConfig` 参数
+   - 直接访问 `ldapProps` 的字段
+   - 更新 `buildContextSource()` 方法，移除参数
+
+**配置变更对比：**
+
+**之前：**
+```properties
+ad.domain.domain=GROUP
+ad.domain.ldap-server=XXXXX.ZZ.COM
+ad.domain.base-dn=DC=XXXXX,DC=ZZ,DC=COM
+```
+
+**现在：**
+```properties
+ad.domain=GROUP
+ad.ldap-server=XXXXX.ZZ.COM
+ad.base-dn=DC=XXXXX,DC=ZZ,DC=COM
+```
+
+**代码变更对比：**
+
+**之前：**
+```java
+private LdapDomainConfig domain;
+
+LdapDomainConfig config = ldapProps.getDomain();
+String domain = config.getDomain();
+String url = protocol + config.getLdapServer() + ":" + config.getLdapPort();
+```
+
+**现在：**
+```java
+private String domain;
+private String ldapServer;
+private int ldapPort = 389;
+
+String domain = ldapProps.getDomain();
+String url = protocol + ldapProps.getLdapServer() + ":" + ldapProps.getLdapPort();
+```
+
+**技术改进：**
+- ✅ 完全扁平化配置结构，无嵌套
+- ✅ 配置更简洁，`ad.domain` 而非 `ad.domain.domain`
+- ✅ 代码访问更直接，无需中间对象
+- ✅ 减少代码层级，提高可读性
+- ✅ 符合扁平化配置的最佳实践
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.config.LdapConfigurationProperties` - 移除内部类，扁平化字段
+- `com.ocbc.ms.easy.care.config.LdapConfig` - 直接访问配置属性
+- `application.properties` - 扁平化配置项
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 极简化AD配置，只保留5个核心字段
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我重构，我现在需要修改String protocol = ldapProps.isUseSsl() ? "ldaps://" : "ldap://";
+String url = protocol + ldapProps.getLdapServer() + ":" + ldapProps.getLdapPort();，我不会配置protocol了，我会直接配置ad.url,ad.domain,ad.searchBase,ad.username和ad.password，其他配置文件全部不要
+```
+
+**执行内容：**
+极简化AD配置，只保留5个核心必需字段：
+
+1. **修改 `LdapConfigurationProperties.java`**：
+   - **删除字段**：`ldapServer`、`ldapPort`、`baseDn`、`useSsl`、`trustAllCertificates`、`connectTimeout`、`readTimeout`
+   - **新增/保留字段**：
+     - `url` - 完整的LDAP URL（如 `ldap://server:389` 或 `ldaps://server:636`）
+     - `domain` - AD域名
+     - `searchBase` - 搜索基础DN（替代baseDn）
+     - `username` - LDAP绑定用户名（可选）
+     - `password` - LDAP绑定密码（可选）
+   - 移除 `isValid()` 方法（由用户删除）
+
+2. **修改 `LdapConfig.java`**：
+   - 移除 `buildLdapUrl()` 方法
+   - 直接使用 `ldapProps.getUrl()`
+   - 使用 `ldapProps.getSearchBase()` 替代 `getBaseDn()`
+   - 移除配置验证逻辑（由用户删除）
+   - 简化Bean创建逻辑
+
+3. **修改 `application.properties`**：
+   - 配置从9个字段简化为5个字段
+   - `ad.url` - 直接配置完整URL
+   - `ad.domain` - 域名
+   - `ad.search-base` - 搜索基础
+   - `ad.username` - 用户名（可选）
+   - `ad.password` - 密码（可选）
+
+4. **修改 `LdapAuthService.java`**（旧代码）：
+   - 更新日志输出，移除SSL、超时等配置信息
+   - 简化 `buildContextSource()` 方法
+   - 移除SSL证书信任、超时等复杂配置
+   - 使用新的配置字段
+
+**配置变更对比：**
+
+**之前（9个配置项）：**
+```properties
+ad.domain=GROUP
+ad.ldap-server=XXXXX.ZZ.COM
+ad.ldap-port=1222
+ad.base-dn=DC=XXXXX,DC=ZZ,DC=COM
+ad.use-ssl=true
+ad.trust-all-certificates=true
+ad.connect-timeout=10000
+ad.read-timeout=15000
+```
+
+**现在（5个配置项）：**
+```properties
+ad.url=ldap://XXXXX.ZZ.COM:1222
+ad.domain=GROUP
+ad.search-base=DC=XXXXX,DC=ZZ,DC=COM
+ad.username=
+ad.password=
+```
+
+**代码变更对比：**
+
+**之前：**
+```java
+private String ldapServer;
+private int ldapPort = 389;
+private String baseDn;
+private boolean useSsl = false;
+private boolean trustAllCertificates = false;
+private int connectTimeout = 5000;
+private int readTimeout = 10000;
+
+String protocol = ldapProps.isUseSsl() ? "ldaps://" : "ldap://";
+String url = protocol + ldapProps.getLdapServer() + ":" + ldapProps.getLdapPort();
+contextSource.setBase(ldapProps.getBaseDn());
+```
+
+**现在：**
+```java
+private String url;
+private String domain;
+private String searchBase;
+private String username;
+private String password;
+
+String url = ldapProps.getUrl();
+contextSource.setBase(ldapProps.getSearchBase());
+```
+
+**技术改进：**
+- ✅ **极简配置**：从9个配置项减少到5个
+- ✅ **更灵活**：直接配置URL，支持任意协议和端口
+- ✅ **更清晰**：`searchBase` 语义比 `baseDn` 更明确
+- ✅ **支持认证**：新增 `username` 和 `password` 字段
+- ✅ **易维护**：移除复杂的SSL和超时配置
+- ✅ **更标准**：URL格式是LDAP的标准配置方式
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.config.LdapConfigurationProperties` - 只保留5个核心字段
+- `com.ocbc.ms.easy.care.config.LdapConfig` - 移除buildLdapUrl方法
+- `application.properties` - 简化为5个配置项
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 创建LdapUserInfo DTO
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我添加以下DTO（截图）
+```
+
+**执行内容：**
+根据用户提供的截图创建 `LdapUserInfo` DTO 类：
+
+**创建的文件：**
+- `com.ocbc.ms.easy.care.dto.LdapUserInfo` - LDAP用户信息DTO
+
+**字段说明：**
+- `lanId` - 用户LAN ID
+- `name` - 用户姓名
+- `email` - 邮箱
+- `department` - 部门
+- `jobTitle` - 职位
+- `manager` - 经理信息（嵌套对象）
+- `managerLanId` - 经理LAN ID
+- `workPhone` - 工作电话
+- `officeLocation` - 办公地点
+- `photoURL` - 照片URL
+- `cellPhone` - 手机号
+- `userPrincipalName` - 用户主体名称
+- `exist` - 是否存在
+
+**使用的注解：**
+- `@Getter`、`@Setter` - Lombok生成getter/setter
+- `@Builder` - Lombok构建器模式
+- `@JsonProperty` - Jackson JSON序列化/反序列化
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 创建LdapUserInfoAttributesMapper
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我添加另外一个mapper，请参照截图
+```
+
+**执行内容：**
+根据用户提供的截图创建 `LdapUserInfoAttributesMapper` 类：
+
+**创建的文件：**
+- `com.ocbc.ms.easy.care.mapper.LdapUserInfoAttributesMapper` - LDAP用户信息属性映射器
+
+**功能说明：**
+1. **属性映射**：将LDAP Attributes映射到 `LdapUserInfo` DTO对象
+2. **支持Manager信息**：可选择是否加载manager信息（通过构造器参数控制）
+3. **字段映射**：
+   - `lanId` ← sAMAccountName
+   - `email` ← mail
+   - `department` ← department
+   - `officeLocation` ← officeLocation
+   - `userPrincipalName` ← userPrincipalName
+   - `workPhone` ← telephoneNumber
+   - `name` ← displayName
+   - `cellPhone` ← mobile
+   - `jobTitle` ← title
+   - `managerLanId` ← manager DN解析
+
+4. **辅助方法**：
+   - `getAttribute()` - 安全获取LDAP属性，异常时返回空字符串
+   - `getIdFromDN()` - 从DN中提取CN值
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.service.impl.LdapServiceImpl` - 添加 `validateUserAndPassword()` 方法实现，优化 `getUserInfo()` 方法
+
+**技术特点：**
+- ✅ 实现Spring LDAP的 `AttributesMapper<LdapUserInfo>` 接口
+- ✅ 使用Builder模式构建对象
+- ✅ 异常处理，避免LDAP属性缺失导致的崩溃
+- ✅ 支持递归加载manager信息（预留接口）
+- ✅ DN解析，从manager的DN中提取lanId
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 优化LdapServiceImpl和Mapper类
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我优化ldapServiceImpl类，现在它报错
+```
+
+**执行内容：**
+修复 `LdapServiceImpl` 和 `LdapUserInfoAttributesMapper` 中的编译错误：
+
+**问题分析：**
+1. **重复类定义**：`LdapServiceImpl.java` 文件末尾重复定义了 `AdGroupAttributesMapper` 类，该类已在独立文件中存在
+2. **方法不存在**：`LdapUserInfoAttributesMapper` 调用了不存在的 `getUserInfoByLanId()` 方法
+3. **循环依赖**：Mapper需要调用Service的方法，但Mapper不应该依赖Service
+
+**修复内容：**
+
+1. **LdapServiceImpl.java**：
+   - 移除第119-163行重复的 `AdGroupAttributesMapper` 类定义
+   - 移除未使用的导入（`NamingEnumeration`、`NamingException`、`Attributes`、`Rdn`、`ArrayList`、`Map`、`Collectors`、`LdapUtils`）
+   - 保持类结构清晰，只包含Service实现逻辑
+
+2. **LdapUserInfoAttributesMapper.java**：
+   - 添加 `LdapService` 字段支持递归获取manager信息
+   - 新增三个构造器：
+     - `LdapUserInfoAttributesMapper()` - 默认不显示manager
+     - `LdapUserInfoAttributesMapper(boolean showManager)` - 指定是否显示manager
+     - `LdapUserInfoAttributesMapper(boolean showManager, LdapService ldapService)` - 支持递归获取manager
+   - 修复manager信息获取逻辑，通过注入的 `ldapService` 调用 `getUserInfo()` 方法
+   - 添加异常处理，避免递归获取失败影响主流程
+
+**代码变更：**
+
+**之前（错误）：**
+```java
+// LdapServiceImpl.java 末尾
+}
+
+public class AdGroupAttributesMapper implements AttributesMapper<AdGroupResp> {
+    // 重复的类定义...
+}
+
+// LdapUserInfoAttributesMapper.java
+List<LdapUserInfo> managers = getUserInfoByLanId(...);  // 方法不存在
+```
+
+**现在（正确）：**
+```java
+// LdapServiceImpl.java
+}  // 类正确结束，无重复定义
+
+// LdapUserInfoAttributesMapper.java
+private final LdapService ldapService;
+
+public LdapUserInfoAttributesMapper(boolean showManager, LdapService ldapService) {
+    this.showManager = showManager;
+    this.ldapService = ldapService;
+}
+
+if (ldapService != null) {
+    List<LdapUserInfo> managers = ldapService.getUserInfo(...);  // 正确调用
+}
+```
+
+**技术改进：**
+- ✅ 修复编译错误，代码可以正常编译
+- ✅ 移除重复的类定义
+- ✅ 修复Mapper与Service之间的依赖关系
+- ✅ 支持可选的manager信息递归获取
+- ✅ 清理未使用的导入，减少代码冗余
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.service.impl.LdapServiceImpl` - 移除重复类定义和未使用导入
+- `com.ocbc.ms.easy.care.mapper.LdapUserInfoAttributesMapper` - 修复递归调用逻辑
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 优化LoginServiceImpl使用新的LDAP逻辑
+
+### 输入人：用户
+
+**提示词：**
+```
+帮我优化和解决LoginServiceImpl的问题
+```
+
+**执行内容：**
+重构 `LoginServiceImpl` 以使用新的 `LdapUserInfo` 和 `LdapService`：
+
+**主要问题：**
+1. **类型不匹配**：方法参数使用了 `List<LdapUserInfo>`，但实际只需要单个对象
+2. **未定义变量**：`ldapResult` 变量不存在
+3. **旧代码残留**：保留了旧的 `LdapUserData` 和 `authenticateWithLdap()` 方法
+4. **缺少认证逻辑**：没有调用 `validateUserAndPassword()` 进行认证
+
+**重构内容：**
+
+1. **Login方法优化**：
+   - 使用 `ldapService.validateUserAndPassword()` 进行LDAP认证
+   - 认证失败时抛出异常
+   - 使用 `ldapService.getUserInfo()` 获取用户详细信息
+   - 传入 `LdapUserInfo` 单个对象而非List
+
+2. **移除旧代码**：
+   - 删除 `authenticateUser()` 方法
+   - 删除 `authenticateWithLdap()` 方法
+   - 删除 `LdapUserAttributesMapper` 内部类
+   - 删除未使用的导入
+
+3. **更新方法签名**：
+   - `loadAndValidateUser(String, LdapUserInfo)` - 从List改为单个对象
+   - `findOrCreateUserFromLdap(String, LdapUserInfo)` - 使用新DTO
+   - `createUserFromLdap(String, LdapUserInfo)` - 使用新DTO
+   - `updateUserFromLdap(User, LdapUserInfo)` - 使用新DTO
+
+4. **字段映射更新**：
+   - `ldapUserInfo.getName()` ← `ldapResult.getDisplayName()`
+   - `ldapUserInfo.getEmail()` 保持不变
+   - `ldapUserInfo.getDepartment()` 保持不变
+
+5. **Mapper构造器修复**：
+   - 移除 `@RequiredArgsConstructor` 注解
+   - 手动添加两个构造器：
+     - `LdapUserInfoAttributesMapper()` - 默认不加载manager
+     - `LdapUserInfoAttributesMapper(boolean, LdapService)` - 支持加载manager
+
+**代码变更对比：**
+
+**之前：**
+```java
+// 旧的认证流程
+LdapUserData ldapResult = authenticateUser(loginRequest);
+User user = loadAndValidateUser(username, ldapResult);
+
+// 使用旧的DTO
+private User createUserFromLdap(String lanId, LdapUserData ldapResult) {
+    String displayName = ldapResult.getDisplayName();
+    // ...
+}
+```
+
+**现在：**
+```java
+// 新的认证流程
+LdapUserInfo ldapUserInfo = null;
+if (loginConfig.getLdap().isEnabled()) {
+    boolean isValidUser = ldapService.validateUserAndPassword(username, password);
+    if (!isValidUser) {
+        throw new RuntimeException("LDAP认证失败");
+    }
+    
+    List<LdapUserInfo> list = ldapService.getUserInfo(username, 
+        new LdapUserInfoAttributesMapper(true, ldapService));
+    if (!list.isEmpty()) {
+        ldapUserInfo = list.get(0);
+    }
+}
+User user = loadAndValidateUser(username, ldapUserInfo);
+
+// 使用新的DTO
+private User createUserFromLdap(String lanId, LdapUserInfo ldapUserInfo) {
+    String displayName = ldapUserInfo.getName();
+    // ...
+}
+```
+
+**技术改进：**
+- ✅ 统一使用新的 `LdapUserInfo` DTO
+- ✅ 使用 `LdapService` 统一接口进行LDAP操作
+- ✅ 认证和信息获取分离，逻辑更清晰
+- ✅ 移除重复和废弃的代码
+- ✅ 支持获取manager信息（递归）
+- ✅ 代码更简洁，易于维护
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.service.impl.LoginServiceImpl` - 重构LDAP认证逻辑
+- `com.ocbc.ms.easy.care.mapper.LdapUserInfoAttributesMapper` - 修复构造器
+
+**输入人**：用户
+
+---
+
+## 2024-12-12 - 修复LDAP配置启动失败问题
+
+### 输入人：用户
+
+**提示词：**
+```
+幫我解決問題
+[Spring Boot启动失败错误日志]
+```
+
+**问题分析：**
+Spring Boot启动失败，报错信息：
+```
+Binding to target LdapConfigurationProperties failed:
+- Property: ad.orgUnit - Value: "null" - Reason: AD user org unit cannot be blank
+- Property: ad.username - Value: "" - Reason: AD user name cannot be blank  
+- Property: ad.password - Value: "" - Reason: AD user password cannot be blank
+```
+
+**根本原因：**
+1. **过度验证**：`username`、`password`、`orgUnit` 字段被标记为 `@NotBlank`，但这些字段应该是可选的
+2. **配置缺失**：`application.properties` 中缺少 `ad.org-unit` 配置项
+3. **字段用途**：这些字段用于LDAP绑定认证，不是所有LDAP服务器都需要绑定认证
+
+**修复内容：**
+
+1. **LdapConfigurationProperties.java**：
+   - 移除 `username` 字段的 `@NotBlank` 注解
+   - 移除 `password` 字段的 `@NotBlank` 注解
+   - 移除 `orgUnit` 字段的 `@NotBlank` 注解
+   - 保留必需字段的验证：`url`、`domain`、`searchBase`
+
+2. **application.properties**：
+   - 添加 `ad.org-unit=` 配置项（可以为空）
+
+**代码变更：**
+
+**之前（有问题）：**
+```java
+@NotBlank(message = "AD user name cannot be blank")
+private String username;
+
+@NotBlank(message = "AD user password cannot be blank")
+private String password;
+
+@NotBlank(message = "AD user org unit cannot be blank")
+private String orgUnit;
+```
+
+**现在（修复后）：**
+```java
+// 这些字段是可选的，用于LDAP绑定认证
+private String username;
+private String password;
+private String orgUnit;
+```
+
+**配置文件：**
+```properties
+# Active Directory Configuration
+ad.url=ldap://XXXXX.ZZ.COM:1222
+ad.domain=GROUP
+ad.search-base=DC=XXXXX,DC=ZZ,DC=COM
+ad.username=
+ad.password=
+ad.org-unit=
+```
+
+**字段说明：**
+- **必需字段**（带 `@NotBlank`）：
+  - `url` - LDAP服务器URL
+  - `domain` - AD域名
+  - `searchBase` - 搜索基础DN
+  
+- **可选字段**（无验证）：
+  - `username` - LDAP绑定用户名（某些LDAP服务器需要）
+  - `password` - LDAP绑定密码
+  - `orgUnit` - 组织单位（用于构建用户DN）
+
+**技术改进：**
+- ✅ 修复Spring Boot启动失败问题
+- ✅ 区分必需配置和可选配置
+- ✅ 支持匿名LDAP查询（无需username/password）
+- ✅ 支持需要绑定认证的LDAP服务器（提供username/password）
+- ✅ 配置更灵活，适应不同LDAP服务器
+
+**修改的文件：**
+- `com.ocbc.ms.easy.care.config.LdapConfigurationProperties` - 移除可选字段的验证
+- `com.ocbc.ms.easy.care.config.LdapConfig` - 添加条件判断支持匿名和认证两种模式
+- `application.properties` - 添加org-unit配置项
+
+**LDAP认证模式：**
+1. **匿名访问模式**（默认）：
+   - 不配置 `username` 和 `password`
+   - 适用于允许匿名查询的LDAP服务器
+   
+2. **绑定认证模式**：
+   - 配置 `username` 和 `password`
+   - 可选配置 `orgUnit`
+   - 适用于需要身份验证的LDAP服务器
+
+**输入人**：用户
