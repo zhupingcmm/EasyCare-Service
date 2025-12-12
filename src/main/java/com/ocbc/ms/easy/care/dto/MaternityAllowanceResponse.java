@@ -16,17 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MaternityAllowanceResponse {
-    
-    /**
-     * 申请记录ID
-     */
-    private Long requestId;
-    
-    /**
-     * 计算结果ID
-     */
-    private Long resultId;
-    
+
     /**
      * 工号
      */
