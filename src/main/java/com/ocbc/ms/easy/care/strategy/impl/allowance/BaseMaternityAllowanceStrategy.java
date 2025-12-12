@@ -1,4 +1,4 @@
-package com.easy.care.strategy.impl.allowance;
+package com.ocbc.ms.easy.care.strategy.impl.allowance;
 
 
 import com.ocbc.ms.easy.care.util.AllowanceCompensationDetailsDO;
@@ -34,7 +34,7 @@ import static com.ocbc.ms.easy.care.constant.AllowanceRuleConstants.PAYOUT_METHO
  * 深圳市生育津贴计算策略实现
  */
 @Slf4j
-@Component
+@Component("baseMaternityAllowanceStrategy")
 @RequiredArgsConstructor
 public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrategy {
 
