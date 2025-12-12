@@ -38,4 +38,13 @@ public interface HolidayRepository extends JpaRepository<Holiday, UUID> {
      * @return 特殊日期分页数据
      */
     Page<Holiday> findByEnabled(Boolean enabled, Pageable pageable);
+    
+    /**
+     * 按日期范围查询节假日
+     * 
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 节假日列表
+     */
+    List<Holiday> findByDateBetweenOrderByDate(LocalDate startDate, LocalDate endDate);
 }

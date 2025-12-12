@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * 产假规则请求DTO
@@ -20,21 +19,21 @@ import java.util.UUID;
 public class MaternityRulesRequest {
 
     /**
-     * 城市ID
+     * 城市代码
      */
-    @NotNull(message = "城市ID不能为空")
-    private UUID cityId;
+//    @NotNull(message = "城市代码不能为空")
+    private String cityCode;
 
     /**
-     * 产假类型ID
+     * 产假类型代码
      */
-    @NotNull(message = "产假类型ID不能为空")
-    private Integer maternityLeaveTypeId;
+//    @NotNull(message = "产假类型代码不能为空")
+    private String maternityLeaveTypeCode;
 
     /**
      * 默认假期天数
      */
-    @NotNull(message = "默认假期天数不能为空")
+//    @NotNull(message = "默认假期天数不能为空")
     @Min(value = 1, message = "默认假期天数必须大于0")
     private Integer defaultDays;
 
@@ -44,21 +43,26 @@ public class MaternityRulesRequest {
     private Integer doctorRecommendDays;
 
     /**
-     * 产假扩展信息
+     * 产假扩展信息（可以是JSONArray或JSONObject）
      */
-    private Map<String, Object> maternityLeaveExt;
+    private Object maternityLeaveExt;
 
     /**
      * 产假是否顺延
      */
-    @NotNull(message = "产假是否顺延不能为空")
+//    @NotNull(message = "产假是否顺延不能为空")
     private Boolean holidayExtend;
 
     /**
      * 是否有津贴
      */
-    @NotNull(message = "是否有津贴不能为空")
+//    @NotNull(message = "是否有津贴不能为空")
     private Boolean hasAllowance;
+
+    /**
+     * 津贴计发天数
+     */
+    private Integer planAllowanceDay;
 
     /**
      * 是否启用

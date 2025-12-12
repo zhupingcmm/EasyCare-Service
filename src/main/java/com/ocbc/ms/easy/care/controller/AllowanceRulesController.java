@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -60,15 +59,36 @@ public class AllowanceRulesController {
     }
 
     /**
-     * 查询所有津贴规则（分页）
+     * 查询所有津贴规则（支持分页和不分页）
+     * 当不传入page和size参数时，返回所有数据
+     * 当传入page和size参数时，返回分页数据
      */
     @GetMapping
-    @Operation(summary = "查询所有津贴规则", description = "分页查询所有津贴规则列表，支持按城市过滤")
-    public ApiResponse<Page<AllowanceRulesResponse>> listAllAllowanceRules(
-            @RequestParam(required = false) String city,
-            @PageableDefault(page = 0, size = 10, sort = "updateDate", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("分页查询津贴规则，城市: {}, page: {}, size: {}", city, pageable.getPageNumber(), pageable.getPageSize());
-        return ApiResponse.success(allowanceRulesService.listAllAllowanceRules(city, pageable));
+    @Operation(summary = "查询津贴规则", description = "查询所有津贴规则，支持按城市代码过滤。不传page/size参数返回全部，传入则返回分页数据")
+    public ApiResponse<?> listAllAllowanceRules(
+            @RequestParam(required = false) String cityCode,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false, defaultValue = "updateDate") String sort,
+            @RequestParam(required = false, defaultValue = "DESC") String direction) {
+        
+        // 判断是否传入了分页参数
+        if (page != null || size != null) {
+            // 有分页参数，返回分页数据
+            int pageNum = page != null ? page : 0;
+            int pageSize = size != null ? size : 10;
+            Sort.Direction sortDirection = "ASC".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+            Pageable pageable = org.springframework.data.domain.PageRequest.of(pageNum, pageSize, Sort.by(sortDirection, sort));
+            
+            log.info("收到分页查询津贴规则请求，城市代码: {}, 分页参数: page={}, size={}", cityCode, pageNum, pageSize);
+            Page<AllowanceRulesResponse> pageResult = allowanceRulesService.listAllAllowanceRules(cityCode, pageable);
+            return ApiResponse.success(pageResult);
+        } else {
+            // 无分页参数，返回所有数据
+            log.info("收到查询所有津贴规则请求（不分页），城市代码: {}", cityCode);
+            List<AllowanceRulesResponse> list = allowanceRulesService.listAllAllowanceRulesWithoutPage(cityCode);
+            return ApiResponse.success(list);
+        }
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.ocbc.ms.easy.care.service;
 
+import com.ocbc.ms.easy.care.dto.DystociaMiscarriageResponse;
+import com.ocbc.ms.easy.care.dto.MaternityPolicyResponse;
 import com.ocbc.ms.easy.care.dto.MaternityRulesRequest;
 import com.ocbc.ms.easy.care.dto.MaternityRulesResponse;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,12 @@ public interface MaternityRulesService {
      */
     Page<MaternityRulesResponse> listAllMaternityRules(String city, Pageable pageable);
 
+    /**
+     * 查询所有产假规则（不分页）
+     * @param city 城市名称（可选，为null则查询所有）
+     */
+    List<MaternityRulesResponse> listAllMaternityRulesWithoutPage(String city);
+
 
 
 
@@ -43,4 +51,18 @@ public interface MaternityRulesService {
      * 批量导入产假规则
      */
     int batchImportMaternityRules(List<Map<String, Object>> dataList);
+
+    /**
+     * 根据城市代码查询产假政策
+     * @param cityCode 城市代码
+     * @return 产假政策键值对列表
+     */
+    List<MaternityPolicyResponse> findMaternityPolicyByCityCode(String cityCode);
+
+    /**
+     * 根据城市代码查询难产和流产假信息
+     * @param cityCode 城市代码
+     * @return 难产和流产假信息
+     */
+    DystociaMiscarriageResponse queryDystociaMiscarriageByCityCode(String cityCode);
 }

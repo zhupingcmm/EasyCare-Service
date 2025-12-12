@@ -1,12 +1,16 @@
 package com.ocbc.ms.easy.care.controller;
 
+import com.ocbc.ms.easy.care.common.ApiResponse;
+import com.ocbc.ms.easy.care.domain.HolidayInfo;
 import com.ocbc.ms.easy.care.entity.CityDO;
 import com.ocbc.ms.easy.care.repository.CityRepository;
 import com.ocbc.ms.easy.care.service.HolidayService;
 import com.ocbc.ms.easy.care.service.WorkdayCalculatorService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,11 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 系统支持功能控制器
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/support")
 @RequiredArgsConstructor
@@ -73,5 +79,47 @@ public class SupportController {
         LocalDate startDate = LocalDate.parse(start);
         LocalDate endDate = LocalDate.parse(end);
         return ResponseEntity.ok(workdayCalculatorService.calculateMonthlyWorkdays(startDate, endDate));
+    }
+    
+    /**
+     * 按日期范围查询节假日
+     * 
+     * @param start 开始日期（格式：yyyy-MM-dd）
+     * @param end 结束日期（格式：yyyy-MM-dd）
+     * @return 节假日列表
+     */
+    @GetMapping("/holidays")
+    @Operation(summary = "按日期范围查询节假日", description = "查询指定日期范围内的节假日信息")
+    public ApiResponse<List<Map<String, Object>>> getHolidaysByDateRange(
+            @Parameter(description = "开始日期", example = "2024-11-01") @RequestParam String start,
+            @Parameter(description = "结束日期", example = "2025-04-25") @RequestParam String end) {
+        
+        log.info("查询节假日，开始日期: {}, 结束日期: {}", start, end);
+        
+        LocalDate startDate = LocalDate.parse(start);
+        LocalDate endDate = LocalDate.parse(end);
+        
+        Map<LocalDate, HolidayInfo> holidayMap = holidayService.getHolidaysByDateRange(startDate, endDate);
+        
+        List<Map<String, Object>> result = holidayMap.values().stream()
+                .map(this::convertToMap)
+                .sorted(Comparator.comparing(m -> (String) m.get("date")))
+                .collect(Collectors.toList());
+        
+        return ApiResponse.success(result);
+    }
+    
+    /**
+     * 转换HolidayInfo为Map
+     */
+    private Map<String, Object> convertToMap(HolidayInfo info) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("date", info.getDate().toString());
+        map.put("name", info.getName());
+        map.put("isPublicHoliday", info.getIsPublicHoliday());
+        map.put("type", info.getType());
+        map.put("name_cn", info.getName());
+        map.put("name_en", info.getName());
+        return map;
     }
 }

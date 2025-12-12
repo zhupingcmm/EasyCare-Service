@@ -31,6 +31,12 @@ public interface AllowanceRulesService {
     Page<AllowanceRulesResponse> listAllAllowanceRules(String city, Pageable pageable);
 
     /**
+     * 查询所有津贴规则（不分页）
+     * @param city 城市名称（可选，为null则查询所有）
+     */
+    List<AllowanceRulesResponse> listAllAllowanceRulesWithoutPage(String city);
+
+    /**
      * 更新津贴规则
      */
     AllowanceRulesResponse updateAllowanceRules(Integer id, AllowanceRulesRequest request);

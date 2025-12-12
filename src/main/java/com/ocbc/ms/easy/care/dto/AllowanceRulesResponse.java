@@ -30,6 +30,11 @@ public class AllowanceRulesResponse {
     private String city;
 
     /**
+     * 城市代码
+     */
+    private String cityCode;
+
+    /**
      * 发放方式
      */
     private Integer payoutMethod;

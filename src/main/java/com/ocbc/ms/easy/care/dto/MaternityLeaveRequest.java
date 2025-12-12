@@ -1,6 +1,6 @@
 package com.ocbc.ms.easy.care.dto;
 
-import com.ocbc.ms.easy.care.enums.PregnancyDurationTypeEnum;
+import com.ocbc.ms.easy.care.enums.DifficultBirthTypeEnum;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -93,5 +93,11 @@ public class MaternityLeaveRequest {
      */
     // @NotNull(message = "流产假细节 不能为空")
     private MiscarriageLeaveDetail miscarriageLeaveDetail;
+
+    /**
+     *  难产类型
+     * @see DifficultBirthTypeEnum
+     */
+    private String difficultType;
 
 }

@@ -1,7 +1,5 @@
 package com.ocbc.ms.easy.care.controller;
 
-import com.ocbc.ms.easy.care.service.HolidayService;
-import com.ocbc.ms.easy.care.strategy.impl.leave.BaseMaternityLeave;
 import com.ocbc.ms.easy.care.strategy.impl.leave.ShanghaiMaternityLeaveStrategy;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

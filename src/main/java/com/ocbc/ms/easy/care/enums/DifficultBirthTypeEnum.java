@@ -8,8 +8,8 @@ package com.ocbc.ms.easy.care.enums;
  */
 public enum DifficultBirthTypeEnum {
     UNKNOWN("unknown", "未知类型"),
-    DYS_002("dys_002", "剖腹产、会阴Ⅲ度破裂"),
-    DYS_003("dys_003", "吸引产、钳产、臀位牵引产");
+    DYS_002("dys_001", "剖腹产、会阴Ⅲ度破裂"),
+    DYS_003("dys_002", "吸引产、钳产、臀位牵引产");
 
     private final String code;
     private final String name;

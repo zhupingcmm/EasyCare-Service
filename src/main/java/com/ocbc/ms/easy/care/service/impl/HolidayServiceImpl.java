@@ -1,5 +1,6 @@
 package com.ocbc.ms.easy.care.service.impl;
 
+import com.ocbc.ms.easy.care.domain.HolidayInfo;
 import com.ocbc.ms.easy.care.dto.HolidayRequest;
 import com.ocbc.ms.easy.care.dto.HolidayResponse;
 import com.ocbc.ms.easy.care.entity.Holiday;
@@ -413,6 +414,39 @@ public class HolidayServiceImpl implements HolidayService {
                 .createBy(holiday.getCreateBy())
                 .updateDate(holiday.getUpdateDate())
                 .updateBy(holiday.getUpdateBy())
+                .build();
+    }
+    
+    @Override
+    public Map<LocalDate, HolidayInfo> getHolidaysByDateRange(LocalDate startDate, LocalDate endDate) {
+        LocalDate firstDateInStartMonth = startDate.withDayOfMonth(1);
+        LocalDate lastDateInEndMonth = endDate.withDayOfMonth(endDate.lengthOfMonth());
+
+        log.info("获取日期范围内的节假日数据: {} 到 {}", firstDateInStartMonth, lastDateInEndMonth);
+        
+        // 从数据库查询
+        List<Holiday> holidays = holidayRepository.findByDateBetweenOrderByDate(firstDateInStartMonth, lastDateInEndMonth);
+        
+        // 转换为Map
+        Map<LocalDate, HolidayInfo> holidayMap = holidays.stream()
+                .collect(Collectors.toMap(
+                        Holiday::getDate,
+                        this::convertToHolidayInfo
+                ));
+        
+        log.info("获取到{}条节假日数据", holidayMap.size());
+        return holidayMap;
+    }
+    
+    /**
+     * 转换为HolidayInfo
+     */
+    private HolidayInfo convertToHolidayInfo(Holiday holiday) {
+        return HolidayInfo.builder()
+                .date(holiday.getDate())
+                .name(holiday.getName())
+                .isPublicHoliday(holiday.getIsPublicHoliday())
+                .type(resolveHolidayType(holiday))
                 .build();
     }
 }

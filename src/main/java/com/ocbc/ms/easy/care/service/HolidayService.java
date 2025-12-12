@@ -1,5 +1,6 @@
 package com.ocbc.ms.easy.care.service;
 
+import com.ocbc.ms.easy.care.domain.HolidayInfo;
 import com.ocbc.ms.easy.care.dto.HolidayRequest;
 import com.ocbc.ms.easy.care.dto.HolidayResponse;
 import org.springframework.data.domain.Page;
@@ -66,4 +67,13 @@ public interface HolidayService {
      * @return CSV文件字节数组
      */
     byte[] generateCsvFromPublicApi(String year) throws Exception;
+    
+    /**
+     * 按日期范围获取节假日数据
+     * 
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 节假日数据映射（日期 -> 节假日信息）
+     */
+    Map<LocalDate, HolidayInfo> getHolidaysByDateRange(LocalDate startDate, LocalDate endDate);
 }

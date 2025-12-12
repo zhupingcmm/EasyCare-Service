@@ -1,6 +1,8 @@
 package com.ocbc.ms.easy.care.service.impl;
 
+import com.ocbc.ms.easy.care.calculator.PayrollDayCalculator;
 import com.ocbc.ms.easy.care.constant.PublicHolidayConstants;
+import com.ocbc.ms.easy.care.domain.HolidayInfo;
 import com.ocbc.ms.easy.care.service.HolidayService;
 import com.ocbc.ms.easy.care.service.WorkdayCalculatorService;
 import com.ocbc.ms.easy.care.domain.MonthlyWorkdayInfoDO;
@@ -316,5 +318,145 @@ public class WorkdayCalculatorServiceImpl implements WorkdayCalculatorService {
         log.debug("{}到{}发薪日计算完成，发薪日: {}", start, end, payrollDays);
         
         return payrollDays;
+    }
+    
+    @Override
+    public List<MonthlyWorkdayInfoDO> calculateMonthlyWorkdaysWithHolidayMap(
+            LocalDate start, 
+            LocalDate end,
+            Map<LocalDate, HolidayInfo> holidayMap) {
+        
+        if (start == null || end == null) {
+            throw new IllegalArgumentException("开始/结束日期不能为空");
+        }
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("结束日期不能早于开始日期");
+        }
+        
+        PayrollDayCalculator calculator = new PayrollDayCalculator(holidayMap);
+        List<MonthlyWorkdayInfoDO> result = new ArrayList<>();
+        
+        LocalDate cursor = start;
+        int monthIndex = 0;
+        
+        // 先计算总月数，用于判断首月和尾月
+        YearMonth startYm = YearMonth.from(start);
+        YearMonth endYm = YearMonth.from(end);
+        int totalMonths = (int) startYm.until(endYm, java.time.temporal.ChronoUnit.MONTHS) + 1;
+        
+        while (!cursor.isAfter(end)) {
+            YearMonth ym = YearMonth.from(cursor);
+            
+            // 当月范围的开始与结束（裁剪到 [start, end] 范围内）
+            LocalDate monthStart = ym.atDay(1);
+            LocalDate monthEnd = ym.atEndOfMonth();
+            LocalDate rangeStart = monthStart.isBefore(start) ? start : monthStart;
+            LocalDate rangeEnd = monthEnd.isAfter(end) ? end : monthEnd;
+            
+            // 计算工作日和计薪日
+            int workdays = calculator.calculateLeaveDays(rangeStart, rangeEnd);
+            int legalWorkdays = calculator.calculateLeaveDays(monthStart, monthEnd);
+            int paydays = calculator.calculatePayrollDays(rangeStart, rangeEnd);
+            int legalPaydays = calculator.calculatePayrollDays(monthStart, monthEnd);
+            
+            // 完整月的定义：
+            // 1. 首月（monthIndex == 0）：从该月1号开始
+            // 2. 尾月（monthIndex == totalMonths - 1）：到该月最后一天结束
+            // 3. 中间月：一定是完整月（产假是连续的）
+            boolean fullMonth;
+            if (totalMonths == 1) {
+                // 只有一个月：必须从1号开始且到月末结束
+                fullMonth = monthStart.equals(start) && monthEnd.equals(end);
+            } else if (monthIndex == 0) {
+                // 首月：从1号开始
+                fullMonth = monthStart.equals(start);
+            } else if (monthIndex == totalMonths - 1) {
+                // 尾月：到月末结束
+                fullMonth = monthEnd.equals(end);
+            } else {
+                // 中间月：一定是完整月
+                fullMonth = true;
+            }
+            
+            result.add(MonthlyWorkdayInfoDO.builder()
+                .year(ym.getYear())
+                .month(ym.getMonthValue())
+                .workdays(workdays)
+                .legalWorkdays(legalWorkdays)
+                .paydays(paydays)
+                .legalPaydays(legalPaydays)
+                .fullMonth(fullMonth)
+                .build());
+            
+            cursor = monthEnd.plusDays(1);
+            monthIndex++;
+        }
+        
+        log.debug("计算月度工作日信息完成，共{}个月", result.size());
+        return result;
+    }
+    
+    @Override
+    public PayrollDayCalculator createPayrollDayCalculator(Map<LocalDate, HolidayInfo> holidayMap) {
+        return new PayrollDayCalculator(holidayMap);
+    }
+    
+    /**
+     * 计算单月的工作日信息
+     * 
+     * @param start 开始日期
+     * @param end 结束日期
+     * @param holidayMap 节假日映射
+     * @return 单月工作日信息
+     */
+    public MonthlyWorkdayInfoDO calculateSingleMonthWorkday(
+            LocalDate start,
+            LocalDate end,
+            Map<LocalDate, HolidayInfo> holidayMap) {
+        
+        // 参数处理：如果start为null，end不为null，则start为end所在月第一天
+        if (start == null && end != null) {
+            start = end.withDayOfMonth(1);
+        }
+        // 如果end为null，start不为null，则end为start所在月最后一天
+        else if (end == null && start != null) {
+            end = start.withDayOfMonth(start.lengthOfMonth());
+        }
+        // 如果end和start同时为null，则抛出异常
+        else if (start == null && end == null) {
+            throw new IllegalArgumentException("开始日期和结束日期不能同时为空");
+        }
+        
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("结束日期不能早于开始日期");
+        }
+        
+        YearMonth ym = YearMonth.from(start);
+        PayrollDayCalculator calculator = new PayrollDayCalculator(holidayMap);
+        
+        // 当月范围的开始与结束
+        LocalDate monthStart = ym.atDay(1);
+        LocalDate monthEnd = ym.atEndOfMonth();
+        LocalDate rangeStart = monthStart.isBefore(start) ? start : monthStart;
+        LocalDate rangeEnd = monthEnd.isAfter(end) ? end : monthEnd;
+        
+        // 计算工作日和计薪日
+        int workdays = calculator.calculateLeaveDays(rangeStart, rangeEnd);
+        int legalWorkdays = calculator.calculateLeaveDays(monthStart, monthEnd);
+        int paydays = calculator.calculatePayrollDays(rangeStart, rangeEnd);
+        int legalPaydays = calculator.calculatePayrollDays(monthStart, monthEnd);
+        
+        // 判断是否为完整月：从1号开始且到月末结束
+        boolean fullMonth = paydays == legalPaydays;
+        
+        return MonthlyWorkdayInfoDO.builder()
+                .year(ym.getYear())
+                .month(ym.getMonthValue())
+                .workdays(workdays)
+                .legalWorkdays(legalWorkdays)
+                .paydays(paydays)
+                .legalPaydays(legalPaydays)
+                .fullMonth(fullMonth)
+                .build();
     }
 }

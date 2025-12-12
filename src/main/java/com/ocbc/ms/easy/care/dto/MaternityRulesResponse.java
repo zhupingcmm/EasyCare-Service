@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * 产假规则响应DTO
@@ -27,6 +25,11 @@ public class MaternityRulesResponse {
      * 城市ID
      */
     private Integer cityId;
+
+    /**
+     * 城市代码
+     */
+    private String cityCode;
 
     /**
      * 城市名称
@@ -49,9 +52,9 @@ public class MaternityRulesResponse {
     private Integer doctorRecommendDays;
 
     /**
-     * 产假扩展信息
+     * 产假扩展信息（可以是JSONArray或JSONObject）
      */
-    private Map<String, Object> maternityLeaveExt;
+    private Object maternityLeaveExt;
 
     /**
      * 产假是否顺延
@@ -62,6 +65,11 @@ public class MaternityRulesResponse {
      * 是否有津贴
      */
     private Boolean hasAllowance;
+
+    /**
+     * 津贴计发天数
+     */
+    private Integer planAllowanceDay;
 
     /**
      * 是否启用

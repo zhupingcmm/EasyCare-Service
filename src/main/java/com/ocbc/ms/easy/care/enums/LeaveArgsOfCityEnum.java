@@ -1,9 +1,7 @@
 package com.ocbc.ms.easy.care.enums;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 /**
  * 城市枚举
