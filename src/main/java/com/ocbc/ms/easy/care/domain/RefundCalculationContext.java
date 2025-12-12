@@ -1,6 +1,7 @@
 package com.ocbc.ms.easy.care.domain;
 
 import com.ocbc.ms.easy.care.calculator.PayrollDayCalculator;
+import com.ocbc.ms.easy.care.dto.AllowanceRulesResponse;
 import com.ocbc.ms.easy.care.dto.CompanyAdvanceMap;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,4 +38,7 @@ public class RefundCalculationContext {
     
     /** 公司垫付信息 */
     private CompanyAdvanceMap companyAdvance;
+
+    /** 津贴规则 */
+    private AllowanceRulesResponse allowanceRules;
 }
