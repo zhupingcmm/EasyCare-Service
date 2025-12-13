@@ -102,7 +102,7 @@ INSERT INTO t_maternity_rules (city_id, maternity_leave_type_id, default_days, m
 ((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1001'), 98, NULL, false, true),
 ((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1002'), 15, NULL, false, true),
 ((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1003'), 15, NULL, false, true),
-((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 60, NULL, false, true),
+((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1004'), 60, NULL, true, true),
 ((SELECT id FROM t_city WHERE code = 'SU'), (SELECT id FROM t_maternity_leave_type WHERE code = '1005'), 15, '[{"code":"mc_002","days":20},{"code":"mc_003","days":30},{"code":"mc_004","days":42},{"code":"mc_011","days":98}]'::jsonb, false, true),
 
 -- 青岛
