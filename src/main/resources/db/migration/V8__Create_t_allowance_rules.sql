@@ -37,3 +37,51 @@ COMMENT ON COLUMN t_allowance_rules.create_date IS '创建时间';
 COMMENT ON COLUMN t_allowance_rules.create_by IS '创建人';
 COMMENT ON COLUMN t_allowance_rules.update_date IS '更新时间';
 COMMENT ON COLUMN t_allowance_rules.update_by IS '更新人';
+
+-- 插入津贴规则数据
+-- 企业类型城市（发放方式：2-单位账户）
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'BJ';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'FS';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'GZ';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'SZ';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'ZH';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'DL';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'WH';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'SU';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'CD';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'QD';
+
+-- 个人类型城市（发放方式：1-个人账户）
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 1, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'TJ';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 1, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'NJ';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 1, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'XM';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 1, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'SH';
+
+INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
+SELECT id, 1, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'CQ';
