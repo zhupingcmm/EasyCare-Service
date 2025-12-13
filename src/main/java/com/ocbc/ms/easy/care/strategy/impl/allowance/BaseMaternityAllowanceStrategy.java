@@ -74,7 +74,6 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         BigDecimal maxAllowance = allowanceBasedCorporateSalary
                 .max(allowanceBasedEmployeeSalary)
                 .max(governmentAllowance);
-
         //  e. 补差 = 计算补差
         BigDecimal compensationAmount = BigDecimal.ZERO;
         if(isIndividual(allowanceRules)){
@@ -134,11 +133,11 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         
         // 2. 计算返还金额
         RefundCalculationResult refundResult = calculateRefundAmount(
-            request, allowanceRules, context, monthlyWageInfo);
+            request, context, monthlyWageInfo);
         
         // 3. 生成返还详情
         List<String> refundDetails = generateRefundDetails(
-            request, allowanceRules, context, monthlyWageInfo, refundResult);
+            request, context, monthlyWageInfo, refundResult);
         
         // 4. 设置响应
         response.setEmployeeRefundAmount(refundResult.getTotalRefund());
@@ -454,7 +453,6 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
      */
     private RefundCalculationResult calculateRefundAmount(
             MaternityAllowanceRequest request,
-            AllowanceRulesResponse allowanceRules,
             RefundCalculationContext context,
             MonthlyWageInfo monthlyWageInfo) {
         
@@ -471,7 +469,8 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         BigDecimal completeMonthsRefund = advance
             .calculateNetCompanyAdvanceWithMonthlyLogic(
                 context.getMonthlyWorkdayList(), 
-                context.isSocialInsuranceAdjusted());
+                context.isSocialInsuranceAdjusted(),
+                context.getAllowanceRules().getSocialAdjustMonth());
         totalRefund = totalRefund.add(completeMonthsRefund);
         result.setCompleteMonthsRefund(completeMonthsRefund);
         
@@ -511,17 +510,13 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
     private List<String> buildAllowanceCompensationDetails(AllowanceCompensationDetailsDO detailsDO) {
         List<String> allowanceCompensationDetails = new ArrayList<>();
 
-        if (isCorporate(detailsDO.getAllowanceRules())) {
-            allowanceCompensationDetails.add(String.format("产假期间发放工资：%.2f元", detailsDO.getPaidWageInMaternity()));
-        }
-
-        allowanceCompensationDetails.add(String.format("单位申报上年度月均工资计算补贴金额：%.2f÷%.2f天×%d=%.2f元",
+        allowanceCompensationDetails.add(String.format("单位申报上年度月均工资计算补贴金额：%.2f÷%.2f×%d天=%.2f元",
                 detailsDO.getUnitMonthlyAverageSalary(),
-                detailsDO.getAllowanceBasedCorporateSalary(),
+                detailsDO.getMonthDays(),
                 detailsDO.getMaternityLeaveDays(),
                 detailsDO.getAllowanceBasedCorporateSalary()));
 
-        allowanceCompensationDetails.add(String.format("员工产前12个月月均工资计算补贴金额：%.2f元÷%.2f天×%d天=%.2f元",
+        allowanceCompensationDetails.add(String.format("员工产前12个月月均工资计算补贴金额：%.2f元÷%.2f×%d天=%.2f元",
                 detailsDO.getAverageSalaryPast12Months(),
                 detailsDO.getMonthDays(),
                 detailsDO.getMaternityLeaveDays(),
@@ -531,6 +526,9 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
 
         allowanceCompensationDetails.add(String.format("政府发放补贴金额：%.2f元", detailsDO.getGovernmentAllowance()));
 
+        if (isCorporate(detailsDO.getAllowanceRules())) {
+            allowanceCompensationDetails.add(String.format("产假期间发放工资：%.2f元", detailsDO.getPaidWageInMaternity()));
+        }
         if(isIndividual(detailsDO.getAllowanceRules())) {
             allowanceCompensationDetails.add(String.format("补差金额：员工应享受补贴%.2f元-政府发放补贴金额%.2f元=%.2f元",
                     detailsDO.getMaxAllowance(), detailsDO.getGovernmentAllowance(), detailsDO.getCompensationAmount()));
@@ -548,7 +546,6 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
      */
     private List<String> generateRefundDetails(
             MaternityAllowanceRequest request,
-            AllowanceRulesResponse allowanceRules,
             RefundCalculationContext context,
             MonthlyWageInfo monthlyWageInfo,
             RefundCalculationResult result) {
@@ -599,7 +596,7 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
             }
             else{
                 refundDetailsList.add(String.format("%d.%d 首月工资不够扣：%s=%.2f元，需返还",
-                    startingYear, startingMonth, wageFormula, firstMonthWage.abs()));
+                    startingYear, startingMonth, wageFormula, firstMonthWage));
             }
         }
         
@@ -631,7 +628,7 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
                     endingYear, endingMonth, wageFormula, lastMonthWage.abs()));
             } else {
                 refundDetailsList.add(String.format("%d.%d 尾月工资不够扣：%s=%.2f元，需返还",
-                    endingYear, endingMonth, wageFormula, lastMonthWage.abs()));
+                    endingYear, endingMonth, wageFormula, lastMonthWage));
             }
         }
         
@@ -646,7 +643,7 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
                 // 如果有社保调整，需要分别显示调整前和调整后的月份
                 if (context.isSocialInsuranceAdjusted() && adjustedSocialInsuranceBase != null) {
                     // 从配置获取社保调整月份
-                    Integer socialAdjustMonth = allowanceRules.getSocialAdjustMonth();
+                    Integer socialAdjustMonth = context.getAllowanceRules().getSocialAdjustMonth();
                     
                     // 调整前的月份
                     List<MonthlyWorkdayInfoDO> beforeAdjustMonths = completeMonthsList.stream()
@@ -751,7 +748,7 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         if (socialInsuranceBase != null && socialInsuranceBase.compareTo(BigDecimal.ZERO) > 0) {
             if (hasItems) formula.append("+");
             BigDecimal socialTotal = advance.calculateSocialInsuranceBaseByMonth(
-                socialInsuranceBase, context.getMonthlyWorkdayList());
+                socialInsuranceBase, context.getMonthlyWorkdayList(),context.getAllowanceRules().getSocialAdjustMonth());
             formula.append(String.format("%.2f", socialTotal));
             hasItems = true;
         }

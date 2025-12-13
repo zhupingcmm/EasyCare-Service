@@ -7,8 +7,10 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 公司垫付信息Map结构
@@ -137,7 +139,7 @@ public class CompanyAdvanceMap implements Serializable {
      * @param monthlyWorkdayList 月工作日信息列表
      * @return 计算后的公司垫付净额
      */
-    public BigDecimal calculateNetCompanyAdvanceWithMonthlyLogic(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, boolean socialInsuranceBaseAdjusted) {
+    public BigDecimal calculateNetCompanyAdvanceWithMonthlyLogic(List<MonthlyWorkdayInfoDO> monthlyWorkdayList, boolean socialInsuranceBaseAdjusted, int month) {
 
         // 先验证所有值都大于等于0
         validateValues();
@@ -175,7 +177,7 @@ public class CompanyAdvanceMap implements Serializable {
                         if (!socialInsuranceBaseAdjusted) {
                             socialInsuranceBaseValue = value.multiply(BigDecimal.valueOf(completeMonths));
                         } else {
-                            socialInsuranceBaseValue = calculateSocialInsuranceBaseByMonth(value, monthlyWorkdayList);
+                            socialInsuranceBaseValue = calculateSocialInsuranceBaseByMonth(value, monthlyWorkdayList, month);
                         }
                         return socialInsuranceBaseValue;
                     }
@@ -189,34 +191,51 @@ public class CompanyAdvanceMap implements Serializable {
         return additionSum.subtract(deleteSum);
     }
     
-    public BigDecimal calculateSocialInsuranceBaseByMonth(BigDecimal value, List<MonthlyWorkdayInfoDO> monthlyWorkdayList) {
+    public BigDecimal calculateSocialInsuranceBaseByMonth(BigDecimal value, List<MonthlyWorkdayInfoDO> monthlyWorkdayList, int adjustMonth) {
+        if (monthlyWorkdayList == null || monthlyWorkdayList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        List<MonthlyWorkdayInfoDO> fullMonthList = monthlyWorkdayList.stream()
+            .filter(workday -> Boolean.TRUE.equals(workday.getFullMonth()))
+            .toList();
+        if (fullMonthList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        int normalizedAdjustMonth = Math.min(Math.max(adjustMonth, 1), 12);
+        YearMonth adjustThreshold = resolveAdjustThreshold(monthlyWorkdayList.get(0), normalizedAdjustMonth);
+        BigDecimal adjustedValue = resolveAdjustedSocialInsuranceBase(value);
+
         BigDecimal socialInsuranceBaseValue = BigDecimal.ZERO;
-        
-        // 遍历所有完整月份
-        for (MonthlyWorkdayInfoDO workday : monthlyWorkdayList) {
-            if (workday.getFullMonth()) {
-                int month = workday.getMonth();
-                int year = workday.getYear();
-                // 调整社保基数之前（最后一年7月之前）使用 socialInsuranceBase
-                if (year < monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getYear()
-                    || (year == monthlyWorkdayList.get(monthlyWorkdayList.size() - 1).getYear() && month < 7)) {
-                    socialInsuranceBaseValue = socialInsuranceBaseValue.add(value);
-                }
-                // 调整社保基数之后（最后一年7月及之后）使用 adjustedSocialInsuranceBase
-                else {
-                    // 这里需要从addItem中获取adjustedSocialInsuranceBase
-                    BigDecimal adjustedValue = addItem.entrySet().stream()
-                        .filter(adjEntry -> AddDeleteItemEnum.ADJUSTED_SOCIAL_INSURANCE_BASE.getCode().equals(adjEntry.getKey()))
-                        .map(Map.Entry::getValue)
-                        .filter(val -> val != null)
-                        .findFirst()
-                        .orElse(BigDecimal.ZERO);
-                    socialInsuranceBaseValue = socialInsuranceBaseValue.add(adjustedValue);
-                }
-            }
+        for (MonthlyWorkdayInfoDO workday : fullMonthList) {
+            YearMonth current = YearMonth.of(workday.getYear(), workday.getMonth());
+            BigDecimal monthBase = current.isBefore(adjustThreshold) ? value : adjustedValue;
+            socialInsuranceBaseValue = socialInsuranceBaseValue.add(monthBase);
         }
 
         return socialInsuranceBaseValue;
+    }
+
+    private BigDecimal resolveAdjustedSocialInsuranceBase(BigDecimal defaultValue) {
+        if (addItem == null) {
+            return defaultValue;
+        }
+        return addItem.entrySet().stream()
+            .filter(adjEntry -> AddDeleteItemEnum.ADJUSTED_SOCIAL_INSURANCE_BASE.getCode().equals(adjEntry.getKey()))
+            .map(Map.Entry::getValue)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .filter(adjusted -> !BigDecimal.ZERO.equals(adjusted))
+            .orElse(defaultValue);
+    }
+
+    private YearMonth resolveAdjustThreshold(MonthlyWorkdayInfoDO firstMonth, int adjustMonth) {
+        YearMonth firstYearMonth = YearMonth.of(firstMonth.getYear(), firstMonth.getMonth());
+        if (firstYearMonth.getMonthValue() <= adjustMonth) {
+            return YearMonth.of(firstYearMonth.getYear(), adjustMonth);
+        }
+        return YearMonth.of(firstYearMonth.getYear() + 1, adjustMonth);
     }
 
     /**

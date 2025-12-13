@@ -396,11 +396,6 @@ public class WorkdayCalculatorServiceImpl implements WorkdayCalculatorService {
         return result;
     }
     
-    @Override
-    public PayrollDayCalculator createPayrollDayCalculator(Map<LocalDate, HolidayInfo> holidayMap) {
-        return new PayrollDayCalculator(holidayMap);
-    }
-    
     /**
      * 计算单月的工作日信息
      * 

@@ -78,12 +78,5 @@ public interface WorkdayCalculatorService {
             LocalDate start,
             LocalDate end,
             Map<LocalDate, HolidayInfo> holidayMap);
-    
-    /**
-     * 创建计薪日计算器
-     * 
-     * @param holidayMap 节假日数据映射
-     * @return 计薪日计算器
-     */
-    PayrollDayCalculator createPayrollDayCalculator(Map<LocalDate, HolidayInfo> holidayMap);
+
 }
