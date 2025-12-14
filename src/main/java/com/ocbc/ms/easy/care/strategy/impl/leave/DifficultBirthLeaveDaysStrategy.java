@@ -31,26 +31,9 @@ public class DifficultBirthLeaveDaysStrategy implements MaternityLeaveDaysStrate
         }
         // prefer difficultBirthTypeCode, fallback to difficultType
         String matchCode = request.getDifficultBirthTypeCode();
-        if (StringUtils.isBlank(matchCode)) {
+        if (!StringUtils.isBlank(matchCode)) {
             matchCode = request.getDifficultType();
         }
         return findDaysFromExtOrDefault(rule, matchCode);
-    }
-
-    private Integer findDaysFromExtOrDefault(MaternityRules rule, String matchCode) {
-        Object ext = rule.getMaternityLeaveExt();
-        if (ext == null) {
-            return rule.getDefaultDays();
-        }
-        List<MaternityLeaveExtDTO> extList = JSONArray.parseArray((String) ext, MaternityLeaveExtDTO.class);
-        if (CollectionUtils.isEmpty(extList)) {
-            return rule.getDefaultDays();
-        }
-        for (MaternityLeaveExtDTO dto : extList) {
-            if (dto != null && Objects.equals(dto.getCode(), matchCode)) {
-                return dto.getDays();
-            }
-        }
-        return rule.getDefaultDays();
     }
 }
