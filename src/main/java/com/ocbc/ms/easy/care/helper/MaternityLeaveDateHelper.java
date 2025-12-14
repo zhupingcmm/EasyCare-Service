@@ -7,6 +7,7 @@ import com.ocbc.ms.easy.care.entity.MaternityRules;
 import com.ocbc.ms.easy.care.enums.AwardLeaveEnum;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
 import com.ocbc.ms.easy.care.util.EasyCareDateUtil;
+import com.ocbc.ms.easy.care.strategy.leave.MaternityLeaveDaysStrategy;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,9 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
+import jakarta.annotation.PostConstruct;
 
 
 @Service
@@ -23,6 +27,23 @@ public class MaternityLeaveDateHelper {
     @Autowired
     private EasyCareDateUtil easyCareDateUtil;
 
+    private final Map<MaternityLeaveTypeEnum, DaysCalculator> calculators = new EnumMap<>(MaternityLeaveTypeEnum.class);
+
+    @Autowired(required = false)
+    private List<MaternityLeaveDaysStrategy> strategies;
+
+    @PostConstruct
+    private void initCalculators() {
+        for (MaternityLeaveDaysStrategy s : strategies) {
+            calculators.put(s.getType(), s::calculate);
+        }
+    }
+
+    @FunctionalInterface
+    private interface DaysCalculator {
+        Integer apply(MaternityLeaveRequest request, MaternityRules rule);
+    }
+
     public LocalDate calMaternityLeaveDay(MaternityLeaveRequest maternityLeaveRequest,
                                           LocalDate startDate,
                                           MaternityRules maternityRule,
@@ -30,13 +51,8 @@ public class MaternityLeaveDateHelper {
         if (type == null) {
             return null;
         }
-        int days = switch (type) {
-            case BASE -> calcBase(maternityRule);
-            case DIFFICULT_BIRTH -> calcDifficult(maternityLeaveRequest, maternityRule);
-            case MULTI_BABIES -> calcMultiBabies(maternityLeaveRequest, maternityRule);
-            case AWARD -> calcAward(maternityLeaveRequest, maternityRule);
-            default -> 0;
-        };
+        DaysCalculator calculator = calculators.get(type);
+        int days = calculator == null ? 0 : calculator.apply(maternityLeaveRequest, maternityRule);
         return computeWithExtension(startDate, days, maternityRule.getHolidayExtend());
     }
 

@@ -38,19 +38,24 @@ public class MaternityLeaveRuleService {
                 .comparingInt(r -> MaternityLeaveTypeEnum.fromId(r.getMaternityLeaveType().getId()).getPriority()));
         LocalDate startDate = maternityLeaveRequest.getExpectedDeliveryDate();
         int totalDays = 0;
-        int totalAllowanceDays=0;
+        int totalAllowanceDays = 0;
         List<TimeScope> timeScopeList = new ArrayList<>();
         int index = 0;
         LocalDate innerStartDate = startDate;
         for (MaternityRules rule : normalRules) {
-            LocalDate innerEndDate = maternityLeaveDateHelper.calMaternityLeaveDay(maternityLeaveRequest, innerStartDate, rule,
-                    MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId()));
+            MaternityLeaveTypeEnum typeEnum = MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId());
+            LocalDate innerEndDate = maternityLeaveDateHelper.calMaternityLeaveDay(
+                    maternityLeaveRequest,
+                    innerStartDate,
+                    rule,
+                    typeEnum
+            );
             if (innerEndDate == null) {
                 continue;
             }
             TimeScope timeScope = new TimeScope();
             timeScope.setIndex(index++);
-            timeScope.setName(MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId()).getCode());
+            timeScope.setName(typeEnum.getCode());
             timeScope.setStartAt(innerStartDate);
             timeScope.setEndAt(innerEndDate);
             int days = (int) ChronoUnit.DAYS.between(innerStartDate, innerEndDate) + 1;
@@ -62,7 +67,7 @@ public class MaternityLeaveRuleService {
             }
             innerStartDate = innerEndDate.plusDays(1);
         }
-        return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, totalAllowanceDays );
+        return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, totalAllowanceDays);
     }
 
     public MaternityLeaveResponse genMaternityLeaveResponse(MaternityLeaveRequest maternityLeaveRequest,
