@@ -1,4 +1,4 @@
-package com.hr.maternity.helper;
+package com.ocbc.ms.easy.care.helper;
 
 import com.ocbc.ms.easy.care.enums.AwardLeaveEnum;
 import org.springframework.stereotype.Service;

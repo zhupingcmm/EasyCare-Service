@@ -1,4 +1,4 @@
-package com.hr.maternity.helper;
+package com.ocbc.ms.easy.care.helper;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveExtDTO;
@@ -41,7 +41,11 @@ public class MaternityLeaveDateHelper {
     }
 
     public Integer calcBase(MaternityRules maternityRule) {
-        return findDaysFromDefault(maternityRule);
+        int baseDays = findDaysFromDefault(maternityRule);
+        if (maternityRule.getPlanAllowanceDay() == null) {
+            return baseDays;
+        }
+        return baseDays + maternityRule.getPlanAllowanceDay();
     }
 
     public Integer calcDifficult(MaternityLeaveRequest maternityLeaveRequest, MaternityRules maternityRule) {
