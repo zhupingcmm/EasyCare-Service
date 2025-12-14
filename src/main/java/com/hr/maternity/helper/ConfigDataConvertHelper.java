@@ -1,6 +1,6 @@
 package com.hr.maternity.helper;
 
-import com.hr.maternity.enums.AwardLeaveEnum;
+import com.ocbc.ms.easy.care.enums.AwardLeaveEnum;
 import org.springframework.stereotype.Service;
 
 @Service

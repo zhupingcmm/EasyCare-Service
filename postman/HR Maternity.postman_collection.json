@@ -11,6 +11,354 @@
 			"name": "local",
 			"item": [
 				{
+					"name": "login",
+					"item": [
+						{
+							"name": "/nonce",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// 简化版：仅提取并保存 nonce\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"const jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Code is 0\", function () {\r",
+											"    pm.expect(jsonData.code).to.equal(0);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Nonce exists\", function () {\r",
+											"    pm.expect(jsonData.data.nonce).to.be.a('string');\r",
+											"});\r",
+											"\r",
+											"// 保存 nonce 到环境变量\r",
+											"pm.environment.set(\"nonce\", jsonData.data.nonce);\r",
+											"\r",
+											"console.log(\"✅ Nonce saved:\", jsonData.data.nonce);"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"AXXXXXXX\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/generateNonce",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"generateNonce"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/publicKey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// 简化版：仅提取并保存公钥\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"const jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Code is 0\", function () {\r",
+											"    pm.expect(jsonData.code).to.equal(0);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Public key exists\", function () {\r",
+											"    pm.expect(jsonData.data.modulus).to.be.a('string');\r",
+											"    pm.expect(jsonData.data.exponent).to.be.a('string');\r",
+											"});\r",
+											"\r",
+											"// 保存公钥到环境变量\r",
+											"pm.environment.set(\"rsa_modulus\", jsonData.data.modulus);\r",
+											"pm.environment.set(\"rsa_exponent\", jsonData.data.exponent);\r",
+											"\r",
+											"console.log(\"✅ RSA Public Key saved\");\r",
+											"console.log(\"  - modulus:\", jsonData.data.modulus.substring(0, 30) + \"...\");\r",
+											"console.log(\"  - exponent:\", jsonData.data.exponent);"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"AXXXXXXX\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/publicKey",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"publicKey"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// 完整优化版本 - 包含更多功能\r",
+											"try {\r",
+											"    // 检查响应是否成功\r",
+											"    pm.test(\"响应状态检查\", function () {\r",
+											"        pm.response.to.have.status(200);\r",
+											"    });\r",
+											"    \r",
+											"    // 解析JSON响应\r",
+											"    var jsonData = pm.response.json(); // 更简洁的JSON解析方式\r",
+											"    \r",
+											"    // 验证响应数据结构\r",
+											"    pm.test(\"响应数据验证\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('code');\r",
+											"        pm.expect(jsonData.code).to.equal(0); // 假设0表示成功\r",
+											"    });\r",
+											"    \r",
+											"    // 获取并设置认证token\r",
+											"    var authToken = pm.response.headers.get(\"x-acc-op\");\r",
+											"    \r",
+											"    if (authToken && authToken.trim() !== \"\") {\r",
+											"        pm.environment.set(\"auth\", authToken);\r",
+											"        pm.environment.set(\"auth_timestamp\", new Date().toISOString());\r",
+											"        \r",
+											"        console.log(\"✅ Auth token已更新\");\r",
+											"        console.log(\"🔑 Token:\", authToken.substring(0, 20) + \"...\");\r",
+											"        \r",
+											"        // 测试token设置成功\r",
+											"        pm.test(\"Token设置成功\", function () {\r",
+											"            pm.expect(pm.environment.get(\"auth\")).to.equal(authToken);\r",
+											"        });\r",
+											"        \r",
+											"    } else {\r",
+											"        console.log(\"⚠️ 未找到有效的x-acc-op响应头\");\r",
+											"        \r",
+											"        // 可选：清除旧的token\r",
+											"        pm.environment.unset(\"auth\");\r",
+											"        pm.environment.unset(\"auth_timestamp\");\r",
+											"    }\r",
+											"    \r",
+											"    // 可选：提取其他有用信息\r",
+											"    if (jsonData.data && jsonData.data.user) {\r",
+											"        pm.environment.set(\"current_user\", jsonData.data.user.lanId);\r",
+											"        console.log(\"👤 当前用户:\", jsonData.data.user.lanId);\r",
+											"    }\r",
+											"    \r",
+											"} catch (error) {\r",
+											"    console.error(\"❌ 脚本执行错误:\", error);\r",
+											"    \r",
+											"    pm.test(\"脚本执行检查\", function () {\r",
+											"        pm.expect.fail(\"脚本执行失败: \" + error.message);\r",
+											"    });\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// ============================================\r",
+											"// Postman 自动加密脚本（支持 Mock 模式）\r",
+											"// ============================================\r",
+											"// \r",
+											"// 环境变量说明：\r",
+											"// - login-mock: 是否启用 Mock 模式（true/false）\r",
+											"// - password: 用户密码\r",
+											"// - nonce: 随机数（Mock 模式下不需要）\r",
+											"// - rsa_modulus: RSA 公钥模数（Mock 模式下不需要）\r",
+											"// - rsa_exponent: RSA 公钥指数（Mock 模式下不需要）\r",
+											"//\r",
+											"// 使用说明：\r",
+											"// 1. Mock 模式：不设置 login-mock 或设置为 true，直接使用明文密码\r",
+											"// 2. 加密模式：显式设置 login-mock=false，调用加密服务\r",
+											"// ============================================\r",
+											"\r",
+											"const loginMock = pm.environment.get(\"login-mock\");\r",
+											"const password = pm.environment.get(\"password\");\r",
+											"const nonce = pm.environment.get(\"nonce\");\r",
+											"const rsa_modulus = pm.environment.get(\"rsa_modulus\");\r",
+											"const rsa_exponent = pm.environment.get(\"rsa_exponent\");\r",
+											"\r",
+											"console.log(\"🔍 登录模式检测:\");\r",
+											"console.log(\"   login-mock:\", loginMock === undefined ? \"未设置\" : loginMock);\r",
+											"console.log(\"   password:\", password ? \"已设置 (***)\" : \"未设置\");\r",
+											"\r",
+											"// 加密模式：只有显式设置为 false 时才启用\r",
+											"// Mock 模式：未设置、为空、或为 true 时使用明文\r",
+											"const isEncryptMode = loginMock === \"false\" || loginMock === false;\r",
+											"const isMockMode = !isEncryptMode;\r",
+											"\r",
+											"if (isMockMode) {\r",
+											"    // ==========================================\r",
+											"    // Mock 模式：直接使用明文密码\r",
+											"    // （login-mock 未设置、为空、为 true 时）\r",
+											"    // ==========================================\r",
+											"    console.log(\"✅ Mock 模式：跳过 RSA 加密\");\r",
+											"    console.log(\"📝 直接使用明文密码\");\r",
+											"    console.log(\"💡 提示：login-mock 未设置或为 true 时默认使用 Mock 模式\");\r",
+											"    \r",
+											"    // 直接将明文密码设置为 encryptedPassword\r",
+											"    pm.environment.set(\"encryptedPassword\", password);\r",
+											"    \r",
+											"    console.log(\"✅ Mock 模式配置完成！\");\r",
+											"    console.log(\"🔓 密码（明文）:\", password);\r",
+											"    \r",
+											"} else {\r",
+											"    // ==========================================\r",
+											"    // 加密模式：调用本地加密服务\r",
+											"    // （login-mock 显式设置为 false 时）\r",
+											"    // ==========================================\r",
+											"    console.log(\"🔐 加密模式：调用本地加密服务\");\r",
+											"    console.log(\"💡 提示：login-mock 显式设为 false 时启用加密模式\");\r",
+											"    \r",
+											"    // 验证必要的环境变量\r",
+											"    if (!password) {\r",
+											"        console.error(\"❌ 错误：password 环境变量未设置\");\r",
+											"        throw new Error(\"password 环境变量未设置\");\r",
+											"    }\r",
+											"    if (!rsa_modulus) {\r",
+											"        console.error(\"❌ 错误：rsa_modulus 环境变量未设置\");\r",
+											"        throw new Error(\"rsa_modulus 环境变量未设置\");\r",
+											"    }\r",
+											"    if (!rsa_exponent) {\r",
+											"        console.error(\"❌ 错误：rsa_exponent 环境变量未设置\");\r",
+											"        throw new Error(\"rsa_exponent 环境变量未设置\");\r",
+											"    }\r",
+											"    \r",
+											"    const plainText = password;\r",
+											"    \r",
+											"    console.log(\"📡 正在调用加密服务...\");\r",
+											"    console.log(\"   URL: http://localhost:3000/encrypt\");\r",
+											"    console.log(\"   明文密码长度:\", plainText.length);\r",
+											"    \r",
+											"    // 调用本地加密服务\r",
+											"    pm.sendRequest({\r",
+											"        url: 'http://localhost:3000/encrypt',\r",
+											"        method: 'POST',\r",
+											"        header: {\r",
+											"            'Content-Type': 'application/json'\r",
+											"        },\r",
+											"        body: {\r",
+											"            mode: 'raw',\r",
+											"            raw: JSON.stringify({\r",
+											"                modulus: rsa_modulus,\r",
+											"                exponent: rsa_exponent,\r",
+											"                plainText: plainText\r",
+											"            })\r",
+											"        }\r",
+											"    }, function (err, response) {\r",
+											"        if (err) {\r",
+											"            console.error(\"❌ 加密服务调用失败:\", err);\r",
+											"            throw new Error(\"加密服务调用失败: \" + err.message);\r",
+											"        }\r",
+											"        \r",
+											"        const result = response.json();\r",
+											"        \r",
+											"        if (result.success) {\r",
+											"            pm.environment.set(\"encryptedPassword\", result.encrypted);\r",
+											"            console.log(\"✅ 加密成功！\");\r",
+											"            console.log(\"🔐 加密结果（前50字符）:\", result.encrypted.substring(0, 50) + \"...\");\r",
+											"            console.log(\"📊 加密结果长度:\", result.encrypted.length);\r",
+											"        } else {\r",
+											"            console.error(\"❌ 加密失败:\", result.error);\r",
+											"            throw new Error(\"加密失败: \" + result.error);\r",
+											"        }\r",
+											"    });\r",
+											"}\r",
+											"\r",
+											"console.log(\"=\".repeat(50));"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "login-mock",
+										"value": "{{login-mock}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"{{username}}\",\r\n    \"password\": \"{{encryptedPassword}}\",\r\n    \"nonce\": \"{{nonce}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/login",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "产假津贴 (Maternity Allowance)",
 					"item": [
 						{
@@ -413,98 +761,6 @@
 				{
 					"name": "加密",
 					"item": []
-				},
-				{
-					"name": "/login",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"// 完整优化版本 - 包含更多功能\r",
-									"try {\r",
-									"    // 检查响应是否成功\r",
-									"    pm.test(\"响应状态检查\", function () {\r",
-									"        pm.response.to.have.status(200);\r",
-									"    });\r",
-									"    \r",
-									"    // 解析JSON响应\r",
-									"    var jsonData = pm.response.json(); // 更简洁的JSON解析方式\r",
-									"    \r",
-									"    // 验证响应数据结构\r",
-									"    pm.test(\"响应数据验证\", function () {\r",
-									"        pm.expect(jsonData).to.have.property('code');\r",
-									"        pm.expect(jsonData.code).to.equal(0); // 假设0表示成功\r",
-									"    });\r",
-									"    \r",
-									"    // 获取并设置认证token\r",
-									"    var authToken = pm.response.headers.get(\"x-acc-op\");\r",
-									"    \r",
-									"    if (authToken && authToken.trim() !== \"\") {\r",
-									"        pm.environment.set(\"auth\", authToken);\r",
-									"        pm.environment.set(\"auth_timestamp\", new Date().toISOString());\r",
-									"        \r",
-									"        console.log(\"✅ Auth token已更新\");\r",
-									"        console.log(\"🔑 Token:\", authToken.substring(0, 20) + \"...\");\r",
-									"        \r",
-									"        // 测试token设置成功\r",
-									"        pm.test(\"Token设置成功\", function () {\r",
-									"            pm.expect(pm.environment.get(\"auth\")).to.equal(authToken);\r",
-									"        });\r",
-									"        \r",
-									"    } else {\r",
-									"        console.log(\"⚠️ 未找到有效的x-acc-op响应头\");\r",
-									"        \r",
-									"        // 可选：清除旧的token\r",
-									"        pm.environment.unset(\"auth\");\r",
-									"        pm.environment.unset(\"auth_timestamp\");\r",
-									"    }\r",
-									"    \r",
-									"    // 可选：提取其他有用信息\r",
-									"    if (jsonData.data && jsonData.data.user) {\r",
-									"        pm.environment.set(\"current_user\", jsonData.data.user.lanId);\r",
-									"        console.log(\"👤 当前用户:\", jsonData.data.user.lanId);\r",
-									"    }\r",
-									"    \r",
-									"} catch (error) {\r",
-									"    console.error(\"❌ 脚本执行错误:\", error);\r",
-									"    \r",
-									"    pm.test(\"脚本执行检查\", function () {\r",
-									"        pm.expect.fail(\"脚本执行失败: \" + error.message);\r",
-									"    });\r",
-									"}"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"username\": \"AXXXXXXX\",\r\n    \"password\": \"123456\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/login",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
 				},
 				{
 					"name": "/holidays",

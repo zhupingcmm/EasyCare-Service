@@ -1,12 +1,12 @@
 package com.hr.maternity.helper;
 
 import com.alibaba.fastjson2.JSONArray;
-import com.hr.maternity.dto.MaternityLeaveExtDTO;
-import com.hr.maternity.dto.MaternityLeaveRequest;
-import com.hr.maternity.entity.MaternityRules;
-import com.hr.maternity.enums.AwardLeaveEnum;
-import com.hr.maternity.enums.MaternityLeaveTypeEnum;
-import com.hr.maternity.util.EasyCareDateUtil;
+import com.ocbc.ms.easy.care.dto.MaternityLeaveExtDTO;
+import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
+import com.ocbc.ms.easy.care.entity.MaternityRules;
+import com.ocbc.ms.easy.care.enums.AwardLeaveEnum;
+import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
+import com.ocbc.ms.easy.care.util.EasyCareDateUtil;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+
 
 @Service
 public class MaternityLeaveDateHelper {
