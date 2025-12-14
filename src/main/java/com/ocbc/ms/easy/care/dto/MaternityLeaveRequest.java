@@ -74,7 +74,7 @@ public class MaternityLeaveRequest {
     /**
      * // 孩子个数
      */
-    private Integer numOfKids; 
+    private Integer numberOfKids;
 
     /**
      * 是否流产

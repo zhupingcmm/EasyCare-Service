@@ -1,18 +1,21 @@
-package com.ocbc.ms.easy.care.function;
+package com.ocbc.ms.easy.care.helper;
 
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.ocbc.ms.easy.care.dto.MaternityLeaveExtDTO;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
+import com.ocbc.ms.easy.care.enums.AwardLeaveEnum;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
 import com.ocbc.ms.easy.care.util.EasyCareDateUtil;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
+import java.util.List;
+
 
 @Service
 public class MaternityLeaveDateHelper {
@@ -30,7 +33,7 @@ public class MaternityLeaveDateHelper {
         int days = switch (type) {
             case BASE -> calcBase(maternityRule);
             case DIFFICULT_BIRTH -> calcDifficult(maternityLeaveRequest, maternityRule);
-            case MULTI_BABIES -> calcMultiBabies(maternityRule);
+            case MULTI_BABIES -> calcMultiBabies(maternityLeaveRequest, maternityRule);
             case AWARD -> calcAward(maternityLeaveRequest, maternityRule);
             default -> 0;
         };
@@ -38,7 +41,11 @@ public class MaternityLeaveDateHelper {
     }
 
     public Integer calcBase(MaternityRules maternityRule) {
-        return findDaysFromDefault(maternityRule);
+        int baseDays = findDaysFromDefault(maternityRule);
+        if (maternityRule.getPlanAllowanceDay() == null) {
+            return baseDays;
+        }
+        return baseDays + maternityRule.getPlanAllowanceDay();
     }
 
     public Integer calcDifficult(MaternityLeaveRequest maternityLeaveRequest, MaternityRules maternityRule) {
@@ -52,13 +59,17 @@ public class MaternityLeaveDateHelper {
         return findDaysFromExtFirst(maternityRule, MaternityLeaveTypeEnum.DIFFICULT_BIRTH.getCode(), maternityLeaveRequest.getDifficultBirthTypeCode());
     }
 
-    public Integer calcMultiBabies(MaternityRules maternityRule) {
-        return findDaysFromDefault(maternityRule);
+    public Integer calcMultiBabies(MaternityLeaveRequest maternityLeaveRequest, MaternityRules maternityRule) {
+        return (maternityLeaveRequest.getNumberOfBabies() - 1) * findDaysFromDefault(maternityRule);
     }
 
 
     public Integer calcAward(MaternityLeaveRequest maternityLeaveRequest, MaternityRules maternityRule) {
-        return findDaysFromExtFirst(maternityRule, MaternityLeaveTypeEnum.AWARD.getCode(), maternityLeaveRequest.getNumOfKids() + "");
+        if (BooleanUtils.isFalse(maternityLeaveRequest.getHasExtendedDays())) {
+            return 0;
+        }
+        AwardLeaveEnum awdCode = ConfigDataConvertHelper.convertKidsToAwardLeaveEnum(maternityLeaveRequest.getNumberOfKids());
+        return findDaysFromExtFirst(maternityRule, MaternityLeaveTypeEnum.AWARD.getCode(), awdCode.getCode());
     }
 
 
@@ -85,35 +96,25 @@ public class MaternityLeaveDateHelper {
         if (ext == null) {
             return maternityRule.getDefaultDays();
         }
-        
-        JSONArray jsonArray;
-        if (ext instanceof JSONArray) {
-            jsonArray = (JSONArray) ext;
-        } else if (ext instanceof java.util.List) {
-            // 如果是 List 类型，转换为 JSONArray
-            jsonArray = JSONArray.parseArray(JSON.toJSONString(ext));
-        } else {
-            // 其他情况返回默认天数
-            return maternityRule.getDefaultDays();
-        }
-        
-        if (jsonArray == null || jsonArray.isEmpty()) {
+
+        String extStr = (String) ext;
+        List<MaternityLeaveExtDTO> extList = JSONArray.parseArray(extStr, MaternityLeaveExtDTO.class);
+
+        if (CollectionUtils.isEmpty(extList)) {
             throw new RuntimeException(matchCode + ":config not found");
         }
-        
-        for (int i = 0; i < jsonArray.size(); i++) {
-            JSONObject obj = jsonArray.getJSONObject(i);
-            if (obj == null) continue;
-            String code = obj.getString("code");
-            if (matchCode.equalsIgnoreCase(code)) {
-                Integer d = obj.getInteger("days");
-                if (d == null) {
-                    throw new RuntimeException(matchCode + ":days not configured");
-                }
-                return d;
+
+        MaternityLeaveExtDTO matched = null;
+        for (MaternityLeaveExtDTO maternityLeaveExtDTO : extList) {
+            if (maternityLeaveExtDTO.getCode().equals(matchCode)) {
+                matched = maternityLeaveExtDTO;
+                break;
             }
         }
-        throw new RuntimeException(matchCode + ":days not configured");
+        if (matched == null) {
+            throw new RuntimeException(matchCode + ":days not configured");
+        }
+        return matched.getDays();
     }
 
 
@@ -121,7 +122,7 @@ public class MaternityLeaveDateHelper {
         if (startDate == null || days == null || days <= 0) {
             return null;
         }
-        LocalDate endDate = startDate.plusDays(days);
+        LocalDate endDate = startDate.plusDays(days - 1);
         if (BooleanUtils.isNotTrue(holidayExtend)) {
             return endDate;
         }

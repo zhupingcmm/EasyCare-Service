@@ -109,20 +109,6 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
     @Override
     public MaternityLeaveResponse calculateMaternityLeaveNew(MaternityLeaveRequest request) {
         log.info("开始计算产假，请求参数: {}", request);
-
-        // 1. 保存申请记录
-        MaternityLeaveRequestDO requestEntity = convertToRequestEntity(request);
-        requestEntity = requestRepository.save(requestEntity);
-        log.info("保存申请记录成功，ID: {}", requestEntity.getId());
-
-        // 2. 创建历史记录并保存申请记录ID
-        HistoryDO history = new HistoryDO();
-        history.setLanId(defaultLanId);
-        history.setRecordType(RecordTypeEnum.MATERNITY);
-        history.setMaternityLeaveRequestId(requestEntity.getId());
-        history = historyRepository.save(history);
-        log.info("保存历史记录(申请)成功，ID: {}", history.getId());
-
         String cityCode = request.getCityCode();
         if (cityCode == null || cityCode.trim().isEmpty()) {
             throw new IllegalArgumentException("参数不能为空");
@@ -135,20 +121,6 @@ public class MaternityLeaveServiceImpl implements MaternityLeaveService {
         log.debug("根据城市查询到规则数量: {}", JSONObject.toJSONString(maternityRuleList));
 
         MaternityLeaveResponse resp = maternityLeaveRuleService.calcMaternityDuration(request, maternityRuleList);
-
-        // 4. 保存计算结果
-        MaternityLeaveResultDO resultEntity = convertToResultEntity(resp, requestEntity.getId());
-        resultEntity = resultRepository.save(resultEntity);
-        log.info("保存计算结果成功，ID: {}", resultEntity.getId());
-
-        // 5. 更新历史记录，保存计算结果ID
-        history.setMaternityLeaveResultId(resultEntity.getId());
-        historyRepository.save(history);
-        log.info("更新历史记录(结果)成功，ID: {}", history.getId());
-
-        // 6. 设置ID到响应中
-        resp.setRequestId(requestEntity.getId());
-        resp.setResultId(resultEntity.getId());
         return resp;
     }
 

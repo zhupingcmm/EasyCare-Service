@@ -5,8 +5,10 @@ import com.ocbc.ms.easy.care.dto.MaternityLeaveResponse;
 import com.ocbc.ms.easy.care.dto.TimeScope;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
-import com.ocbc.ms.easy.care.function.MaternityLeaveDateHelper;
+import com.ocbc.ms.easy.care.helper.MaternityLeaveDateHelper;
 import com.ocbc.ms.easy.care.util.MaternityRulesUtil;
+
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class MaternityLeaveRuleService {
                 .comparingInt(r -> MaternityLeaveTypeEnum.fromId(r.getMaternityLeaveType().getId()).getPriority()));
         LocalDate startDate = maternityLeaveRequest.getExpectedDeliveryDate();
         int totalDays = 0;
+        int totalAllowanceDays=0;
         List<TimeScope> timeScopeList = new ArrayList<>();
         int index = 0;
         LocalDate innerStartDate = startDate;
@@ -50,24 +53,29 @@ public class MaternityLeaveRuleService {
             timeScope.setName(MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId()).getCode());
             timeScope.setStartAt(innerStartDate);
             timeScope.setEndAt(innerEndDate);
-            int days = (int) ChronoUnit.DAYS.between(innerStartDate, innerEndDate);
+            int days = (int) ChronoUnit.DAYS.between(innerStartDate, innerEndDate) + 1;
             timeScope.setDays(days);
             timeScopeList.add(timeScope);
             totalDays += days;
+            if (BooleanUtils.isTrue(rule.getHasAllowance())) {
+                totalAllowanceDays += days;
+            }
             innerStartDate = innerEndDate.plusDays(1);
         }
-        return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, startDate.plusDays(totalDays));
+        return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, totalAllowanceDays );
     }
 
     public MaternityLeaveResponse genMaternityLeaveResponse(MaternityLeaveRequest maternityLeaveRequest,
-                                                            List<TimeScope> timeScopeList, int totalDays, LocalDate endDate) {
+                                                            List<TimeScope> timeScopeList, int totalDays, int totalAllowanceDays) {
         MaternityLeaveResponse resp = new MaternityLeaveResponse();
         BeanUtils.copyProperties(maternityLeaveRequest, resp);
-        resp.setStartDate(maternityLeaveRequest.getExpectedDeliveryDate());
-        resp.setTotalDays(totalDays);
+        LocalDate startDate = maternityLeaveRequest.getExpectedDeliveryDate();
+        LocalDate endDate = startDate.plusDays(totalDays - 1);
+        resp.setStartDate(startDate);
         resp.setEndDate(endDate);
+        resp.setTotalDays(totalDays);
+        resp.setTotalAllowanceDays(totalAllowanceDays);
         resp.setTimeScopeList(timeScopeList);
-        resp.setTotalAllowanceDays(totalDays);
         resp.setReturnToWorkDate(endDate.plusDays(1));
         // 按 code 聚合各段天数到响应字段
         if (timeScopeList != null) {
