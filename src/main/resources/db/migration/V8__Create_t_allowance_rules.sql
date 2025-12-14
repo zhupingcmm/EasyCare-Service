@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS t_allowance_rules (
     need_compensation   BOOLEAN DEFAULT TRUE,
     salary_adjust_month INTEGER DEFAULT 4,
     social_adjust_month INTEGER DEFAULT 7,
-    month_days          DECIMAL(5,2) DEFAULT 30,
+    month_days          DECIMAL(10,8) DEFAULT 30,
     create_date         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     create_by           VARCHAR(100) DEFAULT 'system',
     update_date         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -65,14 +65,14 @@ INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensatio
 SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'SU';
 
 INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
-SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'CD';
+SELECT id, 2, TRUE, TRUE, 4, 7, 30.41666667, 'system', 'system' FROM t_city WHERE code = 'CD';
 
 INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
 SELECT id, 2, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'QD';
 
 -- 个人类型城市（发放方式：1-个人账户）
 INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
-SELECT id, 1, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'TJ';
+SELECT id, 1, TRUE, TRUE, 4, 7, 30.4, 'system', 'system' FROM t_city WHERE code = 'TJ';
 
 INSERT INTO t_allowance_rules (city_id, payout_method, enabled, need_compensation, salary_adjust_month, social_adjust_month, month_days, create_by, update_by)
 SELECT id, 1, TRUE, TRUE, 4, 7, 30, 'system', 'system' FROM t_city WHERE code = 'NJ';
