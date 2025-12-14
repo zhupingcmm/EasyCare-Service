@@ -56,7 +56,7 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
 
         // 提前初始化上下文，避免重复查询节假日数据
         RefundCalculationContext context = initializeContext(request, allowanceRules);
-        
+        log.info("[calculateMaternityAllowance] context {}", JsonUtil.toString(context));
         BigDecimal paidWageInMaternity = getMaternityWage(request, context);
         if(isIndividual (allowanceRules)){
             validateRequest( request);
@@ -130,11 +130,11 @@ public class BaseMaternityAllowanceStrategy implements MaternityAllowanceStrateg
         
         // 1. 计算月度工资信息
         MonthlyWageInfo monthlyWageInfo = calculateMonthlyWages(request, context);
-        
+        log.info("[calculateMaternityAllowance] monthlyWageInfo {}", JsonUtil.toString(monthlyWageInfo));
         // 2. 计算返还金额
         RefundCalculationResult refundResult = calculateRefundAmount(
             request, context, monthlyWageInfo);
-        
+        log.info("[calculateMaternityAllowance] refundResult {}", JsonUtil.toString(refundResult));
         // 3. 生成返还详情
         List<String> refundDetails = generateRefundDetails(
             request, context, monthlyWageInfo, refundResult);
