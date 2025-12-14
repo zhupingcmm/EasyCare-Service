@@ -6,8 +6,6 @@ import com.ocbc.ms.easy.care.dto.TimeScope;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
 import com.ocbc.ms.easy.care.helper.MaternityLeaveDateHelper;
-import com.ocbc.ms.easy.care.util.MaternityRulesUtil;
-
 import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +16,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class MaternityLeaveRuleService {
@@ -29,12 +25,12 @@ public class MaternityLeaveRuleService {
 
     public MaternityLeaveResponse calcMaternityDuration(MaternityLeaveRequest maternityLeaveRequest,
                                                         List<MaternityRules> maternityRuleList) {
-        Map<Boolean, List<MaternityRules>> partition = maternityRuleList.stream()
-                .collect(Collectors.partitioningBy(MaternityRulesUtil::isMiscarriageType));
-        List<MaternityRules> miscarriageRules = partition.get(true);
-        List<MaternityRules> normalRules = partition.get(false);
+//        Map<Boolean, List<MaternityRules>> partition = maternityRuleList.stream()
+//                .collect(Collectors.partitioningBy(MaternityRulesUtil::isMiscarriageType));
+//        List<MaternityRules> miscarriageRules = partition.get(true);
+//        List<MaternityRules> normalRules = partition.get(false);
         // 按优先级升序排列（不考虑空值）
-        normalRules.sort(Comparator
+        maternityRuleList.sort(Comparator
                 .comparingInt(r -> MaternityLeaveTypeEnum.fromId(r.getMaternityLeaveType().getId()).getPriority()));
         LocalDate startDate = maternityLeaveRequest.getExpectedDeliveryDate();
         int totalDays = 0;
@@ -42,7 +38,7 @@ public class MaternityLeaveRuleService {
         List<TimeScope> timeScopeList = new ArrayList<>();
         int index = 0;
         LocalDate innerStartDate = startDate;
-        for (MaternityRules rule : normalRules) {
+        for (MaternityRules rule : maternityRuleList) {
             MaternityLeaveTypeEnum typeEnum = MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId());
             LocalDate innerEndDate = maternityLeaveDateHelper.calMaternityLeaveDay(
                     maternityLeaveRequest,

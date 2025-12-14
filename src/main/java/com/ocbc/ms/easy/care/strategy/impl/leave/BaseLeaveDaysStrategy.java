@@ -16,6 +16,10 @@ public class BaseLeaveDaysStrategy implements MaternityLeaveDaysStrategy {
 
     @Override
     public Integer calculate(MaternityLeaveRequest request, MaternityRules rule) {
+        // When miscarriage, skip non-miscarriage strategies
+        if (Boolean.TRUE.equals(request.getIsMiscarriage())) {
+            return 0;
+        }
         int baseDays = rule.getDefaultDays();
         Integer plan = rule.getPlanAllowanceDay();
         return plan == null ? baseDays : baseDays + plan;
