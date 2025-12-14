@@ -16,6 +16,10 @@ public class MultiBabiesLeaveDaysStrategy implements MaternityLeaveDaysStrategy 
 
     @Override
     public Integer calculate(MaternityLeaveRequest request, MaternityRules rule) {
+        // When miscarriage, skip non-miscarriage strategies
+        if (Boolean.TRUE.equals(request.getIsMiscarriage())) {
+            return 0;
+        }
         Integer num = request.getNumberOfBabies();
         if (num == null || num <= 1) {
             return 0;

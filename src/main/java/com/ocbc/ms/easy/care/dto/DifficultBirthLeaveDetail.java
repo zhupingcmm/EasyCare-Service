@@ -1,5 +1,6 @@
 package com.ocbc.ms.easy.care.dto;
 
+import com.ocbc.ms.easy.care.enums.DifficultBirthTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,14 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DifficultBirthLeaveDetail {
 
-    //
-    private String cityCode;
-    private Integer index;
-    private Integer days = 0;
-
     /**
-     * if overrideDays==true, then need MFE pass truly days value to MS.
+     * @see DifficultBirthTypeEnum
      */
-    private Boolean needOverrideDays = false;
-    private String description;
+    private String code;
 }

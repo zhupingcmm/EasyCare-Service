@@ -34,7 +34,7 @@ public class MaternityLeaveRequest {
     /**
      * 难产类型
      */
-    private String difficultBirthTypeCode;
+    private DifficultBirthLeaveDetail difficultBirthLeaveDetail;
 
     /**
      * 是否多胞胎
@@ -93,11 +93,5 @@ public class MaternityLeaveRequest {
      */
     // @NotNull(message = "流产假细节 不能为空")
     private MiscarriageLeaveDetail miscarriageLeaveDetail;
-
-    /**
-     *  难产类型
-     * @see DifficultBirthTypeEnum
-     */
-    private String difficultType;
 
 }
