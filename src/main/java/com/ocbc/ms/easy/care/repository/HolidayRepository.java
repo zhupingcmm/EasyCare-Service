@@ -25,6 +25,15 @@ public interface HolidayRepository extends JpaRepository<Holiday, Integer> {
     Optional<Holiday> findByDate(LocalDate date);
 
     /**
+     * 根据日期和启用状态查询节假日
+     * 
+     * @param date 日期
+     * @param enabled 是否启用
+     * @return 节假日信息
+     */
+    Optional<Holiday> findByDateAndEnabled(LocalDate date, Boolean enabled);
+
+    /**
      * 根据年份与区域查询节假日，按日期排序
      */
     List<Holiday> findByYearAndRegionOrderByDate(Integer year, String region);
