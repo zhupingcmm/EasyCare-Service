@@ -9,13 +9,12 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * 特殊日期数据访问接口（节假日/补班）
  */
 @Repository
-public interface HolidayRepository extends JpaRepository<Holiday, UUID> {
+public interface HolidayRepository extends JpaRepository<Holiday, Integer> {
 
     /**
      * 根据日期查询节假日

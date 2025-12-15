@@ -202,6 +202,31 @@ public class HolidayServiceImpl implements HolidayService {
     public HolidayResponse createHoliday(HolidayRequest request) {
         log.info("开始创建特殊日期，请求参数: {}", request);
 
+        // 检查是否已存在相同日期的记录
+        Optional<Holiday> existing = holidayRepository.findByDate(request.getDate());
+        if (existing.isPresent()) {
+            Holiday existingHoliday = existing.get();
+            if (existingHoliday.getEnabled()) {
+                // 如果记录存在且启用，报错
+                log.warn("日期 {} 已存在且启用，ID: {}", request.getDate(), existingHoliday.getId());
+                throw new IllegalArgumentException("该日期已存在: " + request.getDate());
+            } else {
+                // 如果记录存在但已禁用，重新启用并更新
+                log.info("日期 {} 已存在但被禁用，重新启用并更新，ID: {}", request.getDate(), existingHoliday.getId());
+                existingHoliday.setYear(request.getYear());
+                existingHoliday.setRegion(request.getRegion());
+                existingHoliday.setName(request.getName());
+                existingHoliday.setCnName(request.getCnName());
+                existingHoliday.setEnName(request.getEnName());
+                existingHoliday.setType(request.getType());
+                existingHoliday.setIsPublicHoliday(request.getIsPublicHoliday());
+                existingHoliday.setEnabled(true);
+                Holiday saved = holidayRepository.save(existingHoliday);
+                log.info("特殊日期重新启用成功，ID: {}", saved.getId());
+                return convertToResponse(saved);
+            }
+        }
+
         Holiday holiday = new Holiday();
         holiday.setYear(request.getYear());
         holiday.setRegion(request.getRegion());
@@ -231,7 +256,7 @@ public class HolidayServiceImpl implements HolidayService {
 
     @Override
     @Transactional
-    public HolidayResponse updateHoliday(UUID id, HolidayRequest request) {
+    public HolidayResponse updateHoliday(Integer id, HolidayRequest request) {
         log.info("更新特殊日期，ID: {}, 请求参数: {}", id, request);
 
         Holiday holiday = holidayRepository.findById(id)
@@ -256,7 +281,7 @@ public class HolidayServiceImpl implements HolidayService {
 
     @Override
     @Transactional
-    public void deleteHoliday(UUID id) {
+    public void deleteHoliday(Integer id) {
         log.info("禁用特殊日期，ID: {}", id);
 
         Holiday holiday = holidayRepository.findById(id)
