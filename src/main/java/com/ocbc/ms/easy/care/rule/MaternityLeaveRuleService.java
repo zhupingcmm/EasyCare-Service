@@ -2,6 +2,7 @@ package com.ocbc.ms.easy.care.rule;
 
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveResponse;
+import com.ocbc.ms.easy.care.dto.MaternityLeaveTypeEndDate;
 import com.ocbc.ms.easy.care.dto.TimeScope;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
@@ -40,28 +41,31 @@ public class MaternityLeaveRuleService {
         LocalDate innerStartDate = startDate;
         for (MaternityRules rule : maternityRuleList) {
             MaternityLeaveTypeEnum typeEnum = MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId());
-            LocalDate innerEndDate = maternityLeaveDateHelper.calMaternityLeaveDay(
+            MaternityLeaveTypeEndDate maternityLeaveTypeEndDate = maternityLeaveDateHelper.calMaternityLeaveDay(
                     maternityLeaveRequest,
                     innerStartDate,
                     rule,
                     typeEnum
             );
-            if (innerEndDate == null) {
+            if (maternityLeaveTypeEndDate == null) {
                 continue;
             }
+            LocalDate originEndDate = maternityLeaveTypeEndDate.getOriginEndDate();
+            LocalDate adjustEndDate = maternityLeaveTypeEndDate.getAdjustEndDate();
             TimeScope timeScope = new TimeScope();
             timeScope.setIndex(index++);
             timeScope.setName(typeEnum.getCode());
             timeScope.setStartAt(innerStartDate);
-            timeScope.setEndAt(innerEndDate);
-            int days = (int) ChronoUnit.DAYS.between(innerStartDate, innerEndDate) + 1;
+            timeScope.setEndAt(adjustEndDate);
+            int days = (int) ChronoUnit.DAYS.between(innerStartDate, adjustEndDate) + 1;
+            int allowanceDays = (int) ChronoUnit.DAYS.between(innerStartDate, originEndDate) + 1;
             timeScope.setDays(days);
             timeScopeList.add(timeScope);
             totalDays += days;
             if (BooleanUtils.isTrue(rule.getHasAllowance())) {
-                totalAllowanceDays += days;
+                totalAllowanceDays += allowanceDays;
             }
-            innerStartDate = innerEndDate.plusDays(1);
+            innerStartDate = adjustEndDate.plusDays(1);
         }
         return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, totalAllowanceDays);
     }
