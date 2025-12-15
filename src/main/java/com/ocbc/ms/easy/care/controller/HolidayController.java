@@ -143,7 +143,7 @@ public class HolidayController {
     @PutMapping("/{id}")
     @Operation(summary = "更新特殊日期", description = "更新指定ID的特殊日期信息")
     public ApiResponse<HolidayResponse> updateHoliday(
-            @PathVariable java.util.UUID id,
+            @PathVariable Integer id,
             @Valid @RequestBody HolidayRequest request) {
         log.info("收到更新特殊日期请求，ID: {}, 请求参数: {}", id, request);
         HolidayResponse response = holidayService.updateHoliday(id, request);
@@ -155,7 +155,7 @@ public class HolidayController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "禁用特殊日期", description = "禁用指定ID的特殊日期")
-    public ApiResponse<Void> deleteHoliday(@PathVariable java.util.UUID id) {
+    public ApiResponse<Void> deleteHoliday(@PathVariable Integer id) {
         log.info("收到禁用特殊日期请求，ID: {}", id);
         holidayService.deleteHoliday(id);
         return ApiResponse.success(null);
