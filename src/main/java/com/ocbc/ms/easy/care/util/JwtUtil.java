@@ -11,6 +11,9 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.extern.slf4j.Slf4j;
+import com.ocbc.ms.easy.care.entity.Token;
+import com.ocbc.ms.easy.care.repository.TokenRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -27,10 +30,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Base64;
+import java.util.Optional;
 
 @Slf4j
 @Component
 public class JwtUtil {
+
+    @Autowired
+    private TokenRepository tokenRepository;
 
     @Value("${jwt.secret:mySecretKey12345678901234567890123456789012}")
     private String jwtSecret;
@@ -252,7 +259,21 @@ public class JwtUtil {
     }
 
     private JWTClaimsSet parseAndValidate(String token) throws ParseException, Exception {
-        SignedJWT signedJWT = SignedJWT.parse(token);
+        String realToken = token;
+
+        // 尝试从数据库查找 op_acc_token
+        Optional<Token> tokenEntity = tokenRepository.findByOpAccTokenAndRevokedFalse(token);
+        if (tokenEntity.isPresent()) {
+            realToken = tokenEntity.get().getAccToken();
+        } else {
+            // 尝试从数据库查找 op_ref_token
+            Optional<Token> refTokenEntity = tokenRepository.findByOpRefTokenAndRevokedFalse(token);
+            if (refTokenEntity.isPresent()) {
+                realToken = refTokenEntity.get().getRefToken();
+            }
+        }
+
+        SignedJWT signedJWT = SignedJWT.parse(realToken);
         JWSVerifier verifier = createVerifier();
 
         if (!signedJWT.verify(verifier)) {

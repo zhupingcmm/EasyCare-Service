@@ -24,8 +24,6 @@ public class CorsConfig implements WebMvcConfigurer {
     private final TokenRepository tokenRepository;
     private final JwtUtil jwtUtil;
 
-    @Value("${app.security.login-validation-enabled:true}")
-    private boolean loginValidationEnabled;
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
@@ -51,11 +49,6 @@ public class CorsConfig implements WebMvcConfigurer {
                     || "/health/alive".equals(uri)
                     || "/health/ready".equals(uri)
                     || "/health/info".equals(uri)) {
-                    return true;
-                }
-
-                // 如果登录校验未启用，直接放行
-                if (!loginValidationEnabled) {
                     return true;
                 }
 

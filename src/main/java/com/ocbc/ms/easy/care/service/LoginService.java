@@ -28,4 +28,9 @@ public interface LoginService {
      * 验证用户凭据（Mock实现）
      */
     boolean validateUserCredentials(String username, String password);
+
+    /**
+     * 验证令牌是否有效
+     */
+    boolean validateToken(String token);
 }

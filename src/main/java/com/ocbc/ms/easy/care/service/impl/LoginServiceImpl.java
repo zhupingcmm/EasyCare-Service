@@ -115,6 +115,11 @@ public class LoginServiceImpl implements LoginService {
         return true;
     }
 
+    @Override
+    public boolean validateToken(String token) {
+        return jwtTokenService.validateToken(token);
+    }
+
     /**
      * 构建用户信息
      */

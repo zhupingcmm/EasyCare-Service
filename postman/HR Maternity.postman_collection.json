@@ -14,7 +14,7 @@
 					"name": "login",
 					"item": [
 						{
-							"name": "/nonce",
+							"name": "1. nonce",
 							"event": [
 								{
 									"listen": "test",
@@ -73,7 +73,7 @@
 							"response": []
 						},
 						{
-							"name": "/publicKey",
+							"name": "2. publicKey",
 							"event": [
 								{
 									"listen": "test",
@@ -139,7 +139,7 @@
 							"response": []
 						},
 						{
-							"name": "/login",
+							"name": "3.login",
 							"event": [
 								{
 									"listen": "test",
@@ -163,9 +163,11 @@
 											"    \r",
 											"    // 获取并设置认证token\r",
 											"    var authToken = pm.response.headers.get(\"x-acc-op\");\r",
+											"    var refToken = pm.response.headers.get(\"x-ref-op\");\r",
 											"    \r",
 											"    if (authToken && authToken.trim() !== \"\") {\r",
 											"        pm.environment.set(\"auth\", authToken);\r",
+											"        pm.environment.set(\"refAuth\", refToken);\r",
 											"        pm.environment.set(\"auth_timestamp\", new Date().toISOString());\r",
 											"        \r",
 											"        console.log(\"✅ Auth token已更新\");\r",
@@ -178,10 +180,6 @@
 											"        \r",
 											"    } else {\r",
 											"        console.log(\"⚠️ 未找到有效的x-acc-op响应头\");\r",
-											"        \r",
-											"        // 可选：清除旧的token\r",
-											"        pm.environment.unset(\"auth\");\r",
-											"        pm.environment.unset(\"auth_timestamp\");\r",
 											"    }\r",
 											"    \r",
 											"    // 可选：提取其他有用信息\r",
@@ -278,12 +276,12 @@
 											"    const plainText = password;\r",
 											"    \r",
 											"    console.log(\"📡 正在调用加密服务...\");\r",
-											"    console.log(\"   URL: http://localhost:3000/encrypt\");\r",
+											"    console.log(\"   URL: http://localhost:8000/encrypt\");\r",
 											"    console.log(\"   明文密码长度:\", plainText.length);\r",
 											"    \r",
 											"    // 调用本地加密服务\r",
 											"    pm.sendRequest({\r",
-											"        url: 'http://localhost:3000/encrypt',\r",
+											"        url: 'http://localhost:8000/encrypt',\r",
 											"        method: 'POST',\r",
 											"        header: {\r",
 											"            'Content-Type': 'application/json'\r",
@@ -351,6 +349,211 @@
 										"api",
 										"auth",
 										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4.refresh-token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// 完整优化版本 - 包含更多功能\r",
+											"try {\r",
+											"    // 检查响应是否成功\r",
+											"    pm.test(\"响应状态检查\", function () {\r",
+											"        pm.response.to.have.status(200);\r",
+											"    });\r",
+											"    \r",
+											"    // 解析JSON响应\r",
+											"    var jsonData = pm.response.json(); // 更简洁的JSON解析方式\r",
+											"    \r",
+											"    // 验证响应数据结构\r",
+											"    pm.test(\"响应数据验证\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('code');\r",
+											"        pm.expect(jsonData.code).to.equal(0); // 假设0表示成功\r",
+											"    });\r",
+											"    \r",
+											"    // 获取并设置认证token\r",
+											"    var authToken = pm.response.headers.get(\"x-acc-op\");\r",
+											"    var refToken = pm.response.headers.get(\"x-ref-op\");\r",
+											"    \r",
+											"    if (authToken && authToken.trim() !== \"\") {\r",
+											"        pm.environment.set(\"auth\", authToken);\r",
+											"        pm.environment.set(\"refAuth\", refToken);\r",
+											"        pm.environment.set(\"auth_timestamp\", new Date().toISOString());\r",
+											"        \r",
+											"        console.log(\"✅ Auth token已更新\");\r",
+											"        console.log(\"🔑 Token:\", authToken.substring(0, 20) + \"...\");\r",
+											"        \r",
+											"        // 测试token设置成功\r",
+											"        pm.test(\"Token设置成功\", function () {\r",
+											"            pm.expect(pm.environment.get(\"auth\")).to.equal(authToken);\r",
+											"        });\r",
+											"        \r",
+											"    } else {\r",
+											"        console.log(\"⚠️ 未找到有效的x-acc-op响应头\");\r",
+											"    }\r",
+											"    \r",
+											"    // 可选：提取其他有用信息\r",
+											"    if (jsonData.data && jsonData.data.user) {\r",
+											"        pm.environment.set(\"current_user\", jsonData.data.user.lanId);\r",
+											"        console.log(\"👤 当前用户:\", jsonData.data.user.lanId);\r",
+											"    }\r",
+											"    \r",
+											"} catch (error) {\r",
+											"    console.error(\"❌ 脚本执行错误:\", error);\r",
+											"    \r",
+											"    pm.test(\"脚本执行检查\", function () {\r",
+											"        pm.expect.fail(\"脚本执行失败: \" + error.message);\r",
+											"    });\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"refreshToken\": \"{{refAuth}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/refresh-token",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"refresh-token"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5.validate-token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/validate-token",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"validate-token"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "6.logout",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-acc-op",
+										"value": "{{auth}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/logout",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"logout"
 									]
 								}
 							},
@@ -761,6 +964,55 @@
 				{
 					"name": "加密",
 					"item": []
+				},
+				{
+					"name": "6.logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-acc-op",
+								"value": "{{auth}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
 				},
 				{
 					"name": "/holidays",
