@@ -262,6 +262,24 @@ public class HolidayServiceImpl implements HolidayService {
         Holiday holiday = holidayRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("特殊日期不存在，ID: " + id));
 
+        // 检查新日期是否与其他记录冲突（排除自己）
+        if (!holiday.getDate().equals(request.getDate())) {
+            Optional<Holiday> existing = holidayRepository.findByDate(request.getDate());
+            if (existing.isPresent() && !existing.get().getId().equals(id)) {
+                Holiday existingHoliday = existing.get();
+                if (existingHoliday.getEnabled()) {
+                    // 如果存在启用的记录，报错
+                    log.warn("日期 {} 已被其他启用记录使用，当前ID={}, 冲突ID={}", request.getDate(), id, existingHoliday.getId());
+                    throw new IllegalArgumentException("该日期已存在: " + request.getDate());
+                } else {
+                    // 如果存在禁用的记录，物理删除它以腾出唯一约束
+                    log.info("日期 {} 存在禁用记录，将物理删除以腾出位置，ID={}", request.getDate(), existingHoliday.getId());
+                    holidayRepository.delete(existingHoliday);
+                    holidayRepository.flush(); // 确保删除立即生效
+                }
+            }
+        }
+
         holiday.setYear(request.getYear());
         holiday.setRegion(request.getRegion());
         holiday.setDate(request.getDate());
