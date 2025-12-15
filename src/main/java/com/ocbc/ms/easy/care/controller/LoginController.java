@@ -136,7 +136,7 @@ public class LoginController {
         return ResponseEntity
                 .ok()
                 .header("x-acc-op", tokenInfo.getAccessToken())
-                .header("x-ref-token", tokenInfo.getRefreshToken())
+                .header("x-ref-op", tokenInfo.getRefreshToken())
                 .body(bodyData);
     }
 
@@ -154,67 +154,67 @@ public class LoginController {
         description = "令牌无效"
     )
     public ResponseEntity<ApiResponse<Void>> logout(
-            @Parameter(description = "Authorization头中的Bearer令牌", required = true)
-            @RequestHeader("Authorization") String authorization) {
-        
+            @Parameter(description = "请求头中的 x-acc-op 令牌", required = true)
+             @RequestHeader("x-acc-op") String token) {
         log.info("收到登出请求");
-        
-        String token = extractTokenFromAuthorization(authorization);
         loginService.logout(token);
-        
         return ResponseEntity.ok(ApiResponse.success(null, "登出成功"));
     }
 
     @PostMapping("/refresh-token")
     @Operation(
         summary = "刷新令牌",
-        description = "使用刷新令牌获取新的访问令牌"
+        description = "使用刷新令牌获取新的访问令牌，新 token 在 response header 中返回"
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "200",
-        description = "刷新成功",
-        content = @Content(schema = @Schema(implementation = com.ocbc.ms.easy.care.common.ApiResponse.class))
+        description = "刷新成功，新 token 在 x-acc-op 和 x-ref-op header 中"
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "400", 
         description = "刷新令牌无效或已过期"
     )
-    public ResponseEntity<ApiResponse<LoginResponse.TokenInfo>> refreshToken(
+    public ResponseEntity<LoginSimpleTokenResponse> refreshToken(
             @Parameter(description = "刷新令牌", required = true)
             @RequestBody RefreshTokenRequest refreshTokenRequest) {
         
         log.info("收到令牌刷新请求");
         
         LoginResponse.TokenInfo tokenInfo = loginService.refreshToken(refreshTokenRequest.getRefreshToken());
-        return ResponseEntity.ok(ApiResponse.success(tokenInfo));
+        
+        LoginSimpleTokenResponse bodyData = LoginSimpleTokenResponse.builder()
+                .tokenType(tokenInfo.getTokenType())
+                .expiresIn(String.valueOf(accessTokenExpirationSeconds))
+                .build();
+        
+        return ResponseEntity
+                .ok()
+                .header("x-acc-op", tokenInfo.getAccessToken())
+                .header("x-ref-op", tokenInfo.getRefreshToken())
+                .body(bodyData);
     }
 
-    @GetMapping("/validate-token")
+    @PostMapping("/validate-token")
     @Operation(
         summary = "验证令牌",
-        description = "验证JWT令牌是否有效"
+        description = "验证令牌是否有效"
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "200",
-        description = "令牌有效"
-    )
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-        responseCode = "401", 
-        description = "令牌无效或已过期"
+        description = "操作成功，返回验证结果"
     )
     public ResponseEntity<ApiResponse<TokenValidationResponse>> validateToken(
-            @Parameter(description = "Authorization头中的Bearer令牌", required = true)
-            @RequestHeader("Authorization") String authorization) {
-        
+            @Parameter(description = "请求头中的 x-acc-op 令牌", required = true)
+            @RequestHeader("x-acc-op") String token) {
         log.info("收到令牌验证请求");
         
-        String token = extractTokenFromAuthorization(authorization);
+        boolean isValid = loginService.validateToken(token);
+        String message = isValid ? "令牌有效" : "令牌无效或已过期";
         
         TokenValidationResponse response = TokenValidationResponse.builder()
-                .valid(true)
-                .message("令牌有效")
+                .valid(isValid)
+                .message(message)
                 .build();
-                
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -258,16 +258,6 @@ public class LoginController {
                     .status(500)
                     .body(ApiResponse.error(500, "提取公钥失败: " + e.getMessage()));
         }
-    }
-
-    /**
-     * 从Authorization头中提取令牌（当前直接返回，未来可扩展Bearer前缀处理）
-     */
-    private String extractTokenFromAuthorization(String authorization) {
-        if (authorization == null || authorization.isBlank()) {
-            throw new RuntimeException("Authorization头不能为空");
-        }
-        return authorization.trim();
     }
 
 }
