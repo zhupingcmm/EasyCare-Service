@@ -26,4 +26,7 @@ public interface NonceRepository extends JpaRepository<Nonce, String> {
     @Modifying
     @Query("DELETE FROM Nonce n WHERE n.used = true AND n.usedAt < :threshold")
     int deleteUsedNonces(@Param("threshold") LocalDateTime threshold);
+
+    @Query(value = "SELECT delete_yesterday_nonces(:threshold)", nativeQuery = true)
+    String deleteYesterdayNonces(@Param("threshold") int threshold);
 }

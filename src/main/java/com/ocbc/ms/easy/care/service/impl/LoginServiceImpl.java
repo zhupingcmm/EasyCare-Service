@@ -1,7 +1,9 @@
 package com.ocbc.ms.easy.care.service.impl;
 
 import com.ocbc.ms.easy.care.config.LoginConfigurationProperties;
+import com.ocbc.ms.easy.care.config.UserRoleConfigurationProperties;
 import com.ocbc.ms.easy.care.dto.LdapUserInfo;
+import com.ocbc.ms.easy.care.encryption.config.EncryptionProperties;
 import com.ocbc.ms.easy.care.dto.LoginRequest;
 import com.ocbc.ms.easy.care.dto.LoginResponse;
 import com.ocbc.ms.easy.care.entity.Role;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,10 +34,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
-    private static final String ROLE_HR_ADMIN = "HR_Admin";
-    private static final String ROLE_EMPLOYEE = "Employee";
-    private static final String NORMALIZED_ROLE_HR_ADMIN = "HR_ADMIN";
-    private static final String NORMALIZED_ROLE_EMPLOYEE = "EMPLOYEE";
+    private static final String ROLE_HR_ADMIN = "HR_ADMIN";
+    private static final String ROLE_EMPLOYEE = "EMPLOYEE";
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -43,22 +44,18 @@ public class LoginServiceImpl implements LoginService {
     private final RSAUtil rsaUtil;
     private final LoginConfigurationProperties loginConfig;
     private final LdapService ldapService;
-
-    @Value("${encryption.rsa-enabled:false}")
-    private boolean rsaEnabled;
-
-    @Value("${user.role.hr-department:CHN E2P Human Resources}")
-    private String hrDepartment;
+    private final EncryptionProperties encryptionProperties;
+    private final UserRoleConfigurationProperties userRoleConfig;
 
     @Override
     @Transactional
     public LoginResponse login(LoginRequest loginRequest, boolean skipRsaDecryption) {
         log.info("开始用户登录验证，用户名: {}, Mock模式: {}", loginRequest.getUsername(), skipRsaDecryption);
 
-        boolean needDecryption = rsaEnabled && !skipRsaDecryption;
-        if (needDecryption) {
+        if (encryptionProperties.isRsaEnabled() && !skipRsaDecryption) {
             String decryptedPassword = rsaUtil.decryptLogin(loginRequest);
             loginRequest.setPassword(decryptedPassword);
+            log.debug("已解密登录密码");
         } else if (skipRsaDecryption) {
             log.info("Mock模式登录，跳过RSA解密，用户名: {}", loginRequest.getUsername());
         }
@@ -72,7 +69,7 @@ public class LoginServiceImpl implements LoginService {
             
             List<LdapUserInfo> ldapUserInfoList = ldapService.getUserInfo(
                 loginRequest.getUsername(), 
-                new LdapUserInfoAttributesMapper(true, ldapService)
+                new LdapUserInfoAttributesMapper(false, ldapService)
             );
             
             if (!ldapUserInfoList.isEmpty()) {
@@ -106,11 +103,11 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public boolean validateUserCredentials(String username, String password) {
         log.debug("验证用户凭据（Mock实现），用户名: {}", username);
-
-        if (isUserExists(username)) {
+        boolean exists = userRepository.findByLanIdAndIsActiveTrue(username).isPresent();
+        if (!exists) {
+            log.warn("用户不存在: {}", username);
             return false;
         }
-
         log.info("用户凭据验证成功（Mock），用户名: {}", username);
         return true;
     }
@@ -153,17 +150,6 @@ public class LoginServiceImpl implements LoginService {
 
 
     /**
-     * 使用 Mock 认证
-     */
-    private void authenticateWithMock(LoginRequest loginRequest) {
-        log.info("开始Mock认证，用户名: {}", loginRequest.getUsername());
-        if (isUserExists(loginRequest.getUsername())) {
-            throw new RuntimeException("用户不存在");
-        }
-        log.info("Mock认证通过，用户名: {}", loginRequest.getUsername());
-    }
-
-    /**
      * 加载并验证用户
      */
     private User loadAndValidateUser(String username, LdapUserInfo ldapUserInfo) {
@@ -187,7 +173,7 @@ public class LoginServiceImpl implements LoginService {
      */
     private User findOrCreateUserFromLdap(String lanId, LdapUserInfo ldapUserInfo) {
         return userRepository.findByLanIdWithRoles(lanId)
-                .map(existingUser -> updateUserFromLdap(existingUser, ldapUserInfo))
+                .map(user -> updateUserFromLdap(user, ldapUserInfo))
                 .orElseGet(() -> createUserFromLdap(lanId, ldapUserInfo));
     }
 
@@ -215,8 +201,7 @@ public class LoginServiceImpl implements LoginService {
         assignRoleBasedOnDepartment(newUser, ldapUserInfo.getDepartment());
         
         log.info("用户创建成功，用户ID: {}, LAN ID: {}", newUser.getId(), lanId);
-        return userRepository.findByLanIdWithRoles(lanId)
-                .orElseThrow(() -> new RuntimeException("创建用户后查询失败"));
+        return newUser;
     }
 
     /**
@@ -255,19 +240,20 @@ public class LoginServiceImpl implements LoginService {
         boolean isHrDepartment = isHrDepartment(department);
         
         String roleName = isHrDepartment ? ROLE_HR_ADMIN : ROLE_EMPLOYEE;
-        String normalizedRoleName = isHrDepartment ? NORMALIZED_ROLE_HR_ADMIN : NORMALIZED_ROLE_EMPLOYEE;
         
         log.info("用户部门: {}, 分配角色: {}", department != null ? department : "未知", roleName);
         
-        Role role = roleRepository.findByNormalizedName(normalizedRoleName)
+        Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("角色 " + roleName + " 不存在"));
         
         UserRole userRole = UserRole.builder()
                 .userId(user.getId())
                 .roleId(role.getId())
+                .role(role)
                 .build();
         
         userRoleRepository.save(userRole);
+        user.setUserRoles(Collections.singletonList(userRole));
         log.info("已为用户分配角色 {}，用户ID: {}", roleName, user.getId());
     }
 
@@ -294,19 +280,6 @@ public class LoginServiceImpl implements LoginService {
     }
 
     /**
-     * 检查用户是否存在
-     */
-    private boolean isUserExists(String username) {
-        boolean exists = userRepository.findByLanIdAndIsActiveTrue(username).isPresent();
-        if (!exists) {
-            log.warn("用户不存在: {}", username);
-        }
-        return !exists;
-    }
-
-
-
-    /**
      * 规范化邮箱
      */
     private String normalizeEmail(String email) {
@@ -317,7 +290,8 @@ public class LoginServiceImpl implements LoginService {
      * 判断是否为HR部门
      */
     private boolean isHrDepartment(String department) {
-        return StringUtils.hasText(department) && department.equals(hrDepartment);
+        return StringUtils.hasText(department) && 
+               department.equals(userRoleConfig.getHrDepartment());
     }
 
 }

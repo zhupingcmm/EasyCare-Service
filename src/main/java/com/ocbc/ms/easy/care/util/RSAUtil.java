@@ -16,10 +16,13 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HashMap;
@@ -307,15 +310,16 @@ public class RSAUtil {
     }
 
     /**
-     * 清理过期的nonce记录
+     * 清理过期的nonce记录（仅清理昨天及之前过期的数据）
      * 
      * @return 删除的记录数
      */
     @Transactional
     public int cleanupExpiredNonces() {
-        log.info("开始清理过期的nonce记录");
-        int deletedCount = nonceRepository.deleteExpiredNonces(LocalDateTime.now());
-        log.info("已清理{}条过期的nonce记录", deletedCount);
+        LocalDateTime yesterdayEnd = LocalDateTime.now().toLocalDate().atStartOfDay();
+        log.info("开始清理过期的nonce记录，清理阈值时间: {}", yesterdayEnd);
+        int deletedCount = nonceRepository.deleteExpiredNonces(yesterdayEnd);
+        log.info("已清理{}条过期的nonce记录（昨天及之前）", deletedCount);
         return deletedCount;
     }
 
@@ -415,6 +419,59 @@ public class RSAUtil {
             
         } catch (Exception e) {
             log.error("从私钥提取公钥信息失败", e);
+            throw new RuntimeException("提取公钥信息失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 从公钥PEM中提取公钥信息（modulus和exponent）
+     * 用于解析JWT公钥配置并提取公钥参数
+     * 
+     * @param publicKeyPem 公钥PEM格式字符串
+     * @return 包含modulus和exponent的Map
+     * @throws RuntimeException 提取失败时抛出异常
+     */
+    public Map<String, String> extractPublicKeyFromPem(String publicKeyPem) {
+        log.info("开始从公钥PEM提取公钥信息");
+        
+        try {
+            String normalized = publicKeyPem
+                    .replace("-----BEGIN PUBLIC KEY-----", "")
+                    .replace("-----END PUBLIC KEY-----", "")
+                    .replaceAll("\\s", "");
+            
+            byte[] keyBytes = Base64.getDecoder().decode(normalized);
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(spec);
+            
+            if (!(publicKey instanceof RSAPublicKey rsaPublicKey)) {
+                throw new RuntimeException("不是有效的RSA公钥");
+            }
+            
+            BigInteger modulus = rsaPublicKey.getModulus();
+            BigInteger publicExponent = rsaPublicKey.getPublicExponent();
+            
+            int keySize = modulus.bitLength();
+            
+            String modulusHex = modulus.toString(16).toUpperCase();
+            String exponentHex = publicExponent.toString(16).toUpperCase();
+            
+            Map<String, String> publicKeyInfo = new HashMap<>();
+            publicKeyInfo.put("modulus", modulusHex);
+            publicKeyInfo.put("exponent", exponentHex);
+            publicKeyInfo.put("modulusBase64", Base64.getEncoder().encodeToString(modulus.toByteArray()));
+            publicKeyInfo.put("exponentBase64", Base64.getEncoder().encodeToString(publicExponent.toByteArray()));
+            publicKeyInfo.put("keySize", String.valueOf(keySize));
+            
+            log.info("公钥信息提取成功，密钥长度: {} 位", keySize);
+            log.debug("Modulus (Hex): {}", modulusHex);
+            log.debug("Exponent (Hex): {}", exponentHex);
+            
+            return publicKeyInfo;
+            
+        } catch (Exception e) {
+            log.error("从公钥PEM提取信息失败", e);
             throw new RuntimeException("提取公钥信息失败: " + e.getMessage(), e);
         }
     }

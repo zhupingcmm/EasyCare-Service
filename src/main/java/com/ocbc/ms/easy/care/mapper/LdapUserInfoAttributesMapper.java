@@ -44,20 +44,18 @@ public class LdapUserInfoAttributesMapper implements AttributesMapper<LdapUserIn
 
         if (showManager && attrs.get("manager") != null) {
             String managerDn = (String) attrs.get("manager").get();
-            userInfo.setManagerLanId(getIdFromDN(managerDn));
+            String managerId = getIdFromDN(managerDn);
+            userInfo.setManagerLanId(managerId);
 
             // 递归获取manager信息需要通过LdapService
             if (ldapService != null) {
                 try {
-                    List<LdapUserInfo> managers = ldapService.getUserInfo(
-                        getIdFromDN(managerDn), 
-                        new LdapUserInfoAttributesMapper(false, ldapService)
-                    );
+                    List<LdapUserInfo> managers = ldapService.getUserInfo(managerId, new LdapUserInfoAttributesMapper(false, ldapService));
                     if (!managers.isEmpty()) {
                         userInfo.setManager(managers.getFirst());
                     }
                 } catch (Exception e) {
-                    log.warn("Failed to get manager info for: {}", getIdFromDN(managerDn));
+                    log.warn("Failed to get manager info for: {}", managerId);
                 }
             }
         }
@@ -82,7 +80,9 @@ public class LdapUserInfoAttributesMapper implements AttributesMapper<LdapUserIn
         String[] parts = dn.split(",");
         for (String part : parts) {
             if (part.trim().startsWith("CN=")) {
-                return part.trim().substring(3);
+                String commonName = part.trim().substring(3);
+                String[] CN = commonName.split(" ");
+                return CN[CN.length - 1];
             }
         }
         return "";
