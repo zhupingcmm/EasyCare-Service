@@ -32,6 +32,11 @@ public class LdapServiceImpl implements LdapService {
 
     @Override
     public AdGroupResp searchAdGroup(String lanId) {
+        if (StringUtils.isBlank(lanId)) {
+            log.warn("searchAdGroup called with blank lanId");
+            return new AdGroupResp();
+        }
+        
         try {
             if (ldapTemplate == null) {
                 log.warn("LdapTemplate is not configured, skipping AD group search for lanId: {}", lanId);
@@ -45,23 +50,33 @@ public class LdapServiceImpl implements LdapService {
             List<AdGroupResp> results = ldapTemplate.search(queryResult, new AdGroupAttributesMapper());
             
             if (results.isEmpty()) {
-                log.info("LdapServiceImpl Exception: User not found");
-                throw new RuntimeException("Can find this user");
+                log.warn("AD group not found for lanId: {}", lanId);
+                throw new RuntimeException("User not found in AD: " + lanId);
             }
             
             AdGroupResp resp = results.getFirst();
             resp.setLanId(lanId);
             
+            log.debug("Successfully retrieved AD groups for lanId: {}", lanId);
             return resp;
         } catch (Exception e) {
-            log.info("LdapServiceImpl Exception={}", e.getMessage());
-            log.info("Enterprise:chatbot-fulfillment-hr: fail to searchAdGroup");
-            throw new RuntimeException("Can find this user", e);
+            log.error("Failed to search AD group for lanId: {}, error: {}", lanId, e.getMessage(), e);
+            throw new RuntimeException("Failed to search AD group for user: " + lanId, e);
         }
     }
 
     @Override
     public List<LdapUserInfo> getUserInfo(String lanId, AttributesMapper<LdapUserInfo> attributesMapper) {
+        if (StringUtils.isBlank(lanId)) {
+            log.warn("getUserInfo called with blank lanId");
+            return Collections.emptyList();
+        }
+        
+        if (attributesMapper == null) {
+            log.warn("getUserInfo called with null attributesMapper");
+            return Collections.emptyList();
+        }
+        
         try {
             if (ldapTemplate == null) {
                 log.warn("LdapTemplate is not configured, skipping user info search for lanId: {}", lanId);
@@ -75,19 +90,25 @@ public class LdapServiceImpl implements LdapService {
             List<LdapUserInfo> results = ldapTemplate.search(queryResult, attributesMapper);
             
             if (results.isEmpty()) {
-                log.info("User not found for lanId: {}", lanId);
+                log.warn("User info not found for lanId: {}", lanId);
                 return Collections.emptyList();
             }
             
+            log.debug("Successfully retrieved user info for lanId: {}", lanId);
             return results;
         } catch (Exception e) {
             log.error("Failed to get user info for lanId: {}, error: {}", lanId, e.getMessage(), e);
-            throw new RuntimeException("Failed to get user info", e);
+            throw new RuntimeException("Failed to get user info for user: " + lanId, e);
         }
     }
     
     @Override
     public Boolean validateUserAndPassword(String lanId, String password) {
+        if (StringUtils.isBlank(lanId) || StringUtils.isBlank(password)) {
+            log.warn("validateUserAndPassword called with blank lanId or password");
+            return false;
+        }
+        
         try {
             UsernamePasswordAuthenticationToken authentication = 
                 new UsernamePasswordAuthenticationToken(lanId, password);
@@ -97,9 +118,17 @@ public class LdapServiceImpl implements LdapService {
             }
             
             LdapUserDetails userDetails = (LdapUserDetails) authentication.getPrincipal();
-            return userDetails != null && StringUtils.isNotBlank(userDetails.getUsername());
+            boolean isValid = userDetails != null && StringUtils.isNotBlank(userDetails.getUsername());
+            
+            if (isValid) {
+                log.debug("LDAP authentication successful for user: {}", lanId);
+            } else {
+                log.warn("LDAP authentication failed: invalid user details for user: {}", lanId);
+            }
+            
+            return isValid;
         } catch (AuthenticationException e) {
-            log.error("LDAP authentication failed for user: {}", lanId, e);
+            log.warn("LDAP authentication failed for user: {}, reason: {}", lanId, e.getMessage());
             return false;
         } catch (Exception e) {
             log.error("Unexpected error during LDAP authentication for user: {}", lanId, e);

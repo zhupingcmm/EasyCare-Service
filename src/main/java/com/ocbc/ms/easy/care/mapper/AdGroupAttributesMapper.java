@@ -23,41 +23,59 @@ public class AdGroupAttributesMapper implements AttributesMapper<AdGroupResp> {
         List<String> adGroupList = new ArrayList<>();
         AdGroupResp adGroupResp = new AdGroupResp();
         
-        if (attributes.get(CommonConstants.MEMBEROF) != null) {
-            NamingEnumeration<?> authorization = attributes.get(CommonConstants.MEMBEROF).getAll();
-            while (authorization.hasMore()) {
-                String adGroupDn = (String) authorization.next();
-                String ldapName = LdapUtils.newLdapName(adGroupDn);
-                List<Rdn> rdnList = LdapUtils.getRdns(ldapName);
+        try {
+            if (attributes.get(CommonConstants.MEMBEROF) != null) {
+                NamingEnumeration<?> memberOfEnum = attributes.get(CommonConstants.MEMBEROF).getAll();
                 
-                Map<String, String> rdnMap = rdnList.stream()
-                        .collect(Collectors.groupingBy(
-                                Rdn::getType,
-                                Collectors.mapping(
-                                        rdn -> String.valueOf(rdn.getValue()),
-                                        Collectors.toList()
-                                )
-                        ))
-                        .entrySet()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                Map.Entry::getKey,
-                                e -> String.join(", ", e.getValue())
-                        ));
-                
-                String cn = rdnMap.get(CommonConstants.CN);
-                if (cn != null) {
-                    adGroupList.add(cn);
+                while (memberOfEnum.hasMore()) {
+                    try {
+                        String adGroupDn = (String) memberOfEnum.next();
+                        String cn = extractCnFromDn(adGroupDn);
+                        
+                        if (cn != null && !cn.isEmpty()) {
+                            adGroupList.add(cn);
+                            log.debug("Extracted AD group CN: {}", cn);
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to process AD group entry", e);
+                    }
                 }
+            } else {
+                log.debug("No memberOf attribute found");
             }
+        } catch (Exception e) {
+            log.error("Error processing AD group attributes", e);
         }
         
         String adGroupStr = adGroupList.stream()
                 .sorted()
+                .distinct()
                 .collect(Collectors.joining("<br/>"));
         
         adGroupResp.setAdGroups(adGroupStr);
+        log.debug("Mapped {} AD groups", adGroupList.size());
         
         return adGroupResp;
+    }
+    
+    private String extractCnFromDn(String dn) {
+        if (dn == null || dn.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            String ldapName = LdapUtils.newLdapName(dn);
+            List<Rdn> rdnList = LdapUtils.getRdns(ldapName);
+            
+            for (Rdn rdn : rdnList) {
+                if (CommonConstants.CN.equals(rdn.getType())) {
+                    return String.valueOf(rdn.getValue());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Failed to extract CN from DN: {}", dn, e);
+        }
+        
+        return null;
     }
 }

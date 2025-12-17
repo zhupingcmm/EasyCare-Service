@@ -4,6 +4,7 @@ import com.ocbc.ms.easy.care.constants.CommonConstants;
 import com.ocbc.ms.easy.care.dto.LdapUserInfo;
 import com.ocbc.ms.easy.care.service.LdapService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ldap.core.AttributesMapper;
 
 import javax.naming.NamingException;
@@ -43,20 +44,30 @@ public class LdapUserInfoAttributesMapper implements AttributesMapper<LdapUserIn
         userInfo.setJobTitle(getAttribute(attrs, "title"));
 
         if (showManager && attrs.get("manager") != null) {
-            String managerDn = (String) attrs.get("manager").get();
-            String managerId = getIdFromDN(managerDn);
-            userInfo.setManagerLanId(managerId);
+            try {
+                String managerDn = (String) attrs.get("manager").get();
+                String managerId = getIdFromDN(managerDn);
+                
+                if (StringUtils.isNotBlank(managerId)) {
+                    userInfo.setManagerLanId(managerId);
 
-            // 递归获取manager信息需要通过LdapService
-            if (ldapService != null) {
-                try {
-                    List<LdapUserInfo> managers = ldapService.getUserInfo(managerId, new LdapUserInfoAttributesMapper(false, ldapService));
-                    if (!managers.isEmpty()) {
-                        userInfo.setManager(managers.getFirst());
+                    if (ldapService != null) {
+                        try {
+                            List<LdapUserInfo> managers = ldapService.getUserInfo(
+                                managerId, 
+                                new LdapUserInfoAttributesMapper(false, ldapService)
+                            );
+                            if (!managers.isEmpty()) {
+                                userInfo.setManager(managers.getFirst());
+                                log.debug("Successfully retrieved manager info for: {}", managerId);
+                            }
+                        } catch (Exception e) {
+                            log.warn("Failed to get manager info for: {}, error: {}", managerId, e.getMessage());
+                        }
                     }
-                } catch (Exception e) {
-                    log.warn("Failed to get manager info for: {}", managerId);
                 }
+            } catch (NamingException e) {
+                log.warn("Failed to extract manager DN from attributes", e);
             }
         }
 
@@ -74,17 +85,23 @@ public class LdapUserInfoAttributesMapper implements AttributesMapper<LdapUserIn
     }
 
     private String getIdFromDN(String dn) {
-        if (dn == null || dn.isEmpty()) {
+        if (StringUtils.isBlank(dn)) {
             return "";
         }
+        
         String[] parts = dn.split(",");
         for (String part : parts) {
-            if (part.trim().startsWith("CN=")) {
-                String commonName = part.trim().substring(3);
-                String[] CN = commonName.split(" ");
-                return CN[CN.length - 1];
+            String trimmed = part.trim();
+            if (trimmed.startsWith("CN=")) {
+                String commonName = trimmed.substring(3);
+                if (StringUtils.isNotBlank(commonName)) {
+                    String[] nameParts = commonName.split(" ");
+                    return nameParts[nameParts.length - 1];
+                }
             }
         }
+        
+        log.debug("Could not extract ID from DN: {}", dn);
         return "";
     }
 }
