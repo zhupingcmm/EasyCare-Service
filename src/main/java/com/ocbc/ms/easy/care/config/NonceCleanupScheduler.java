@@ -1,8 +1,11 @@
 package com.ocbc.ms.easy.care.config;
 
-import com.ocbc.ms.easy.care.util.RSAUtil;
+import com.ocbc.ms.easy.care.repository.NonceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -11,17 +14,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class NonceCleanupScheduler {
 
-    private final RSAUtil rsaUtil;
+    private final NonceRepository nonceRepository;
 
-    @Scheduled(cron = "${encryption.nonce-cleanup-cron:0 */10 * * * ?}")
-    public void cleanupExpiredNonces() {
-        log.debug("开始执行nonce清理任务");
-        try {
-            int expiredCount = rsaUtil.cleanupExpiredNonces();
-            int usedCount = rsaUtil.cleanupUsedNonces(7);
-            log.info("nonce清理任务完成，已清理过期记录: {}, 已清理使用记录: {}", expiredCount, usedCount);
-        } catch (Exception e) {
-            log.error("nonce清理任务执行失败", e);
-        }
+    @Value("${nonce.delete.threshold:1000}")
+    private int threshold;
+
+    @Async("asyncServiceExecutor")
+    @Scheduled(cron = "${nonce.delete.cron:0 0 2 * * ?}")
+    @SchedulerLock(name = "nonceDelete", lockAtMostFor = "9m", lockAtLeastFor = "1m")
+    public void run() {
+        log.info("{call deleteYesterdayNonces(?)} .. " + threshold);
+        String result = nonceRepository.deleteYesterdayNonces(threshold);
+        log.info("Cron job completed to deleteYesterdayNonces .. " + result);
     }
 }
