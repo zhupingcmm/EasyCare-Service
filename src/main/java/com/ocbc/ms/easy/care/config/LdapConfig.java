@@ -33,36 +33,53 @@ public class LdapConfig {
     @Bean(name = "ldapTemplate")
     public LdapTemplate initLdapTemplate() {
         LdapContextSource contextSource = new LdapContextSource();
-        contextSource.setCacheEnvironmentProperties(false);
         contextSource.setUrl(ldapProps.getUrl());
         contextSource.setBase(ldapProps.getSearchBase());
+        
+        contextSource.setCacheEnvironmentProperties(false);
+        contextSource.setPooled(true);
+        contextSource.setAnonymousReadOnly(false);
         
         if (ldapProps.getUsername() != null && !ldapProps.getUsername().isBlank() 
             && ldapProps.getPassword() != null && !ldapProps.getPassword().isBlank()) {
             log.info("Configuring LDAP with authentication for user: {}", ldapProps.getUsername());
-            contextSource.setAuthenticationSource(new AuthenticationSource() {
-                @Override
-                public String getPrincipal() {
-                    if (ldapProps.getOrgUnit() != null && !ldapProps.getOrgUnit().isBlank()) {
-                        return "CN=" + ldapProps.getUsername() + ",OU=" + ldapProps.getOrgUnit() + "," + ldapProps.getSearchBase();
-                    } else {
-                        return "CN=" + ldapProps.getUsername() + "," + ldapProps.getSearchBase();
-                    }
-                }
-
-                @Override
-                public String getCredentials() {
-                    return ldapProps.getPassword();
-                }
-            });
+            contextSource.setAuthenticationSource(createAuthenticationSource());
         } else {
             log.info("Configuring LDAP with anonymous access");
         }
         
+        try {
+            contextSource.afterPropertiesSet();
+        } catch (Exception e) {
+            log.error("Failed to initialize LDAP context source", e);
+            throw new RuntimeException("LDAP configuration error", e);
+        }
+        
         LdapTemplate template = new LdapTemplate(contextSource);
         template.setIgnorePartialResultException(true);
+        template.setDefaultTimeLimit(5000);
+        template.setDefaultCountLimit(100);
         
         return template;
+    }
+    
+    private AuthenticationSource createAuthenticationSource() {
+        return new AuthenticationSource() {
+            @Override
+            public String getPrincipal() {
+                StringBuilder dn = new StringBuilder("CN=").append(ldapProps.getUsername());
+                if (ldapProps.getOrgUnit() != null && !ldapProps.getOrgUnit().isBlank()) {
+                    dn.append(",OU=").append(ldapProps.getOrgUnit());
+                }
+                dn.append(",").append(ldapProps.getSearchBase());
+                return dn.toString();
+            }
+
+            @Override
+            public String getCredentials() {
+                return ldapProps.getPassword();
+            }
+        };
     }
 
 }
