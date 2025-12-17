@@ -1,7 +1,9 @@
 package com.ocbc.ms.easy.care.service.impl;
 
 import com.ocbc.ms.easy.care.config.LoginConfigurationProperties;
+import com.ocbc.ms.easy.care.config.UserRoleConfigurationProperties;
 import com.ocbc.ms.easy.care.dto.LdapUserInfo;
+import com.ocbc.ms.easy.care.encryption.config.EncryptionProperties;
 import com.ocbc.ms.easy.care.dto.LoginRequest;
 import com.ocbc.ms.easy.care.dto.LoginResponse;
 import com.ocbc.ms.easy.care.entity.Role;
@@ -42,22 +44,18 @@ public class LoginServiceImpl implements LoginService {
     private final RSAUtil rsaUtil;
     private final LoginConfigurationProperties loginConfig;
     private final LdapService ldapService;
-
-    @Value("${encryption.rsa-enabled:false}")
-    private boolean rsaEnabled;
-
-    @Value("${user.role.hr-department:CHN E2P Human Resources}")
-    private String hrDepartment;
+    private final EncryptionProperties encryptionProperties;
+    private final UserRoleConfigurationProperties userRoleConfig;
 
     @Override
     @Transactional
     public LoginResponse login(LoginRequest loginRequest, boolean skipRsaDecryption) {
         log.info("开始用户登录验证，用户名: {}, Mock模式: {}", loginRequest.getUsername(), skipRsaDecryption);
 
-        boolean needDecryption = rsaEnabled && !skipRsaDecryption;
-        if (needDecryption) {
+        if (encryptionProperties.isRsaEnabled() && !skipRsaDecryption) {
             String decryptedPassword = rsaUtil.decryptLogin(loginRequest);
             loginRequest.setPassword(decryptedPassword);
+            log.debug("已解密登录密码");
         } else if (skipRsaDecryption) {
             log.info("Mock模式登录，跳过RSA解密，用户名: {}", loginRequest.getUsername());
         }
@@ -105,11 +103,11 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public boolean validateUserCredentials(String username, String password) {
         log.debug("验证用户凭据（Mock实现），用户名: {}", username);
-
-        if (isUserExists(username)) {
+        boolean exists = userRepository.findByLanIdAndIsActiveTrue(username).isPresent();
+        if (!exists) {
+            log.warn("用户不存在: {}", username);
             return false;
         }
-
         log.info("用户凭据验证成功（Mock），用户名: {}", username);
         return true;
     }
@@ -152,17 +150,6 @@ public class LoginServiceImpl implements LoginService {
 
 
     /**
-     * 使用 Mock 认证
-     */
-    private void authenticateWithMock(LoginRequest loginRequest) {
-        log.info("开始Mock认证，用户名: {}", loginRequest.getUsername());
-        if (isUserExists(loginRequest.getUsername())) {
-            throw new RuntimeException("用户不存在");
-        }
-        log.info("Mock认证通过，用户名: {}", loginRequest.getUsername());
-    }
-
-    /**
      * 加载并验证用户
      */
     private User loadAndValidateUser(String username, LdapUserInfo ldapUserInfo) {
@@ -186,7 +173,7 @@ public class LoginServiceImpl implements LoginService {
      */
     private User findOrCreateUserFromLdap(String lanId, LdapUserInfo ldapUserInfo) {
         return userRepository.findByLanIdWithRoles(lanId)
-                .map(existingUser -> updateUserFromLdap(existingUser, ldapUserInfo))
+                .map(user -> updateUserFromLdap(user, ldapUserInfo))
                 .orElseGet(() -> createUserFromLdap(lanId, ldapUserInfo));
     }
 
@@ -293,19 +280,6 @@ public class LoginServiceImpl implements LoginService {
     }
 
     /**
-     * 检查用户是否存在
-     */
-    private boolean isUserExists(String username) {
-        boolean exists = userRepository.findByLanIdAndIsActiveTrue(username).isPresent();
-        if (!exists) {
-            log.warn("用户不存在: {}", username);
-        }
-        return !exists;
-    }
-
-
-
-    /**
      * 规范化邮箱
      */
     private String normalizeEmail(String email) {
@@ -316,7 +290,8 @@ public class LoginServiceImpl implements LoginService {
      * 判断是否为HR部门
      */
     private boolean isHrDepartment(String department) {
-        return StringUtils.hasText(department) && department.equals(hrDepartment);
+        return StringUtils.hasText(department) && 
+               department.equals(userRoleConfig.getHrDepartment());
     }
 
 }

@@ -1,7 +1,9 @@
 package com.ocbc.ms.easy.care.controller;
 
 import com.ocbc.ms.easy.care.common.ApiResponse;
+import com.ocbc.ms.easy.care.config.JwtConfigurationProperties;
 import com.ocbc.ms.easy.care.config.LoginConfigurationProperties;
+import com.ocbc.ms.easy.care.encryption.config.EncryptionProperties;
 import com.ocbc.ms.easy.care.dto.LoginRequest;
 import com.ocbc.ms.easy.care.dto.LoginResponse;
 import com.ocbc.ms.easy.care.dto.LoginSimpleTokenResponse;
@@ -34,15 +36,14 @@ public class LoginController {
     private final LoginService loginService;
     private final RSAUtil rsaUtil;
     private final LoginConfigurationProperties loginConfig;
-
-    @Value("${jwt.access-token.expiration:600}")
-    private int accessTokenExpirationSeconds;
-
-    @Value("${encryption.nonce-expiration-minutes:5}")
-    private int nonceExpirationMinutes;
+    private final EncryptionProperties encryptionProperties;
+    private final JwtConfigurationProperties jwtConfig;
 
     @Value("${app.dev.extract-key-enabled:false}")
     private boolean extractKeyEnabled;
+
+    private static final long MILLIS_PER_SECOND = 1000L;
+    private static final int SECONDS_PER_MINUTE = 60;
 
     @GetMapping("/publicKey")
     @Operation(
@@ -87,12 +88,15 @@ public class LoginController {
         log.info("收到生成nonce请求，用户ID: {}", nonceRequest.getUsername());
 
         String nonce = rsaUtil.generateNonce(nonceRequest.getUsername());
-        long expiresAtMillis = System.currentTimeMillis() + (nonceExpirationMinutes * 60 * 1000L);
+        int nonceExpirationMinutes = encryptionProperties.getNonceExpirationMinutes();
+        long expiresAtMillis = System.currentTimeMillis() + 
+                (nonceExpirationMinutes * SECONDS_PER_MINUTE * MILLIS_PER_SECOND);
+        int expiresInSeconds = nonceExpirationMinutes * SECONDS_PER_MINUTE;
 
         NonceResponse response = NonceResponse.builder()
                 .nonce(nonce)
                 .expiresAt(expiresAtMillis)
-                .expiresIn(nonceExpirationMinutes * 60)
+                .expiresIn(expiresInSeconds)
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -126,18 +130,7 @@ public class LoginController {
             loginRequest.getUsername(), loginMock, loginConfig.getMock().isEnabled(), skipRsaDecryption);
 
         LoginResponse loginResponse = loginService.login(loginRequest, skipRsaDecryption);
-        LoginResponse.TokenInfo tokenInfo = loginResponse.getTokenInfo();
-
-        LoginSimpleTokenResponse bodyData = LoginSimpleTokenResponse.builder()
-                .tokenType(tokenInfo.getTokenType())
-                .expiresIn(String.valueOf(accessTokenExpirationSeconds))
-                .build();
-
-        return ResponseEntity
-                .ok()
-                .header("x-acc-op", tokenInfo.getAccessToken())
-                .header("x-ref-op", tokenInfo.getRefreshToken())
-                .body(bodyData);
+        return buildTokenResponse(loginResponse.getTokenInfo());
     }
 
     @PostMapping("/logout")
@@ -179,19 +172,8 @@ public class LoginController {
             @RequestBody RefreshTokenRequest refreshTokenRequest) {
         
         log.info("收到令牌刷新请求");
-        
         LoginResponse.TokenInfo tokenInfo = loginService.refreshToken(refreshTokenRequest.getRefreshToken());
-        
-        LoginSimpleTokenResponse bodyData = LoginSimpleTokenResponse.builder()
-                .tokenType(tokenInfo.getTokenType())
-                .expiresIn(String.valueOf(accessTokenExpirationSeconds))
-                .build();
-        
-        return ResponseEntity
-                .ok()
-                .header("x-acc-op", tokenInfo.getAccessToken())
-                .header("x-ref-op", tokenInfo.getRefreshToken())
-                .body(bodyData);
+        return buildTokenResponse(tokenInfo);
     }
 
     @PostMapping("/validate-token")
@@ -220,8 +202,8 @@ public class LoginController {
 
     @GetMapping("/dev/extract-public-key")
     @Operation(
-        summary = "从私钥提取公钥信息（开发环境专用）",
-        description = "从配置的RSA私钥中提取公钥的modulus和exponent，用于更新配置文件。此接口默认关闭，仅在开发环境启用。"
+        summary = "从JWT公钥PEM提取公钥信息（开发环境专用）",
+        description = "从配置的JWT公钥PEM中提取公钥的modulus和exponent，用于更新配置文件。此接口默认关闭，仅在开发环境启用。"
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "200",
@@ -232,7 +214,7 @@ public class LoginController {
         responseCode = "403",
         description = "此接口在当前环境中已禁用"
     )
-    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> extractPublicKeyFromPrivateKey() {
+    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> extractPublicKeyFromPem() {
         log.warn("收到提取公钥请求（开发环境专用接口）");
 
         if (!extractKeyEnabled) {
@@ -242,13 +224,21 @@ public class LoginController {
                     .body(ApiResponse.error(403, "此接口在当前环境中已禁用，请在配置文件中启用"));
         }
 
+        String rsaPublicKeyPem = encryptionProperties.getRsaPublicKeyPem();
+        if (rsaPublicKeyPem == null || rsaPublicKeyPem.isBlank()) {
+            log.error("RSA公钥PEM未配置");
+            return ResponseEntity
+                    .status(400)
+                    .body(ApiResponse.error(400, "RSA公钥PEM未配置，请在配置文件中设置 encryption.rsa-public-key-pem"));
+        }
+
         try {
-            java.util.Map<String, String> publicKeyInfo = rsaUtil.extractPublicKeyFromPrivateKey();
+            java.util.Map<String, String> publicKeyInfo = rsaUtil.extractPublicKeyFromPem(rsaPublicKeyPem);
             
-            log.info("公钥提取成功");
+            log.info("公钥提取成功，密钥长度: {} 位", publicKeyInfo.get("keySize"));
             log.info("请将以下配置更新到 application.properties:");
-            log.info("encryption.rsa-public-modulus={}", publicKeyInfo.get("modulusBase64"));
-            log.info("encryption.rsa-public-exponent={}", publicKeyInfo.get("exponentBase64"));
+            log.info("encryption.rsa-public-modulus={}", publicKeyInfo.get("modulus"));
+            log.info("encryption.rsa-public-exponent={}", publicKeyInfo.get("exponent"));
             
             return ResponseEntity.ok(ApiResponse.success(publicKeyInfo, "公钥提取成功，请查看日志获取配置信息"));
             
@@ -260,4 +250,16 @@ public class LoginController {
         }
     }
 
+    private ResponseEntity<LoginSimpleTokenResponse> buildTokenResponse(LoginResponse.TokenInfo tokenInfo) {
+        LoginSimpleTokenResponse bodyData = LoginSimpleTokenResponse.builder()
+                .tokenType(tokenInfo.getTokenType())
+                .expiresIn(String.valueOf(jwtConfig.getAccessToken().getExpiration()))
+                .build();
+
+        return ResponseEntity
+                .ok()
+                .header("x-acc-op", tokenInfo.getAccessToken())
+                .header("x-ref-op", tokenInfo.getRefreshToken())
+                .body(bodyData);
+    }
 }

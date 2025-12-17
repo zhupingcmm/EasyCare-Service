@@ -13,6 +13,11 @@ import org.springframework.stereotype.Component;
 public class EncryptionProperties {
 
     /**
+     * 是否启用RSA加密
+     */
+    private boolean rsaEnabled = true;
+
+    /**
      * AES加密密钥
      */
     private String aesSecretKey = "MySecretKey12345";
