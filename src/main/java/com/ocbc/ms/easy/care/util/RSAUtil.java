@@ -307,15 +307,16 @@ public class RSAUtil {
     }
 
     /**
-     * 清理过期的nonce记录
+     * 清理过期的nonce记录（仅清理昨天及之前过期的数据）
      * 
      * @return 删除的记录数
      */
     @Transactional
     public int cleanupExpiredNonces() {
-        log.info("开始清理过期的nonce记录");
-        int deletedCount = nonceRepository.deleteExpiredNonces(LocalDateTime.now());
-        log.info("已清理{}条过期的nonce记录", deletedCount);
+        LocalDateTime yesterdayEnd = LocalDateTime.now().toLocalDate().atStartOfDay();
+        log.info("开始清理过期的nonce记录，清理阈值时间: {}", yesterdayEnd);
+        int deletedCount = nonceRepository.deleteExpiredNonces(yesterdayEnd);
+        log.info("已清理{}条过期的nonce记录（昨天及之前）", deletedCount);
         return deletedCount;
     }
 

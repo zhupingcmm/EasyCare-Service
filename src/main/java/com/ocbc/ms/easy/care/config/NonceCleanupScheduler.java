@@ -3,14 +3,12 @@ package com.ocbc.ms.easy.care.config;
 import com.ocbc.ms.easy.care.util.RSAUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "encryption.rsa-enabled", havingValue = "true")
 public class NonceCleanupScheduler {
 
     private final RSAUtil rsaUtil;

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,10 +32,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
-    private static final String ROLE_HR_ADMIN = "HR_Admin";
-    private static final String ROLE_EMPLOYEE = "Employee";
-    private static final String NORMALIZED_ROLE_HR_ADMIN = "HR_ADMIN";
-    private static final String NORMALIZED_ROLE_EMPLOYEE = "EMPLOYEE";
+    private static final String ROLE_HR_ADMIN = "HR_ADMIN";
+    private static final String ROLE_EMPLOYEE = "EMPLOYEE";
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -72,7 +71,7 @@ public class LoginServiceImpl implements LoginService {
             
             List<LdapUserInfo> ldapUserInfoList = ldapService.getUserInfo(
                 loginRequest.getUsername(), 
-                new LdapUserInfoAttributesMapper(true, ldapService)
+                new LdapUserInfoAttributesMapper(false, ldapService)
             );
             
             if (!ldapUserInfoList.isEmpty()) {
@@ -215,8 +214,7 @@ public class LoginServiceImpl implements LoginService {
         assignRoleBasedOnDepartment(newUser, ldapUserInfo.getDepartment());
         
         log.info("用户创建成功，用户ID: {}, LAN ID: {}", newUser.getId(), lanId);
-        return userRepository.findByLanIdWithRoles(lanId)
-                .orElseThrow(() -> new RuntimeException("创建用户后查询失败"));
+        return newUser;
     }
 
     /**
@@ -255,19 +253,20 @@ public class LoginServiceImpl implements LoginService {
         boolean isHrDepartment = isHrDepartment(department);
         
         String roleName = isHrDepartment ? ROLE_HR_ADMIN : ROLE_EMPLOYEE;
-        String normalizedRoleName = isHrDepartment ? NORMALIZED_ROLE_HR_ADMIN : NORMALIZED_ROLE_EMPLOYEE;
         
         log.info("用户部门: {}, 分配角色: {}", department != null ? department : "未知", roleName);
         
-        Role role = roleRepository.findByNormalizedName(normalizedRoleName)
+        Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("角色 " + roleName + " 不存在"));
         
         UserRole userRole = UserRole.builder()
                 .userId(user.getId())
                 .roleId(role.getId())
+                .role(role)
                 .build();
         
         userRoleRepository.save(userRole);
+        user.setUserRoles(Collections.singletonList(userRole));
         log.info("已为用户分配角色 {}，用户ID: {}", roleName, user.getId());
     }
 
