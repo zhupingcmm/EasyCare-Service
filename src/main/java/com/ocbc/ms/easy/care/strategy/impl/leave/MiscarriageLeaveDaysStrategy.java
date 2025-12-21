@@ -1,5 +1,6 @@
 package com.ocbc.ms.easy.care.strategy.impl.leave;
 
+import com.ocbc.ms.easy.care.dto.MaternityLeaveDaysResult;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.dto.MiscarriageLeaveDetail;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
@@ -18,14 +19,15 @@ public class MiscarriageLeaveDaysStrategy implements MaternityLeaveDaysStrategy 
     }
 
     @Override
-    public Integer calculate(MaternityLeaveRequest request, MaternityRules rule) {
+    public MaternityLeaveDaysResult calculate(MaternityLeaveRequest request, MaternityRules rule) {
         if (BooleanUtils.isFalse(request.getIsMiscarriage())) {
-            return 0;
+            return null;
         }
         MiscarriageLeaveDetail detail = request.getMiscarriageLeaveDetail();
         if (detail == null || StringUtils.isBlank(detail.getCode())) {
             throw new IllegalArgumentException("misCarriage param invalid");
         }
-        return findDaysFromExtOrDefault(rule, detail.getCode());
+        int days = findDaysFromExtOrDefault(rule, detail.getCode());
+        return buildResult(days, days);
     }
 }

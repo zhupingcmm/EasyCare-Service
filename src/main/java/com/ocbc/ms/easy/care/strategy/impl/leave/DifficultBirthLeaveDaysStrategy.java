@@ -1,5 +1,6 @@
 package com.ocbc.ms.easy.care.strategy.impl.leave;
 
+import com.ocbc.ms.easy.care.dto.MaternityLeaveDaysResult;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
@@ -15,18 +16,19 @@ public class DifficultBirthLeaveDaysStrategy implements MaternityLeaveDaysStrate
     }
 
     @Override
-    public Integer calculate(MaternityLeaveRequest request, MaternityRules rule) {
+    public MaternityLeaveDaysResult calculate(MaternityLeaveRequest request, MaternityRules rule) {
         // When miscarriage, skip non-miscarriage strategies
         if (Boolean.TRUE.equals(request.getIsMiscarriage())) {
-            return 0;
+            return null;
         }
         if (BooleanUtils.isFalse(request.getIsDifficultBirth())) {
-            return 0;
+            return buildResult(0, null);
         }
         if (request.getDoctorRecommendDays() != null) {
-            return request.getDoctorRecommendDays();
+            return buildResult(request.getDoctorRecommendDays(), request.getDoctorRecommendDays());
         }
         String matchCode = request.getDifficultBirthLeaveDetail() == null ? null : request.getDifficultBirthLeaveDetail().getCode();
-        return findDaysFromExtOrDefault(rule, matchCode);
+        int days = findDaysFromExtOrDefault(rule, matchCode);
+        return buildResult(days, days);
     }
 }

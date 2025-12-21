@@ -1,13 +1,12 @@
 package com.ocbc.ms.easy.care.rule;
 
+import com.ocbc.ms.easy.care.dto.MaternityLeaveDaysResult;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveResponse;
-import com.ocbc.ms.easy.care.dto.MaternityLeaveTypeEndDate;
 import com.ocbc.ms.easy.care.dto.TimeScope;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
 import com.ocbc.ms.easy.care.helper.MaternityLeaveDateHelper;
-import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,11 +25,6 @@ public class MaternityLeaveRuleService {
 
     public MaternityLeaveResponse calcMaternityDuration(MaternityLeaveRequest maternityLeaveRequest,
                                                         List<MaternityRules> maternityRuleList) {
-//        Map<Boolean, List<MaternityRules>> partition = maternityRuleList.stream()
-//                .collect(Collectors.partitioningBy(MaternityRulesUtil::isMiscarriageType));
-//        List<MaternityRules> miscarriageRules = partition.get(true);
-//        List<MaternityRules> normalRules = partition.get(false);
-        // 按优先级升序排列（不考虑空值）
         maternityRuleList.sort(Comparator
                 .comparingInt(r -> MaternityLeaveTypeEnum.fromId(r.getMaternityLeaveType().getId()).getPriority()));
         LocalDate startDate = maternityLeaveRequest.getExpectedDeliveryDate();
@@ -41,30 +35,31 @@ public class MaternityLeaveRuleService {
         LocalDate innerStartDate = startDate;
         for (MaternityRules rule : maternityRuleList) {
             MaternityLeaveTypeEnum typeEnum = MaternityLeaveTypeEnum.fromId(rule.getMaternityLeaveType().getId());
-            MaternityLeaveTypeEndDate maternityLeaveTypeEndDate = maternityLeaveDateHelper.calMaternityLeaveDay(
+            MaternityLeaveDaysResult segment = maternityLeaveDateHelper.calMaternityLeaveDay(
                     maternityLeaveRequest,
                     innerStartDate,
                     rule,
                     typeEnum
             );
-            if (maternityLeaveTypeEndDate == null) {
+            if (segment == null || segment.getAdjustEndDate() == null) {
                 continue;
             }
-            LocalDate originEndDate = maternityLeaveTypeEndDate.getOriginEndDate();
-            LocalDate adjustEndDate = maternityLeaveTypeEndDate.getAdjustEndDate();
-            TimeScope timeScope = new TimeScope();
-            timeScope.setIndex(index++);
-            timeScope.setName(typeEnum.getCode());
-            timeScope.setStartAt(innerStartDate);
-            timeScope.setEndAt(adjustEndDate);
-            int days = (int) ChronoUnit.DAYS.between(innerStartDate, adjustEndDate) + 1;
-            int allowanceDays = (int) ChronoUnit.DAYS.between(innerStartDate, originEndDate) + 1;
-            timeScope.setDays(days);
+            LocalDate adjustEndDate = segment.getAdjustEndDate();
+            Integer  adjustLeaveDays = segment.getAdjustLeaveDays();
+
+            TimeScope timeScope = TimeScope.builder()
+                    .index(index++)
+                    .name(typeEnum.getCode())
+                    .startAt(innerStartDate)
+                    .endAt(adjustEndDate)
+                    .build();
+//            int days = (int) ChronoUnit.DAYS.between(innerStartDate, adjustEndDate) + 1;
+//            Integer allowanceFromStrategy = segment.getAllowanceDays();
+//            int allowanceDays = allowanceFromStrategy == null ? 0 : allowanceFromStrategy;
+            timeScope.setDays(adjustLeaveDays);
             timeScopeList.add(timeScope);
-            totalDays += days;
-            if (BooleanUtils.isTrue(rule.getHasAllowance())) {
-                totalAllowanceDays += allowanceDays;
-            }
+            totalDays += adjustLeaveDays;
+            totalAllowanceDays += segment.getAllowanceDays();
             innerStartDate = adjustEndDate.plusDays(1);
         }
         return genMaternityLeaveResponse(maternityLeaveRequest, timeScopeList, totalDays, totalAllowanceDays);

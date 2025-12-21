@@ -1,5 +1,6 @@
 package com.ocbc.ms.easy.care.strategy.impl.leave;
 
+import com.ocbc.ms.easy.care.dto.MaternityLeaveDaysResult;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
 import com.ocbc.ms.easy.care.enums.MaternityLeaveTypeEnum;
@@ -15,16 +16,17 @@ public class MultiBabiesLeaveDaysStrategy implements MaternityLeaveDaysStrategy 
     }
 
     @Override
-    public Integer calculate(MaternityLeaveRequest request, MaternityRules rule) {
+    public MaternityLeaveDaysResult calculate(MaternityLeaveRequest request, MaternityRules rule) {
         // When miscarriage, skip non-miscarriage strategies
         if (Boolean.TRUE.equals(request.getIsMiscarriage())) {
-            return 0;
+            return null;
         }
         Integer num = request.getNumberOfBabies();
         if (num == null || num <= 1) {
-            return 0;
+            return buildResult(0, 0);
         }
         int perExtra = rule.getDefaultDays();
-        return (num - 1) * perExtra;
+        int days = (num - 1) * perExtra;
+        return buildResult(days, days);
     }
 }

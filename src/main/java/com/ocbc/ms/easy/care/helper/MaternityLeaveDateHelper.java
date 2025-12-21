@@ -1,5 +1,6 @@
 package com.ocbc.ms.easy.care.helper;
 
+import com.ocbc.ms.easy.care.dto.MaternityLeaveDaysResult;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveTypeEndDate;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
@@ -37,10 +38,10 @@ public class MaternityLeaveDateHelper {
 
     @FunctionalInterface
     private interface DaysCalculator {
-        Integer apply(MaternityLeaveRequest request, MaternityRules rule);
+        MaternityLeaveDaysResult apply(MaternityLeaveRequest request, MaternityRules rule);
     }
 
-    public MaternityLeaveTypeEndDate calMaternityLeaveDay(MaternityLeaveRequest maternityLeaveRequest,
+    public MaternityLeaveDaysResult calMaternityLeaveDay(MaternityLeaveRequest maternityLeaveRequest,
                                           LocalDate startDate,
                                           MaternityRules maternityRule,
                                           MaternityLeaveTypeEnum type) {
@@ -48,26 +49,39 @@ public class MaternityLeaveDateHelper {
             return null;
         }
         DaysCalculator calculator = calculators.get(type);
-        int days = calculator == null ? 0 : calculator.apply(maternityLeaveRequest, maternityRule);
-        return computeWithExtension(startDate, days, maternityRule.getHolidayExtend());
+        MaternityLeaveDaysResult baseResult = calculator == null ? null : calculator.apply(maternityLeaveRequest, maternityRule);
+        if (baseResult == null || baseResult.getLeaveDays() == null || baseResult.getLeaveDays() <= 0) {
+            return null;
+        }
+        return computeLeaveDaysWithExtension(startDate, baseResult, maternityRule.getHolidayExtend());
     }
 
     /**
-     * 通用：从规则扩展字段中，按匹配code提取天数
-     * maternityLeaveExt 直接是 JSONArray 格式：[{"code":"xxx","days":N}]
+     * 计算单段产假的起止日期与节假日顺延信息，并写回到 MaternityLeaveDaysResult 中。
      */
-    private MaternityLeaveTypeEndDate computeWithExtension(LocalDate startDate, Integer days, Boolean holidayExtend) {
+    private MaternityLeaveDaysResult computeLeaveDaysWithExtension(LocalDate startDate,
+                                                                   MaternityLeaveDaysResult baseResult,
+                                                                   Boolean holidayExtend) {
+        Integer days = baseResult == null ? null : baseResult.getLeaveDays();
         if (startDate == null || days == null || days <= 0) {
             return null;
         }
+
+        // 复制一份，避免意外修改原对象（按需，可直接在 baseResult 上修改）
+        MaternityLeaveDaysResult result = MaternityLeaveDaysResult.builder()
+                .leaveDays(baseResult.getLeaveDays())
+                .allowanceDays(baseResult.getAllowanceDays())
+                .build();
+
         LocalDate originEndDate = startDate.plusDays(days - 1);
+        result.setOriginEndDate(originEndDate);
+
         if (BooleanUtils.isNotTrue(holidayExtend)) {
-            MaternityLeaveTypeEndDate meta = new MaternityLeaveTypeEndDate();
-            meta.setOriginEndDate(originEndDate);
-            meta.setExtendDays(0);
-            meta.setAdjustEndDate(originEndDate);
-            return meta;
+            result.setExtendDays(0);
+            result.setAdjustEndDate(originEndDate);
+            return result;
         }
+
         LocalDate endDate = originEndDate;
         LocalDate loopStart = startDate;
         int totalExtend = 0;
@@ -81,10 +95,9 @@ public class MaternityLeaveDateHelper {
                 break;
             }
         }
-        MaternityLeaveTypeEndDate meta = new MaternityLeaveTypeEndDate();
-        meta.setOriginEndDate(originEndDate);
-        meta.setExtendDays(totalExtend);
-        meta.setAdjustEndDate(endDate);
-        return meta;
+        result.setExtendDays(totalExtend);
+        result.setAdjustEndDate(endDate);
+        return result;
     }
 }
+

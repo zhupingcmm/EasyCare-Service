@@ -1,6 +1,7 @@
 package com.ocbc.ms.easy.care.strategy.leave;
 
 import com.alibaba.fastjson2.JSONArray;
+import com.ocbc.ms.easy.care.dto.MaternityLeaveDaysResult;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveExtDTO;
 import com.ocbc.ms.easy.care.dto.MaternityLeaveRequest;
 import com.ocbc.ms.easy.care.entity.MaternityRules;
@@ -14,7 +15,7 @@ public interface MaternityLeaveDaysStrategy {
 
     MaternityLeaveTypeEnum getType();
 
-    Integer calculate(MaternityLeaveRequest request, MaternityRules rule);
+    MaternityLeaveDaysResult calculate(MaternityLeaveRequest request, MaternityRules rule);
 
 
     default Integer findDaysFromExtOrDefault(MaternityRules rule, String matchCode) {
@@ -32,5 +33,13 @@ public interface MaternityLeaveDaysStrategy {
             }
         }
         return rule.getDefaultDays();
+    }
+
+
+    default MaternityLeaveDaysResult buildResult(Integer leaveDays, Integer allowanceDays) {
+        return MaternityLeaveDaysResult.builder()
+                .leaveDays(leaveDays)
+                .allowanceDays(allowanceDays)
+                .build();
     }
 }
