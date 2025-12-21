@@ -22,7 +22,7 @@ public class DifficultBirthLeaveDaysStrategy implements MaternityLeaveDaysStrate
             return null;
         }
         if (BooleanUtils.isFalse(request.getIsDifficultBirth())) {
-            return buildResult(0, null);
+            return buildResult(0, 0);
         }
         if (request.getDoctorRecommendDays() != null) {
             return buildResult(request.getDoctorRecommendDays(), request.getDoctorRecommendDays());
