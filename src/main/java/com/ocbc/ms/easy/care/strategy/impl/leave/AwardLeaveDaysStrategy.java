@@ -31,6 +31,7 @@ public class AwardLeaveDaysStrategy implements MaternityLeaveDaysStrategy {
             return buildResult(0, 0);
         }
         int days = findDaysFromExtOrDefault(rule, awdCode.getCode());
-        return buildResult(days, days);
+        int allowanceDays = BooleanUtils.isTrue(rule.getHasAllowance())? days: 0;
+        return buildResult(days, allowanceDays);
     }
 }
