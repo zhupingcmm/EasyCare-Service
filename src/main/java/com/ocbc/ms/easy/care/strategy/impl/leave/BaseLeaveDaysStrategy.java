@@ -22,7 +22,7 @@ public class BaseLeaveDaysStrategy implements MaternityLeaveDaysStrategy {
             return null;
         }
         Integer baseDays = rule.getDefaultDays();
-        Integer planAllowanceDay = rule.getPlanAllowanceDay();
+        Integer planAllowanceDay = rule.getPlanAllowanceDay() == null ? baseDays : rule.getPlanAllowanceDay();
         return buildResult(baseDays, planAllowanceDay);
     }
 }

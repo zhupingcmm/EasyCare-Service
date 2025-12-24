@@ -52,11 +52,8 @@ public class MaternityLeaveRuleService {
                     .name(typeEnum.getCode())
                     .startAt(innerStartDate)
                     .endAt(adjustEndDate)
+                    .days(adjustLeaveDays)
                     .build();
-//            int days = (int) ChronoUnit.DAYS.between(innerStartDate, adjustEndDate) + 1;
-//            Integer allowanceFromStrategy = segment.getAllowanceDays();
-//            int allowanceDays = allowanceFromStrategy == null ? 0 : allowanceFromStrategy;
-            timeScope.setDays(adjustLeaveDays);
             timeScopeList.add(timeScope);
             totalDays += adjustLeaveDays;
             totalAllowanceDays += segment.getAllowanceDays();
