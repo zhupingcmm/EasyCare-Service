@@ -1,5 +1,35 @@
 # Prompts 记录
 
+## 2025-12-25
+
+### 输入人：用户
+
+**提示词：**
+```
+startDate字段，HistoryRecordServiceImpl中用于saveHistory(HistoryAddRequest request) , 查询条件 hrId + employeeId + started 如果存在则更新，不存在则新增一条
+```
+
+**执行内容：**
+- `HistoryRecordServiceImpl.saveHistory` 无论 `startDate` 是否为空，都会按 `hrId + employeeId + startDate` 查询（为空时走 `start_date IS NULL`），存在则更新，否则新增。
+- `HistoryRecordRepository` 新增 `findByHrIdAndEmployeeIdAndStartDate` 与 `findByHrIdAndEmployeeIdAndStartDateIsNull` 方法供 Service 调用。
+
+---
+
+## 2025-01-16
+
+### 输入人：用户
+
+**提示词：**
+```
+HistoryAddRequest 新增 startDate 字段，可以为null
+```
+
+**执行内容：**
+- 在 `HistoryAddRequest` 中新增可选 `startDate` 字段（`LocalDate`），允许为空。
+- 将 `startDate` 透传至 `HistoryRecordServiceImpl` 与 `HistoryRecordDTO`，与实体 `HistoryRecordDO` 映射保持一致。
+
+---
+
 ## 2025-01-16
 
 ### 输入人：用户

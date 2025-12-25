@@ -14,7 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,20 +30,24 @@ public class HistoryRecordServiceImpl implements HistoryRecordService {
     @Transactional
     public HistoryRecordDTO saveHistory(HistoryAddRequest request) {
         log.info("保存历史记录，hrId: {}, employeeId: {}", request.getHrId(), request.getEmployeeId());
-        HistoryRecordDO record = historyRecordRepository.findByHrIdAndEmployeeId(
-                        request.getHrId(),
-                        request.getEmployeeId())
+        HistoryRecordDO record = findExistingRecord(request.getHrId(), request.getEmployeeId(), request.getStartDate())
                 .orElseGet(HistoryRecordDO::new);
         record.setHrId(request.getHrId());
         record.setEmployeeId(request.getEmployeeId());
         record.setEmployeeData(request.getEmployeeData());
+        record.setStartDate(request.getStartDate());
         HistoryRecordDO saved = historyRecordRepository.save(record);
         return HistoryRecordDTO.builder()
                 .id(saved.getId())
                 .hrId(saved.getHrId())
                 .employeeId(saved.getEmployeeId())
                 .employeeData(saved.getEmployeeData())
+                .startDate(saved.getStartDate())
                 .build();
+    }
+
+    private Optional<HistoryRecordDO> findExistingRecord(String hrId, String employeeId, LocalDate startDate) {
+        return historyRecordRepository.findByHrIdAndEmployeeIdAndStartDate(hrId, employeeId, startDate);
     }
 
     @Override

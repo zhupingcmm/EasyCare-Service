@@ -20,6 +20,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -51,6 +52,9 @@ public class HistoryRecordDO {
     @JsonbEncryptedField
     @Convert(converter = JsonbAttributeConverter.class)
     private JsonNode employeeData;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
 
     @CreatedDate
     @Column(name = "created_time", nullable = false, updatable = false)

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 /**
  * 历史记录 DTO
  */
@@ -22,4 +24,6 @@ public class HistoryRecordDTO {
     private String employeeId;
 
     private JsonNode employeeData;
+
+    private LocalDate startDate;
 }

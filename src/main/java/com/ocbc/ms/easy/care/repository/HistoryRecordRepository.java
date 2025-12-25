@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,8 @@ import java.util.Optional;
 public interface HistoryRecordRepository extends JpaRepository<HistoryRecordDO, Long> {
 
     Optional<HistoryRecordDO> findByHrIdAndEmployeeId(String hrId, String employeeId);
+
+    Optional<HistoryRecordDO> findByHrIdAndEmployeeIdAndStartDate(String hrId, String employeeId, LocalDate startDate);
 
     List<HistoryRecordDO> findByHrIdOrderByCreatedTimeDesc(String hrId);
 
