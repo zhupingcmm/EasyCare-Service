@@ -61,6 +61,20 @@ docker-compose config 仍然提示 Version unsupported（远程 docker-compose �
 
 ---
 
+## 2026-01-10
+
+### 输入人：用户
+
+**提示词：**
+```
+docker-compose config 报错：healthcheck value Additional properties are not allowed ('start_period' was unexpected)
+```
+
+**执行内容：**
+- 移除 `deployment/docker-compose.yml` 中 `healthcheck.start_period` 字段，以兼容远程较旧的 `docker-compose 1.18.0` 的 schema 校验。
+
+---
+
 ## 2025-12-25
 
 ### 输入人：用户
