@@ -371,6 +371,21 @@ compensate的value为现在的返回BigDecimal, refundDetail的value为String格
 
 ---
 
+## 2026-01-10
+
+### 输入人：用户
+
+**提示词：**
+```
+我是阿里云服务器，已经设置了阿里云镜像加速器但是还是连不上 Docker Hub（docker pull/docker login 超时/connection refused）
+```
+
+**执行内容：**
+- 识别服务器到 `registry-1.docker.io:443` IPv4/IPv6 均不可达（`curl -4` 超时，IPv6 `Network is unreachable`），即使配置了镜像加速器也无法保障 Docker Hub 鉴权/回源链路。
+- 将部署链路从 Docker Hub 切换为阿里云 ACR：workflow 构建后登录 ACR 并推送镜像；远程部署时登录 ACR 并拉取镜像；同时更新 `deployment/docker-compose.yml` 使用 `ACR_REGISTRY/ACR_NAMESPACE` 镜像地址，并在远程 `.env` 写入 ACR 与数据库相关变量。
+
+---
+
 ## 2025-12-10
 
 ### 输入人：用户

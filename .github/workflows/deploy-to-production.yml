@@ -31,11 +31,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Login to Alibaba Cloud ACR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Extract version from pom.xml
         id: version
@@ -50,9 +51,9 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+            ${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            ${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -100,18 +101,24 @@ jobs:
 
             if [ ! -f ".env" ]; then
               set +x
-              DOCKER_USERNAME_VAL="${{ secrets.DOCKER_USERNAME }}"
+              ACR_REGISTRY_VAL="${{ secrets.ACR_REGISTRY }}"
+              ACR_NAMESPACE_VAL="${{ secrets.ACR_NAMESPACE }}"
+              ACR_USERNAME_VAL="${{ secrets.ACR_USERNAME }}"
+              ACR_PASSWORD_VAL="${{ secrets.ACR_PASSWORD }}"
               DB_URL_VAL="${{ secrets.DB_URL }}"
               DB_USERNAME_VAL="${{ secrets.DB_USERNAME }}"
               DB_PASSWORD_VAL="${{ secrets.DB_PASSWORD }}"
 
-              if [ -z "$DOCKER_USERNAME_VAL" ] || [ -z "$DB_URL_VAL" ] || [ -z "$DB_USERNAME_VAL" ] || [ -z "$DB_PASSWORD_VAL" ]; then
-                echo "Missing required env values. Either create /opt/easycare/.env on the server or configure GitHub secrets: DOCKER_USERNAME, DB_URL, DB_USERNAME, DB_PASSWORD" >&2
+              if [ -z "$ACR_REGISTRY_VAL" ] || [ -z "$ACR_NAMESPACE_VAL" ] || [ -z "$ACR_USERNAME_VAL" ] || [ -z "$ACR_PASSWORD_VAL" ] || [ -z "$DB_URL_VAL" ] || [ -z "$DB_USERNAME_VAL" ] || [ -z "$DB_PASSWORD_VAL" ]; then
+                echo "Missing required env values. Either create /opt/easycare/.env on the server or configure GitHub secrets: ACR_REGISTRY, ACR_NAMESPACE, ACR_USERNAME, ACR_PASSWORD, DB_URL, DB_USERNAME, DB_PASSWORD" >&2
                 exit 1
               fi
 
-              printf "DOCKER_USERNAME=%s\nDB_URL=%s\nDB_USERNAME=%s\nDB_PASSWORD=%s\n" \
-                "$DOCKER_USERNAME_VAL" \
+              printf "ACR_REGISTRY=%s\nACR_NAMESPACE=%s\nACR_USERNAME=%s\nACR_PASSWORD=%s\nDB_URL=%s\nDB_USERNAME=%s\nDB_PASSWORD=%s\n" \
+                "$ACR_REGISTRY_VAL" \
+                "$ACR_NAMESPACE_VAL" \
+                "$ACR_USERNAME_VAL" \
+                "$ACR_PASSWORD_VAL" \
                 "$DB_URL_VAL" \
                 "$DB_USERNAME_VAL" \
                 "$DB_PASSWORD_VAL" \
@@ -134,7 +141,27 @@ jobs:
             $COMPOSE version || true
             $COMPOSE config
 
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+            set +x
+            ACR_REGISTRY_VAL="${{ secrets.ACR_REGISTRY }}"
+            ACR_USERNAME_VAL="${{ secrets.ACR_USERNAME }}"
+            ACR_PASSWORD_VAL="${{ secrets.ACR_PASSWORD }}"
+            if [ -z "$ACR_REGISTRY_VAL" ] || [ -z "$ACR_USERNAME_VAL" ] || [ -z "$ACR_PASSWORD_VAL" ]; then
+              echo "Missing ACR secrets for remote docker login: ACR_REGISTRY, ACR_USERNAME, ACR_PASSWORD" >&2
+              exit 1
+            fi
+            printf '%s' "$ACR_PASSWORD_VAL" | docker login "$ACR_REGISTRY_VAL" -u "$ACR_USERNAME_VAL" --password-stdin
+            set -x
+
+            IMAGE="${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+            for i in 1 2 3 4 5; do
+              if docker pull "$IMAGE"; then
+                break
+              fi
+              if [ "$i" -eq 5 ]; then
+                exit 1
+              fi
+              sleep $((i * 10))
+            done
 
             $COMPOSE down --remove-orphans
 

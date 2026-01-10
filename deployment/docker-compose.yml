@@ -2,7 +2,7 @@ version: '2.2'
 
 services:
   easycare-app:
-    image: ${DOCKER_USERNAME}/easycare-service:latest
+    image: ${ACR_REGISTRY}/${ACR_NAMESPACE}/easycare-service:latest
     container_name: easycare-service
     restart: unless-stopped
     ports:
