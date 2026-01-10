@@ -14,10 +14,10 @@ import java.time.LocalDate;
 @Data
 public class MaternityLeaveRequest {
 
-    @NotBlank(message = "工号不能为空")
+//    @NotBlank(message = "工号不能为空")
     private String lanId;
 
-    @NotBlank(message = "姓名不能为空")
+//    @NotBlank(message = "姓名不能为空")
     private String employeeName;
 
     @NotBlank(message = "城市代码不能为空")

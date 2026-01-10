@@ -41,6 +41,17 @@ public class CorsConfig implements WebMvcConfigurer {
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
                 String uri = request.getRequestURI();
 
+                // 检查是否来自微信小程序
+                String sourceId = request.getHeader("x-source-id");
+                String appId = request.getHeader("x-app-id");
+                
+                if ("wechat-miniprogram".equals(sourceId) && "wxd04c483b41ba7caf".equals(appId)) {
+                    // 微信小程序请求，跳过认证直接放行
+                    request.setAttribute("fromMiniProgram", true);
+                    request.setAttribute("wechatAppId", appId);
+                    return true;
+                }
+
                 // 登录接口和健康检查接口直接放行
                 if ("/api/auth/login".equals(uri)
                     || "/api/auth/generateNonce".equals(uri)
