@@ -64,25 +64,36 @@ jobs:
           password: ${{ secrets.REMOTE_PASSWORD }}
           port: ${{ secrets.REMOTE_PORT }}
           script: |
+            set -euxo pipefail
+
             cd /opt/easycare
-            
-            # 拉取最新镜像
+
+            if command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE="docker-compose"
+            elif docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            else
+              echo "Neither docker-compose nor docker compose is available on remote server" >&2
+              exit 1
+            fi
+
+            trap 'echo "---- DEPLOY FAILED: dumping diagnostics ----"; docker ps -a || true; $COMPOSE ps || true; $COMPOSE logs --no-color --tail=200 || true; echo "---- END DIAGNOSTICS ----"' ERR
+
+            docker version
+            $COMPOSE version || true
+            $COMPOSE config
+
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-            
-            # 停止并删除旧容器
-            docker-compose down
-            
-            # 启动新容器
-            docker-compose up -d
-            
-            # 清理旧镜像
+
+            $COMPOSE down --remove-orphans
+
+            $COMPOSE up -d --remove-orphans
+
             docker image prune -f
-            
-            # 检查容器状态
-            docker-compose ps
-            
-            # 查看日志
-            docker-compose logs --tail=50
+
+            $COMPOSE ps
+
+            $COMPOSE logs --no-color --tail=200
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.0

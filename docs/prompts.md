@@ -1,5 +1,20 @@
 # Prompts 记录
 
+## 2026-01-10
+
+### 输入人：用户
+
+**提示词：**
+```
+Deployment failed! 但是看不到任何报错
+在 Deploy to remote server 失败了，但是看不到 任何报错信息，能不能输出更多的日志来找到失败的原因
+```
+
+**执行内容：**
+- 在 `.github/workflows/deploy-to-production.yml` 的 `Deploy to remote server` 步骤中增强远程脚本日志：启用 `set -euxo pipefail`，自动识别 `docker-compose`/`docker compose`，并在失败时输出 `docker ps -a`、compose 状态与最近日志（tail=200），以便定位失败原因。
+
+---
+
 ## 2025-12-25
 
 ### 输入人：用户
