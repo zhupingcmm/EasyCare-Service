@@ -46,6 +46,21 @@ docker-compose 提示 DOCKER_USERNAME/DB_URL/DB_USERNAME/DB_PASSWORD 未设置�
 
 ---
 
+## 2026-01-10
+
+### 输入人：用户
+
+**提示词：**
+```
+docker-compose config 仍然提示 Version unsupported（远程 docker-compose 过旧 / 或服务器残留旧 compose 文件未被覆盖）
+```
+
+**执行内容：**
+- 将 `deployment/docker-compose.yml` 的 `version` 进一步降级为 `2.2`，提高与 `docker-compose 1.18.0` 的兼容性。
+- 在远程部署脚本中每次强制覆盖 `/opt/easycare/docker-compose.yml`（从上传的 `deployment/docker-compose.yml` 复制），避免使用服务器上残留的旧版本 compose 文件。
+
+---
+
 ## 2025-12-25
 
 ### 输入人：用户

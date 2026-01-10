@@ -84,12 +84,12 @@ jobs:
             fi
             cd /opt/easycare
 
-            if [ ! -f "docker-compose.yml" ] && [ -f "deployment/docker-compose.yml" ]; then
-              cp deployment/docker-compose.yml docker-compose.yml
+            if [ -f "deployment/docker-compose.yml" ]; then
+              cp -f deployment/docker-compose.yml docker-compose.yml
             fi
 
-            if [ ! -f "docker-compose.yml" ] && [ -f "deployment/docker-compose.yaml" ]; then
-              cp deployment/docker-compose.yaml docker-compose.yaml
+            if [ -f "deployment/docker-compose.yaml" ]; then
+              cp -f deployment/docker-compose.yaml docker-compose.yaml
             fi
 
             if [ ! -f "docker-compose.yml" ] && [ ! -f "docker-compose.yaml" ]; then
