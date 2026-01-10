@@ -61,7 +61,7 @@ jobs:
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
+          password: ${{ secrets.REMOTE_PASSWORD }}
           port: ${{ secrets.REMOTE_PORT }}
           script: |
             cd /opt/easycare
@@ -89,7 +89,7 @@ jobs:
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
+          password: ${{ secrets.REMOTE_PASSWORD }}
           port: ${{ secrets.REMOTE_PORT }}
           script: |
             # 等待应用启动
