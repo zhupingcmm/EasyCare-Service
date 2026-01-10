@@ -31,6 +31,21 @@ Deploy to remote server 执行 docker-compose config 报错：Can't find a suita
 
 ---
 
+## 2026-01-10
+
+### 输入人：用户
+
+**提示词：**
+```
+docker-compose 提示 DOCKER_USERNAME/DB_URL/DB_USERNAME/DB_PASSWORD 未设置，且 version: 3.8 unsupported
+```
+
+**执行内容：**
+- 将 `deployment/docker-compose.yml` 的 `version` 调整为 `3.3` 以兼容远程较旧的 `docker-compose`。
+- 在远程部署脚本中确保 `/opt/easycare/.env` 存在：若不存在则从 GitHub Secrets 写入（避免在日志中回显敏感值），并在缺少必要 secret 时直接失败提示。
+
+---
+
 ## 2025-12-25
 
 ### 输入人：用户
