@@ -99,32 +99,39 @@ jobs:
               exit 1
             fi
 
-            if [ ! -f ".env" ]; then
-              set +x
-              ACR_REGISTRY_VAL="${{ secrets.ACR_REGISTRY }}"
-              ACR_NAMESPACE_VAL="${{ secrets.ACR_NAMESPACE }}"
-              ACR_USERNAME_VAL="${{ secrets.ACR_USERNAME }}"
-              ACR_PASSWORD_VAL="${{ secrets.ACR_PASSWORD }}"
-              DB_URL_VAL="${{ secrets.DB_URL }}"
-              DB_USERNAME_VAL="${{ secrets.DB_USERNAME }}"
-              DB_PASSWORD_VAL="${{ secrets.DB_PASSWORD }}"
+            set +x
+            ACR_REGISTRY_VAL="${{ secrets.ACR_REGISTRY }}"
+            ACR_NAMESPACE_VAL="${{ secrets.ACR_NAMESPACE }}"
+            ACR_USERNAME_VAL="${{ secrets.ACR_USERNAME }}"
+            ACR_PASSWORD_VAL="${{ secrets.ACR_PASSWORD }}"
+            DB_URL_VAL="${{ secrets.DB_URL }}"
+            DB_USERNAME_VAL="${{ secrets.DB_USERNAME }}"
+            DB_PASSWORD_VAL="${{ secrets.DB_PASSWORD }}"
 
-              if [ -z "$ACR_REGISTRY_VAL" ] || [ -z "$ACR_NAMESPACE_VAL" ] || [ -z "$ACR_USERNAME_VAL" ] || [ -z "$ACR_PASSWORD_VAL" ] || [ -z "$DB_URL_VAL" ] || [ -z "$DB_USERNAME_VAL" ] || [ -z "$DB_PASSWORD_VAL" ]; then
-                echo "Missing required env values. Either create /opt/easycare/.env on the server or configure GitHub secrets: ACR_REGISTRY, ACR_NAMESPACE, ACR_USERNAME, ACR_PASSWORD, DB_URL, DB_USERNAME, DB_PASSWORD" >&2
-                exit 1
-              fi
-
-              printf "ACR_REGISTRY=%s\nACR_NAMESPACE=%s\nACR_USERNAME=%s\nACR_PASSWORD=%s\nDB_URL=%s\nDB_USERNAME=%s\nDB_PASSWORD=%s\n" \
-                "$ACR_REGISTRY_VAL" \
-                "$ACR_NAMESPACE_VAL" \
-                "$ACR_USERNAME_VAL" \
-                "$ACR_PASSWORD_VAL" \
-                "$DB_URL_VAL" \
-                "$DB_USERNAME_VAL" \
-                "$DB_PASSWORD_VAL" \
-                > .env
-              set -x
+            if [ -z "$ACR_REGISTRY_VAL" ] || [ -z "$ACR_NAMESPACE_VAL" ] || [ -z "$ACR_USERNAME_VAL" ] || [ -z "$ACR_PASSWORD_VAL" ] || [ -z "$DB_URL_VAL" ] || [ -z "$DB_USERNAME_VAL" ] || [ -z "$DB_PASSWORD_VAL" ]; then
+              echo "Missing required env values. Configure GitHub secrets: ACR_REGISTRY, ACR_NAMESPACE, ACR_USERNAME, ACR_PASSWORD, DB_URL, DB_USERNAME, DB_PASSWORD" >&2
+              exit 1
             fi
+
+            touch .env
+            upsert_env() {
+              key="$1"
+              val="$2"
+              if grep -q "^${key}=" .env; then
+                sed -i "s|^${key}=.*|${key}=${val}|" .env
+              else
+                printf "%s=%s\n" "$key" "$val" >> .env
+              fi
+            }
+
+            upsert_env "ACR_REGISTRY" "$ACR_REGISTRY_VAL"
+            upsert_env "ACR_NAMESPACE" "$ACR_NAMESPACE_VAL"
+            upsert_env "ACR_USERNAME" "$ACR_USERNAME_VAL"
+            upsert_env "ACR_PASSWORD" "$ACR_PASSWORD_VAL"
+            upsert_env "DB_URL" "$DB_URL_VAL"
+            upsert_env "DB_USERNAME" "$DB_USERNAME_VAL"
+            upsert_env "DB_PASSWORD" "$DB_PASSWORD_VAL"
+            set -x
 
             if command -v docker-compose >/dev/null 2>&1; then
               COMPOSE="docker-compose"
