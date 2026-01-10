@@ -63,6 +63,9 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           password: ${{ secrets.REMOTE_PASSWORD }}
           port: ${{ secrets.REMOTE_PORT }}
+          timeout: 120s
+          command_timeout: 30m
+          debug: true
           script: |
             set -euxo pipefail
 
@@ -102,6 +105,9 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           password: ${{ secrets.REMOTE_PASSWORD }}
           port: ${{ secrets.REMOTE_PORT }}
+          timeout: 120s
+          command_timeout: 10m
+          debug: true
           script: |
             # 等待应用启动
             sleep 10
