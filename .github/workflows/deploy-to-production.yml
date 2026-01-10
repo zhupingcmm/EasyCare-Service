@@ -56,6 +56,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Upload docker-compose.yml to remote server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          password: ${{ secrets.REMOTE_PASSWORD }}
+          port: ${{ secrets.REMOTE_PORT }}
+          source: "deployment/docker-compose.yml"
+          target: "/opt/easycare"
+
       - name: Deploy to remote server
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -69,7 +79,16 @@ jobs:
           script: |
             set -euxo pipefail
 
+            if [ ! -d "/opt/easycare" ]; then
+              mkdir -p /opt/easycare
+            fi
             cd /opt/easycare
+
+            if [ ! -f "docker-compose.yml" ] && [ ! -f "docker-compose.yaml" ]; then
+              echo "docker-compose.yml/docker-compose.yaml not found under /opt/easycare" >&2
+              ls -la
+              exit 1
+            fi
 
             if command -v docker-compose >/dev/null 2>&1; then
               COMPOSE="docker-compose"

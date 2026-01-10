@@ -15,6 +15,22 @@ Deployment failed! 但是看不到任何报错
 
 ---
 
+## 2026-01-10
+
+### 输入人：用户
+
+**提示词：**
+```
+Deploy to remote server 执行 docker-compose config 报错：Can't find a suitable configuration file
+需要在 cd /opt/easycare 后确保 docker-compose.yml 存在，否则部署会失败
+```
+
+**执行内容：**
+- 在 workflow 中增加 `appleboy/scp-action` 步骤，将仓库内 `deployment/docker-compose.yml` 上传到远程 `/opt/easycare`。
+- 在远程脚本中增加对 `docker-compose.yml/docker-compose.yaml` 的存在性检查，不存在时输出目录列表并失败退出。
+
+---
+
 ## 2025-12-25
 
 ### 输入人：用户
