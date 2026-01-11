@@ -1,3 +1,6 @@
+-- Delete existing 2025 data first to ensure idempotency
+DELETE FROM t_special_day WHERE year = 2025;
+
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2025,'CN','2025-01-01','元旦','元旦','New Year''s Day',1,true,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-01-26','春节补班','春节补班','Spring Festival Workday',2,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
@@ -8,8 +11,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2025,'CN','2025-02-01','春节','春节','Chinese New Year',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-02-02','春节','春节','Chinese New Year',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-02-03','春节','春节','Chinese New Year',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
-	 (2025,'CN','2025-02-04','春节','春节','Chinese New Year',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system')
-ON CONFLICT ("year", region, "date") DO NOTHING;
+	 (2025,'CN','2025-02-04','春节','春节','Chinese New Year',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system');
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2025,'CN','2025-02-08','春节补班','春节补班','Spring Festival Workday',2,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-04-04','清明节','清明节','Tomb-Sweeping Day',1,true,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
@@ -20,8 +22,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2025,'CN','2025-05-02','劳动节','劳动节','Labor Day',1,true,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-05-03','劳动节','劳动节','Labor Day',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-05-04','劳动节','劳动节','Labor Day',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
-	 (2025,'CN','2025-05-05','劳动节','劳动节','Labor Day',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system')
-ON CONFLICT ("year", region, "date") DO NOTHING;
+	 (2025,'CN','2025-05-05','劳动节','劳动节','Labor Day',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system');
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2025,'CN','2025-05-31','端午节','端午节','Dragon Boat Festival',1,true,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-06-01','端午节','端午节','Dragon Boat Festival',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
@@ -32,13 +33,15 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2025,'CN','2025-10-03','国庆节、中秋节','国庆节、中秋节','National Day & Mid-Autumn Festival',1,true,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-10-04','国庆节、中秋节','国庆节、中秋节','National Day & Mid-Autumn Festival',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-10-05','国庆节、中秋节','国庆节、中秋节','National Day & Mid-Autumn Festival',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
-	 (2025,'CN','2025-10-06','国庆节、中秋节','国庆节、中秋节','National Day & Mid-Autumn Festival',1,true,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system')
-ON CONFLICT ("year", region, "date") DO NOTHING;
+	 (2025,'CN','2025-10-06','国庆节、中秋节','国庆节、中秋节','National Day & Mid-Autumn Festival',1,true,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system');
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2025,'CN','2025-10-07','国庆节、中秋节','国庆节、中秋节','National Day & Mid-Autumn Festival',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
 	 (2025,'CN','2025-10-08','国庆节、中秋节','国庆节、中秋节','National Day & Mid-Autumn Festival',1,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system'),
-	 (2025,'CN','2025-10-11','国庆节补班','国庆节补班','National Day Workday',2,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system')
-ON CONFLICT ("year", region, "date") DO NOTHING;
+	 (2025,'CN','2025-10-11','国庆节补班','国庆节补班','National Day Workday',2,false,true,'2025-12-05 22:09:59.085179','system','2025-12-05 22:09:59.085179','system');
+
+-- Delete existing 2022 data first
+DELETE FROM t_special_day WHERE year = 2022;
+
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2022,'CN','2022-01-01','元旦','元旦','元旦',1,true,true,'2025-12-08 12:06:18.676272',NULL,'2025-12-08 12:06:18.676272',NULL),
 	 (2022,'CN','2022-01-02','元旦','元旦','元旦',1,false,true,'2025-12-08 12:06:18.979015',NULL,'2025-12-08 12:06:18.979015',NULL),
@@ -47,7 +50,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2022,'CN','2022-01-30','春节补班','春节补班','春节补班',2,false,true,'2025-12-08 12:06:19.087494',NULL,'2025-12-08 12:06:19.087494',NULL),
 	 (2022,'CN','2022-01-31','春节','春节','春节',1,true,true,'2025-12-08 12:06:19.125532',NULL,'2025-12-08 12:06:19.125532',NULL),
 	 (2022,'CN','2022-02-01','春节','春节','春节',1,true,true,'2025-12-08 12:06:19.191982',NULL,'2025-12-08 12:06:19.191982',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2022,'CN','2022-02-02','春节','春节','春节',1,true,true,'2025-12-08 12:06:19.256036',NULL,'2025-12-08 12:06:19.256036',NULL),
 	 (2022,'CN','2022-02-03','春节','春节','春节',1,false,true,'2025-12-08 12:06:19.321652',NULL,'2025-12-08 12:06:19.321652',NULL),
@@ -59,7 +62,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2022,'CN','2022-04-04','清明节','清明节','清明节',1,false,true,'2025-12-08 12:06:19.723956',NULL,'2025-12-08 12:06:19.723956',NULL),
 	 (2022,'CN','2022-04-05','清明节','清明节','清明节',1,true,true,'2025-12-08 12:06:19.790644',NULL,'2025-12-08 12:06:19.790644',NULL),
 	 (2022,'CN','2022-04-24','劳动节补班','劳动节补班','劳动节补班',2,false,true,'2025-12-08 12:06:19.856374',NULL,'2025-12-08 12:06:19.856374',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2022,'CN','2022-04-30','劳动节','劳动节','劳动节',1,false,true,'2025-12-08 12:06:19.924897',NULL,'2025-12-08 12:06:19.924897',NULL),
 	 (2022,'CN','2022-05-01','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:06:19.990629',NULL,'2025-12-08 12:06:19.990629',NULL),
@@ -71,7 +74,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2022,'CN','2022-06-04','端午节','端午节','端午节',1,false,true,'2025-12-08 12:06:20.385819',NULL,'2025-12-08 12:06:20.385819',NULL),
 	 (2022,'CN','2022-06-05','端午节','端午节','端午节',1,false,true,'2025-12-08 12:06:20.453332',NULL,'2025-12-08 12:06:20.453332',NULL),
 	 (2022,'CN','2022-09-10','中秋节','中秋节','中秋节',1,true,true,'2025-12-08 12:06:20.52079',NULL,'2025-12-08 12:06:20.52079',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2022,'CN','2022-09-11','中秋节','中秋节','中秋节',1,false,true,'2025-12-08 12:06:20.587585',NULL,'2025-12-08 12:06:20.587585',NULL),
 	 (2022,'CN','2022-09-12','中秋节','中秋节','中秋节',1,false,true,'2025-12-08 12:06:20.655014',NULL,'2025-12-08 12:06:20.655014',NULL),
@@ -83,10 +86,15 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2022,'CN','2022-10-06','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:06:21.054464',NULL,'2025-12-08 12:06:21.054464',NULL),
 	 (2022,'CN','2022-10-07','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:06:21.120438',NULL,'2025-12-08 12:06:21.120438',NULL),
 	 (2022,'CN','2022-10-08','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:06:21.187564',NULL,'2025-12-08 12:06:21.187564',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2022,'CN','2022-10-09','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:06:21.253262',NULL,'2025-12-08 12:06:21.253262',NULL),
-	 (2022,'CN','2022-12-31','元旦','元旦','元旦',1,false,true,'2025-12-08 12:13:01.937199',NULL,'2025-12-08 12:13:01.937199',NULL),
+	 (2022,'CN','2022-12-31','元旦','元旦','元旦',1,false,true,'2025-12-08 12:13:01.937199',NULL,'2025-12-08 12:13:01.937199',NULL);
+
+-- Delete existing 2023 data first
+DELETE FROM t_special_day WHERE year = 2023;
+
+INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2023,'CN','2023-01-01','元旦','元旦','元旦',1,true,true,'2025-12-08 12:13:02.011832',NULL,'2025-12-08 12:13:02.011832',NULL),
 	 (2023,'CN','2023-01-02','元旦','元旦','元旦',1,false,true,'2025-12-08 12:13:02.077758',NULL,'2025-12-08 12:13:02.077758',NULL),
 	 (2023,'CN','2023-01-21','春节','春节','春节',1,true,true,'2025-12-08 12:13:02.145068',NULL,'2025-12-08 12:13:02.145068',NULL),
@@ -106,7 +114,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2023,'CN','2023-05-01','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:13:03.008284',NULL,'2025-12-08 12:13:03.008284',NULL),
 	 (2023,'CN','2023-05-02','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:13:03.075305',NULL,'2025-12-08 12:13:03.075305',NULL),
 	 (2023,'CN','2023-05-03','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:13:03.139878',NULL,'2025-12-08 12:13:03.139878',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2023,'CN','2023-05-06','劳动节补班','劳动节补班','劳动节补班',2,false,true,'2025-12-08 12:13:03.207386',NULL,'2025-12-08 12:13:03.207386',NULL),
 	 (2023,'CN','2023-06-22','端午节','端午节','端午节',1,true,true,'2025-12-08 12:13:03.275337',NULL,'2025-12-08 12:13:03.275337',NULL),
@@ -118,21 +126,24 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2023,'CN','2023-10-01','中秋节和国庆节','中秋节和国庆节','中秋节和国庆节',1,true,true,'2025-12-08 12:13:03.676415',NULL,'2025-12-08 12:13:03.676415',NULL),
 	 (2023,'CN','2023-10-02','中秋节和国庆节','中秋节和国庆节','中秋节和国庆节',1,true,true,'2025-12-08 12:13:03.742399',NULL,'2025-12-08 12:13:03.742399',NULL),
 	 (2023,'CN','2023-10-03','中秋节和国庆节','中秋节和国庆节','中秋节和国庆节',1,true,true,'2025-12-08 12:13:03.810612',NULL,'2025-12-08 12:13:03.810612',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2023,'CN','2023-10-04','中秋节和国庆节','中秋节和国庆节','中秋节和国庆节',1,false,true,'2025-12-08 12:13:03.876079',NULL,'2025-12-08 12:13:03.876079',NULL),
 	 (2023,'CN','2023-10-05','中秋节和国庆节','中秋节和国庆节','中秋节和国庆节',1,false,true,'2025-12-08 12:13:03.943025',NULL,'2025-12-08 12:13:03.943025',NULL),
 	 (2023,'CN','2023-10-06','中秋节和国庆节','中秋节和国庆节','中秋节和国庆节',1,false,true,'2025-12-08 12:13:04.011311',NULL,'2025-12-08 12:13:04.011311',NULL),
 	 (2023,'CN','2023-10-07','中秋节和国庆节补班','中秋节和国庆节补班','中秋节和国庆节补班',2,false,true,'2025-12-08 12:13:04.076256',NULL,'2025-12-08 12:13:04.076256',NULL),
-	 (2023,'CN','2023-10-08','中秋节和国庆节补班','中秋节和国庆节补班','中秋节和国庆节补班',2,false,true,'2025-12-08 12:13:04.142365',NULL,'2025-12-08 12:13:04.142365',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+	 (2023,'CN','2023-10-08','中秋节和国庆节补班','中秋节和国庆节补班','中秋节和国庆节补班',2,false,true,'2025-12-08 12:13:04.142365',NULL,'2025-12-08 12:13:04.142365',NULL);
+
+-- Delete existing 2024 data first
+DELETE FROM t_special_day WHERE year = 2024;
+
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2024,'CN','2024-01-01','元旦','元旦','元旦',1,true,true,'2025-12-08 12:13:43.786022',NULL,'2025-12-08 12:13:43.786022',NULL),
 	 (2024,'CN','2024-02-04','春节补班','春节补班','春节补班',2,false,true,'2025-12-08 12:13:43.855827',NULL,'2025-12-08 12:13:43.855827',NULL),
 	 (2024,'CN','2024-02-10','春节','春节','春节',1,true,true,'2025-12-08 12:13:43.924431',NULL,'2025-12-08 12:13:43.924431',NULL),
 	 (2024,'CN','2024-02-11','春节','春节','春节',1,true,true,'2025-12-08 12:13:43.991847',NULL,'2025-12-08 12:13:43.991847',NULL),
 	 (2024,'CN','2024-02-12','春节','春节','春节',1,true,true,'2025-12-08 12:13:44.061255',NULL,'2025-12-08 12:13:44.061255',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2024,'CN','2024-02-13','春节','春节','春节',1,false,true,'2025-12-08 12:13:44.130875',NULL,'2025-12-08 12:13:44.130875',NULL),
 	 (2024,'CN','2024-02-14','春节','春节','春节',1,false,true,'2025-12-08 12:13:44.199087',NULL,'2025-12-08 12:13:44.199087',NULL),
@@ -144,7 +155,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2024,'CN','2024-04-05','清明节','清明节','清明节',1,false,true,'2025-12-08 12:13:44.600598',NULL,'2025-12-08 12:13:44.600598',NULL),
 	 (2024,'CN','2024-04-06','清明节','清明节','清明节',1,false,true,'2025-12-08 12:13:44.667019',NULL,'2025-12-08 12:13:44.667019',NULL),
 	 (2024,'CN','2024-04-07','清明节补班','清明节补班','清明节补班',2,false,true,'2025-12-08 12:13:44.730124',NULL,'2025-12-08 12:13:44.730124',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2024,'CN','2024-04-28','劳动节补班','劳动节补班','劳动节补班',2,false,true,'2025-12-08 12:13:44.794799',NULL,'2025-12-08 12:13:44.794799',NULL),
 	 (2024,'CN','2024-05-01','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:13:44.860636',NULL,'2025-12-08 12:13:44.860636',NULL),
@@ -156,7 +167,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2024,'CN','2024-06-10','端午节','端午节','端午节',1,true,true,'2025-12-08 12:13:45.258642',NULL,'2025-12-08 12:13:45.258642',NULL),
 	 (2024,'CN','2024-09-14','中秋节补班','中秋节补班','中秋节补班',2,false,true,'2025-12-08 12:13:45.323314',NULL,'2025-12-08 12:13:45.323314',NULL),
 	 (2024,'CN','2024-09-15','中秋节','中秋节','中秋节',1,false,true,'2025-12-08 12:13:45.391581',NULL,'2025-12-08 12:13:45.391581',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2024,'CN','2024-09-16','中秋节','中秋节','中秋节',1,false,true,'2025-12-08 12:13:45.458615',NULL,'2025-12-08 12:13:45.458615',NULL),
 	 (2024,'CN','2024-09-17','中秋节','中秋节','中秋节',1,true,true,'2025-12-08 12:13:45.523426',NULL,'2025-12-08 12:13:45.523426',NULL),
@@ -168,10 +179,13 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2024,'CN','2024-10-05','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:13:45.931658',NULL,'2025-12-08 12:13:45.931658',NULL),
 	 (2024,'CN','2024-10-06','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:13:45.996604',NULL,'2025-12-08 12:13:45.996604',NULL),
 	 (2024,'CN','2024-10-07','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:13:46.064475',NULL,'2025-12-08 12:13:46.064475',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
-	 (2024,'CN','2024-10-12','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:13:46.13132',NULL,'2025-12-08 12:13:46.13132',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+	 (2024,'CN','2024-10-12','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:13:46.13132',NULL,'2025-12-08 12:13:46.13132',NULL);
+
+-- Delete existing 2026 data first
+DELETE FROM t_special_day WHERE year = 2026;
+
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2026,'CN','2026-01-01','元旦','元旦','元旦',1,true,true,'2025-12-08 12:13:52.386009',NULL,'2025-12-08 12:13:52.386009',NULL),
 	 (2026,'CN','2026-01-02','元旦','元旦','元旦',1,false,true,'2025-12-08 12:13:52.456183',NULL,'2025-12-08 12:13:52.456183',NULL),
@@ -182,7 +196,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2026,'CN','2026-02-16','春节','春节','春节',1,true,true,'2025-12-08 12:13:52.791515',NULL,'2025-12-08 12:13:52.791515',NULL),
 	 (2026,'CN','2026-02-17','春节','春节','春节',1,true,true,'2025-12-08 12:13:52.858359',NULL,'2025-12-08 12:13:52.858359',NULL),
 	 (2026,'CN','2026-02-18','春节','春节','春节',1,true,true,'2025-12-08 12:13:52.924541',NULL,'2025-12-08 12:13:52.924541',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2026,'CN','2026-02-19','春节','春节','春节',1,true,true,'2025-12-08 12:13:52.9907',NULL,'2025-12-08 12:13:52.9907',NULL),
 	 (2026,'CN','2026-02-20','春节','春节','春节',1,false,true,'2025-12-08 12:13:53.055493',NULL,'2025-12-08 12:13:53.055493',NULL),
@@ -194,7 +208,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2026,'CN','2026-04-05','清明节','清明节','清明节',1,false,true,'2025-12-08 12:13:53.463432',NULL,'2025-12-08 12:13:53.463432',NULL),
 	 (2026,'CN','2026-04-06','清明节','清明节','清明节',1,false,true,'2025-12-08 12:13:53.528554',NULL,'2025-12-08 12:13:53.528554',NULL),
 	 (2026,'CN','2026-05-01','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:13:53.596318',NULL,'2025-12-08 12:13:53.596318',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2026,'CN','2026-05-02','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:13:53.662075',NULL,'2025-12-08 12:13:53.662075',NULL),
 	 (2026,'CN','2026-05-03','劳动节','劳动节','劳动节',1,false,true,'2025-12-08 12:13:53.731636',NULL,'2025-12-08 12:13:53.731636',NULL),
@@ -206,7 +220,7 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2026,'CN','2026-06-21','端午节','端午节','端午节',1,false,true,'2025-12-08 12:13:54.128559',NULL,'2025-12-08 12:13:54.128559',NULL),
 	 (2026,'CN','2026-09-25','中秋节','中秋节','中秋节',1,true,true,'2025-12-08 12:13:54.193291',NULL,'2025-12-08 12:13:54.193291',NULL),
 	 (2026,'CN','2026-09-26','中秋节','中秋节','中秋节',1,false,true,'2025-12-08 12:13:54.261289',NULL,'2025-12-08 12:13:54.261289',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2026,'CN','2026-09-27','中秋节','中秋节','中秋节',1,false,true,'2025-12-08 12:13:54.327072',NULL,'2025-12-08 12:13:54.327072',NULL),
 	 (2026,'CN','2026-09-20','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:13:54.394098',NULL,'2025-12-08 12:13:54.394098',NULL),
@@ -217,8 +231,11 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2026,'CN','2026-10-05','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:13:54.726758',NULL,'2025-12-08 12:13:54.726758',NULL),
 	 (2026,'CN','2026-10-06','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:13:54.795649',NULL,'2025-12-08 12:13:54.795649',NULL),
 	 (2026,'CN','2026-10-07','国庆节','国庆节','国庆节',1,false,true,'2025-12-08 12:13:54.861038',NULL,'2025-12-08 12:13:54.861038',NULL),
-	 (2026,'CN','2026-10-10','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:13:54.930219',NULL,'2025-12-08 12:13:54.930219',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+	 (2026,'CN','2026-10-10','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:13:54.930219',NULL,'2025-12-08 12:13:54.930219',NULL);
+
+-- Delete existing 2021 data first
+DELETE FROM t_special_day WHERE year = 2021;
+
 INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is_public_holiday,enabled,create_date,create_by,update_date,update_by) VALUES
 	 (2021,'CN','2021-05-05','劳动节','劳动节','劳动节',1,true,true,'2025-12-08 12:16:27.245703',NULL,'2025-12-08 12:16:27.245703',NULL),
 	 (2021,'CN','2021-05-08','劳动节补班','劳动节补班','劳动节补班',2,false,true,'2025-12-08 12:16:27.310433',NULL,'2025-12-08 12:16:27.310433',NULL),
@@ -239,4 +256,4 @@ INSERT INTO t_special_day ("year",region,"date","name",cn_name,en_name,"type",is
 	 (2021,'CN','2021-10-06','国庆节','国庆节','国庆节',1,true,true,'2025-12-08 12:16:28.233662',NULL,'2025-12-08 12:16:28.233662',NULL),
 	 (2021,'CN','2021-10-07','国庆节','国庆节','国庆节',1,true,true,'2025-12-08 12:16:28.300783',NULL,'2025-12-08 12:16:28.300783',NULL),
 	 (2021,'CN','2021-10-09','国庆节补班','国庆节补班','国庆节补班',2,false,true,'2025-12-08 12:16:28.367817',NULL,'2025-12-08 12:16:28.367817',NULL)
-ON CONFLICT ("year", region, "date") DO NOTHING;
+;
