@@ -46,9 +46,9 @@ public class CorsConfig implements WebMvcConfigurer {
                 log.info("拦截请求: {} {}", method, uri);
 
                 // 检查是否来自微信小程序
-                String sourceId = request.getHeader("x-source-id");
-                String appId = request.getHeader("x-app-id");
-                log.info("请求头信息: {} {}, x-source-id={}, x-app-id={}", method, uri, sourceId, appId);
+                String sourceId = request.getHeader("X-Source-Id");
+                String appId = request.getHeader("X-App-Id");
+                log.info("请求头信息: {} {}, X-Source-Id={}, X-App-Id={}", method, uri, sourceId, appId);
                 
                 if ("wechat-miniprogram".equals(sourceId) && "wxd04c483b41ba7caf".equals(appId)) {
                     log.info("微信小程序请求放行: {} {}, appId={}", method, uri, appId);
