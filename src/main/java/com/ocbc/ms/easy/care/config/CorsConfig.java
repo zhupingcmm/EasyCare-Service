@@ -43,12 +43,12 @@ public class CorsConfig implements WebMvcConfigurer {
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
                 String uri = request.getRequestURI();
                 String method = request.getMethod();
-                log.debug("拦截请求: {} {}", method, uri);
+                log.info("拦截请求: {} {}", method, uri);
 
                 // 检查是否来自微信小程序
                 String sourceId = request.getHeader("x-source-id");
                 String appId = request.getHeader("x-app-id");
-                log.debug("请求头信息: {} {}, x-source-id={}, x-app-id={}", method, uri, sourceId, appId);
+                log.info("请求头信息: {} {}, x-source-id={}, x-app-id={}", method, uri, sourceId, appId);
                 
                 if ("wechat-miniprogram".equals(sourceId) && "wxd04c483b41ba7caf".equals(appId)) {
                     log.info("微信小程序请求放行: {} {}, appId={}", method, uri, appId);
@@ -66,7 +66,7 @@ public class CorsConfig implements WebMvcConfigurer {
                     || "/health/info".equals(uri)
                     || "/actuator/health".equals(uri)
                     || "/actuator/info".equals(uri)) {
-                    log.debug("公开接口放行: {} {}", method, uri);
+                    log.info("公开接口放行: {} {}", method, uri);
                     return true;
                 }
 
@@ -101,7 +101,7 @@ public class CorsConfig implements WebMvcConfigurer {
                         return false;
                     }
                     request.setAttribute("lanId", lanId);
-                    log.debug("认证成功: {} {}, lanId={}", method, uri, lanId);
+                    log.info("认证成功: {} {}, lanId={}", method, uri, lanId);
                 } catch (Exception ex) {
                     log.error("Token解析失败: {} {}, error={}", method, uri, ex.getMessage());
                     writeUnauthorized(response, "未登录");
