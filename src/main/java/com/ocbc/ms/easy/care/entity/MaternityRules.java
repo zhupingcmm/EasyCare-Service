@@ -60,7 +60,7 @@ public class MaternityRules {
     /**
      * 产假扩展信息（JSON字符串格式）
      */
-    @Column(name = "maternity_leave_ext", columnDefinition = "jsonb")
+    @Column(name = "maternity_leave_ext", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private String maternityLeaveExt;
 

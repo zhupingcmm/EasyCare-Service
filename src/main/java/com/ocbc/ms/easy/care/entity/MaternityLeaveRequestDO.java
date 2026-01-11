@@ -66,7 +66,7 @@ public class MaternityLeaveRequestDO {
     @Column(name = "is_first_time_birth")
     private Boolean isFirstTimeBirth;
 
-    @Column(name = "miscarriage_leave_detail", columnDefinition = "jsonb")
+    @Column(name = "miscarriage_leave_detail", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private MiscarriageLeaveDetail miscarriageLeaveDetail;
 

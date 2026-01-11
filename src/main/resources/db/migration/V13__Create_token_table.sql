@@ -18,23 +18,15 @@ CREATE TABLE tokens (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_by VARCHAR(255),
     CONSTRAINT fk_tokens_users FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-)
-PARTITION BY RANGE (exp_time);
+);
 
--- 3. 创建分区表（示例分区，实际使用时应根据业务需求调整）
-CREATE TABLE tokens_2024 PARTITION OF tokens
-    FOR VALUES FROM ('2024-01-01 00:00:00+00') TO ('2025-01-01 00:00:00+00');
-
-CREATE TABLE tokens_2025 PARTITION OF tokens
-    FOR VALUES FROM ('2025-01-01 00:00:00+00') TO ('2026-01-01 00:00:00+00');
-
--- 4. 创建索引以提高查询性能
+-- 3. 创建索引以提高查询性能
 CREATE INDEX idx_tokens_user_id ON tokens USING btree (user_id);
 CREATE INDEX idx_tokens_op_acc_token ON tokens USING btree (op_acc_token, exp_time);
 CREATE INDEX idx_tokens_op_ref_token ON tokens USING btree (op_ref_token, exp_time);
 CREATE INDEX idx_tokens_exp_time ON tokens USING btree (exp_time);
 
--- 5. 添加表注释
+-- 4. 添加表注释
 COMMENT ON TABLE tokens IS 'JWT令牌表，存储用户访问令牌和刷新令牌';
 COMMENT ON COLUMN tokens.id IS '主键ID';
 COMMENT ON COLUMN tokens.user_id IS '用户ID，外键关联users表';

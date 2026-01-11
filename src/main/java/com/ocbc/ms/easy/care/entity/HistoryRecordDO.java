@@ -47,7 +47,7 @@ public class HistoryRecordDO {
     @Column(name = "employee_id", nullable = false, length = 64)
     private String employeeId;
 
-    @Column(name = "employee_data", columnDefinition = "jsonb", nullable = false)
+    @Column(name = "employee_data", columnDefinition = "json", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)
     @JsonbEncryptedField
     @Convert(converter = JsonbAttributeConverter.class)

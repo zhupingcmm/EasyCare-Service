@@ -61,11 +61,11 @@ public class MaternityAllowanceResultDO {
     @Column(name = "employee_refund_amount", precision = 15, scale = 2)
     private BigDecimal employeeRefundAmount;
 
-    @Column(name = "allowance_compensation_details", columnDefinition = "jsonb")
+    @Column(name = "allowance_compensation_details", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private List<String> allowanceCompensationDetails;
 
-    @Column(name = "refund_details", columnDefinition = "jsonb")
+    @Column(name = "refund_details", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private List<String> refundDetails;
 

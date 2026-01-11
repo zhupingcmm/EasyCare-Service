@@ -76,7 +76,7 @@ public class CityDO {
     /**
      * 备注
      */
-    @Column(name = "remark", columnDefinition = "jsonb")
+    @Column(name = "remark", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     @JsonInclude(JsonInclude.Include.ALWAYS)
     private CityRemark remark;

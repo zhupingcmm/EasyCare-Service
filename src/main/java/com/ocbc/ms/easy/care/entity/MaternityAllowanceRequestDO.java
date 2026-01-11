@@ -75,7 +75,7 @@ public class MaternityAllowanceRequestDO {
     @Column(name = "maternity_leave_request_date")
     private LocalDate maternityLeaveRequestDate;
 
-    @Column(name = "company_advance", columnDefinition = "jsonb")
+    @Column(name = "company_advance", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private CompanyAdvanceMap companyAdvance;
 

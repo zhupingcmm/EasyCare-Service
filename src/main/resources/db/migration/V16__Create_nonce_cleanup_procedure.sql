@@ -31,7 +31,4 @@ end
 $FUNCTIONS$
 LANGUAGE plpgsql;
 
--- 授权
-ALTER FUNCTION delete_yesterday_nonces(threshold int) OWNER TO "hr-maternity-cn";
-GRANT ALL ON FUNCTION delete_yesterday_nonces(threshold int) TO "hr-maternity-cn";
-GRANT DELETE, TRUNCATE ON TABLE nonce TO "hr-maternity-cn";
+

@@ -77,7 +77,7 @@ public class MaternityLeaveResultDO {
     @Column(name = "return_to_work_date")
     private LocalDate returnToWorkDate;
 
-    @Column(name = "time_scope_list", columnDefinition = "jsonb")
+    @Column(name = "time_scope_list", columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private List<TimeScope> timeScopeList;
 

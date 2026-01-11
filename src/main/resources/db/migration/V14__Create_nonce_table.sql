@@ -1,5 +1,7 @@
 -- Create nonce table for preventing replay attacks
-CREATE TABLE IF NOT EXISTS nonce (
+DROP TABLE IF EXISTS nonce CASCADE;
+
+CREATE TABLE nonce (
     id VARCHAR(36) PRIMARY KEY,
     nonce_value VARCHAR(256) NOT NULL UNIQUE,
     user_id VARCHAR(36) NOT NULL,
@@ -10,11 +12,17 @@ CREATE TABLE IF NOT EXISTS nonce (
 );
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_nonce_value ON nonce(nonce_value);
-CREATE INDEX IF NOT EXISTS idx_user_id ON nonce(user_id);
-CREATE INDEX IF NOT EXISTS idx_created_at ON nonce(created_at);
-CREATE INDEX IF NOT EXISTS idx_expires_at ON nonce(expires_at);
-CREATE INDEX IF NOT EXISTS idx_used ON nonce(used);
+DROP INDEX IF EXISTS idx_nonce_value;
+DROP INDEX IF EXISTS idx_user_id;
+DROP INDEX IF EXISTS idx_created_at;
+DROP INDEX IF EXISTS idx_expires_at;
+DROP INDEX IF EXISTS idx_used;
+
+CREATE INDEX idx_nonce_value ON nonce(nonce_value);
+CREATE INDEX idx_user_id ON nonce(user_id);
+CREATE INDEX idx_created_at ON nonce(created_at);
+CREATE INDEX idx_expires_at ON nonce(expires_at);
+CREATE INDEX idx_used ON nonce(used);
 
 -- Add comments
 COMMENT ON TABLE nonce IS '用于防止重放攻击的nonce记录表';

@@ -386,6 +386,69 @@ compensate的value为现在的返回BigDecimal, refundDetail的value为String格
 
 ---
 
+## 2026-01-11
+
+### 输入人：用户
+
+**提示词：**
+```
+部署后应用启动失败，容器日志显示 Flyway 报错：ERROR: type "jsonb" does not exist
+```
+
+**执行内容：**
+- 定位为生产数据库不支持 `jsonb` 类型（PostgreSQL 版本过低或非 PostgreSQL），导致 Flyway 执行迁移失败，应用启动中断。
+- 将相关迁移脚本中的 `JSONB/::jsonb` 降级为 `JSON/::json`：
+  - `V5__Create_history_table.sql`：`employee_data` 改为 `json`
+  - `V7__Create_t_maternity_rules.sql`：`maternity_leave_ext` 改为 `json`，并将插入数据中的 `::jsonb` 改为 `::json`
+- 同步将相关实体类的 `columnDefinition = "jsonb"` 降级为 `json`，避免运行期仍按 `jsonb` 映射导致异常。
+
+---
+
+## 2026-01-11
+
+### 输入人：用户
+
+**提示词：**
+```
+Flyway 执行 V13__Create_token_table.sql 报错：ERROR: syntax error at or near "PARTITION"
+```
+
+**执行内容：**
+- 定位为生产数据库不支持 PostgreSQL 分区表语法（`PARTITION BY` / `PARTITION OF`），导致 Flyway 迁移失败。
+- 将 `V13__Create_token_table.sql` 降级为普通表建表脚本：移除 `PARTITION BY RANGE` 以及示例分区表创建语句，仅保留 `tokens` 主表 + 索引 + 注释，确保兼容旧版本数据库。
+
+---
+
+## 2026-01-11
+
+### 输入人：用户
+
+**提示词：**
+```
+Flyway 执行 V14__Create_nonce_table.sql 报错：ERROR: syntax error at or near "NOT"
+```
+
+**执行内容：**
+- 定位为生产数据库不支持 `CREATE TABLE/INDEX IF NOT EXISTS` 语法，导致 Flyway 在 `IF NOT EXISTS` 处解析失败。
+- 将 `V14__Create_nonce_table.sql` 改为兼容写法：使用 `DROP TABLE IF EXISTS` / `DROP INDEX IF EXISTS` + 普通 `CREATE TABLE/CREATE INDEX`，确保旧版本数据库可执行。
+
+---
+
+## 2026-01-11
+
+### 输入人：用户
+
+**提示词：**
+```
+Flyway 执行 V16__Create_nonce_cleanup_procedure.sql 报错：ERROR: role "hr-maternity-cn" does not exist
+```
+
+**执行内容：**
+- 定位为迁移脚本中硬编码了数据库角色 `hr-maternity-cn`（`ALTER FUNCTION ... OWNER TO` / `GRANT ... TO`），但生产库不存在该 role，导致 Flyway 执行失败。
+- 移除 `V16__Create_nonce_cleanup_procedure.sql` 中与 `hr-maternity-cn` 相关的 `OWNER/GRANT` 语句，使迁移不依赖特定 role，在不同环境可直接通过。
+
+---
+
 ## 2025-12-10
 
 ### 输入人：用户
