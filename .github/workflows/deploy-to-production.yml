@@ -191,12 +191,38 @@ jobs:
           command_timeout: 10m
           debug: true
           script: |
-            # 等待应用启动
-            sleep 10
-            
-            # 健康检查
-            curl -f http://localhost:8080/health/alive || exit 1
-            echo "Application is healthy!"
+            set -euxo pipefail
+
+            cd /opt/easycare
+
+            if command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE="docker-compose"
+            elif docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            else
+              echo "Neither docker-compose nor docker compose is available on remote server" >&2
+              exit 1
+            fi
+
+            for i in $(seq 1 30); do
+              if curl -f http://localhost:8080/health/alive >/dev/null 2>&1; then
+                echo "Application is healthy!"
+                $COMPOSE logs --no-color --tail=200 || true
+                exit 0
+              fi
+              if [ "$i" -eq 1 ] || [ "$i" -eq 10 ] || [ "$i" -eq 20 ] || [ "$i" -eq 30 ]; then
+                echo "Waiting for application to become healthy (attempt ${i}/30)..." >&2
+                $COMPOSE ps || true
+                $COMPOSE logs --no-color --tail=200 || true
+              fi
+              sleep 5
+            done
+
+            echo "Healthcheck failed, dumping diagnostics..." >&2
+            docker ps -a || true
+            $COMPOSE ps || true
+            $COMPOSE logs --no-color --tail=300 || true
+            exit 1
 
       - name: Notify deployment status
         if: always()
