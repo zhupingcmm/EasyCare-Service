@@ -6,10 +6,10 @@ import com.ocbc.ms.easy.care.email.dto.PdfEmailResponse;
 import com.ocbc.ms.easy.care.email.service.PdfEmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
 
 import jakarta.mail.internet.MimeMessage;
 import java.io.File;
@@ -19,11 +19,10 @@ import java.time.LocalDateTime;
  * PDF邮件发送服务实现
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class PdfEmailServiceImpl implements PdfEmailService {
 
-    private final JavaMailSender mailSender;
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final EmailProperties emailProperties;
 
     @Override
@@ -31,6 +30,18 @@ public class PdfEmailServiceImpl implements PdfEmailService {
         log.info("开始发送PDF邮件，收件人: {}, PDF路径: {}", request.getEmailAddress(), request.getPdfPath());
         
         try {
+            JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+            if (mailSender == null) {
+                log.warn("未配置邮件发送器(JavaMailSender)，请配置 spring.mail.host 等参数后再使用邮件功能");
+                return PdfEmailResponse.builder()
+                        .success(false)
+                        .message("邮件服务未配置，请先配置 spring.mail.host 等参数")
+                        .sentTime(LocalDateTime.now())
+                        .emailAddress(request.getEmailAddress())
+                        .pdfPath(request.getPdfPath())
+                        .build();
+            }
+
             // 验证PDF文件是否存在
             File pdfFile = new File(request.getPdfPath());
             if (!pdfFile.exists() || !pdfFile.isFile()) {

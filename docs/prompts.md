@@ -449,6 +449,35 @@ Flyway 执行 V16__Create_nonce_cleanup_procedure.sql 报错：ERROR: role "hr-m
 
 ---
 
+## 2026-01-11
+
+### 输入人：用户
+
+**提示词：**
+```
+应用启动报错：No qualifying bean of type 'org.springframework.mail.javamail.JavaMailSender' available
+```
+
+**执行内容：**
+- 定位为生产环境未配置 `spring.mail.host` 等邮件参数时，Spring Boot 不会自动装配 `JavaMailSender`，导致 `PdfEmailServiceImpl` 构造注入失败，从而应用无法启动。
+- 将 `PdfEmailServiceImpl` 对 `JavaMailSender` 的硬依赖改为 `ObjectProvider<JavaMailSender>` 可选注入：当 `JavaMailSender` 不存在时服务仍可启动，调用邮件接口会返回明确失败信息并提示补充 `spring.mail.*` 配置。
+
+---
+
+## 2026-01-11
+
+### 输入人：用户
+
+**提示词：**
+```
+先将email相关的代码删除掉
+```
+
+**执行内容：**
+- 将 email 模块从 Spring 容器中下线：移除 `PdfEmailController` 的 `@RestController/@RequestMapping`，移除 `PdfEmailServiceImpl` 的 `@Service`，移除 `EmailProperties` 的 `@Component`，确保应用启动与对外接口不再加载/暴露邮件功能。
+
+---
+
 ## 2025-12-10
 
 ### 输入人：用户

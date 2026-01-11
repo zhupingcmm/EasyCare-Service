@@ -17,8 +17,6 @@ import jakarta.validation.Valid;
  * PDF邮件发送控制器
  */
 @Slf4j
-@RestController
-@RequestMapping("/api/pdf-email")
 @RequiredArgsConstructor
 @Tag(name = "PDF邮件发送", description = "发送PDF文件到指定邮箱")
 public class PdfEmailController {
